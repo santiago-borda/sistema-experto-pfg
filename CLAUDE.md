@@ -69,8 +69,7 @@ Este repositorio es una **migración con historial completo** desde el
 repositorio original del TP2 grupal (`felix-toledo/sistema-experto-infecciones`),
 donde el proyecto arrancó como trabajo en equipo. A partir de la migración,
 el desarrollo continúa en solitario como parte del PFG, bajo
-`santiago-borda/sistema-experto-infecciones` (o el nombre que hayas
-elegido para el repo nuevo). El historial de commits previo a la
+`santiago-borda/sistema-experto-pfg`. El historial de commits previo a la
 migración se preservó intencionalmente (no se hizo squash) para dejar
 trazabilidad clara de qué es aporte grupal (TP2) y qué es continuación
 individual (PFG) — relevante para cualquier pregunta de autoría en la
