@@ -34,8 +34,9 @@ LLM participe jamás de la inferencia clínica (arquitectura no-wrapper).
 ```
 legacy/       Código original (main.py CustomTkinter, expert_system.py,
               knowledge_base.py con reglas embebidas en lambdas, etc.)
-              Se preserva como referencia histórica — no se toca su lógica
-              ni sus reglas. Excepción única: los imports internos se
+              Se preserva como referencia histórica — no se modifica
+              ningún comportamiento clínico, regla de negocio, ni valor
+              de umbral. Única excepción: los imports internos se
               actualizaron a rutas absolutas (`from legacy.xxx import ...`)
               como parte del `git mv` a este directorio, ya que ahora es
               un paquete y los imports relativos del root ya no resuelven.
@@ -141,7 +142,8 @@ otra cosa — son la red de seguridad contra regresiones.
 ## Pendiente / próximos frentes (en orden sugerido)
 
 1. Reorganización del repo (`legacy/`, `spec/`, `seitt_core/` como hermanos
-   en la raíz) — en curso.
+   en la raíz) — completa y validada (45/45 spec, 23/23 tests, 28/28 eval
+   harness, corrido en Windows con .venv).
 2. Dockerización + entorno reproducible (Consigna 4).
 3. Contrato JSON MedGemma ↔ Motor Difuso (extiende `sample_input.schema.json`).
 4. Adaptación de `main.py` (GUI) al nuevo `expert_system.evaluar_caso()` —
