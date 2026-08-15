@@ -9,9 +9,9 @@ Coordina el flujo completo:
 API pública: evaluar_caso(datos) → dict
 """
 
-from fuzzy_engine import construir_hechos
-from inference_engine import evaluar_reglas
-from explicador import generar_explicacion
+from legacy.fuzzy_engine import construir_hechos
+from legacy.inference_engine import evaluar_reglas
+from legacy.explicador import generar_explicacion
 
 
 # ---------------------------------------------------------------------------

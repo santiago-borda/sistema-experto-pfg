@@ -13,7 +13,7 @@ Jerarquía de arbitraje (de mayor a menor precedencia):
     0 — Apta / Habilitado
 """
 
-from knowledge_base import REGLAS
+from legacy.knowledge_base import REGLAS
 
 # ---------------------------------------------------------------------------
 # Orden clínico de evaluación (no es el orden del archivo knowledge_base.py)

@@ -34,7 +34,11 @@ LLM participe jamás de la inferencia clínica (arquitectura no-wrapper).
 ```
 legacy/       Código original (main.py CustomTkinter, expert_system.py,
               knowledge_base.py con reglas embebidas en lambdas, etc.)
-              Se preserva intacto como referencia histórica — NO se edita.
+              Se preserva como referencia histórica — no se toca su lógica
+              ni sus reglas. Excepción única: los imports internos se
+              actualizaron a rutas absolutas (`from legacy.xxx import ...`)
+              como parte del `git mv` a este directorio, ya que ahora es
+              un paquete y los imports relativos del root ya no resuelven.
 
 spec/         Fase 0: especificación formal.
   domain_model.md          Invariantes (INV-01..08), fórmulas, hallazgos
@@ -58,6 +62,38 @@ docs/         Papers académicos ya existentes (Poster, PIF, TP2) — leer
               con cautela, tienen discrepancias documentadas vs. el código
               real (ver domain_model.md §4bis).
 ```
+
+## Origen y propiedad del repositorio
+
+Este repositorio es una **migración con historial completo** desde el
+repositorio original del TP2 grupal (`felix-toledo/sistema-experto-infecciones`),
+donde el proyecto arrancó como trabajo en equipo. A partir de la migración,
+el desarrollo continúa en solitario como parte del PFG, bajo
+`santiago-borda/sistema-experto-infecciones` (o el nombre que hayas
+elegido para el repo nuevo). El historial de commits previo a la
+migración se preservó intencionalmente (no se hizo squash) para dejar
+trazabilidad clara de qué es aporte grupal (TP2) y qué es continuación
+individual (PFG) — relevante para cualquier pregunta de autoría en la
+defensa.
+
+## Flujo de git (acordado, no lo cambies sin avisar)
+
+- Trabajar en la rama **`refactor/spec-driven-v2`**, nunca directo en `main`.
+- Si la rama no existe todavía en el repo local, crearla desde `main` antes
+  de tocar cualquier archivo: `git checkout -b refactor/spec-driven-v2`.
+- Si `legacy/` todavía no existe: mover ahí los archivos originales con
+  `git mv` (preserva historial) — `main.py`, `expert_system.py`,
+  `knowledge_base.py`, `inference_engine.py`, `fuzzy_engine.py`,
+  `explicador.py`, `test_cases.py` — antes de agregar `spec/` y `seitt_core/`.
+- **No mergear `refactor/spec-driven-v2` a `main` todavía.** Quedan dos
+  condiciones pendientes antes del merge: (1) Dockerización cerrada,
+  (2) contrato MedGemma↔Motor Difuso definido y `main.py` (GUI) adaptado
+  a la nueva firma de `expert_system.evaluar_caso()`. Recién ahí, un
+  commit final que documente la transición completa.
+- Commits chicos y descriptivos por frente de trabajo (ej. "feat(spec):
+  agrega working_memory_facts.schema.json", no un commit gigante con todo
+  junto) — ayuda a que el `git log` sea legible como narrativa de
+  ingeniería para la memoria técnica del PFG.
 
 ## Estado actual (verificar corriendo esto al empezar cualquier sesión)
 
@@ -114,6 +150,10 @@ otra cosa — son la red de seguridad contra regresiones.
    para no reescribir la UI dos veces.
 
 ## Al recibir una tarea sobre este proyecto
+
+Primero: confirmar con `git branch --show-current` que se está parado en
+`refactor/spec-driven-v2`, no en `main`. Si no existe la rama o estás en
+`main`, resolverlo antes de cualquier otra cosa (ver sección de git arriba).
 
 Antes de escribir código: revisar `domain_model.md` si la tarea toca
 reglas de negocio, invariantes o el modelo de dominio. Antes de tocar

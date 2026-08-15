@@ -5,7 +5,7 @@ Incluye los 6 casos obligatorios del README más casos borde para
 verificar reglas críticas y los límites de la Zona gris.
 """
 
-from expert_system import evaluar_caso
+from legacy.expert_system import evaluar_caso
 
 # ---------------------------------------------------------------------------
 # Definición de casos de prueba

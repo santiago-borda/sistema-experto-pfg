@@ -13,9 +13,9 @@ import sys
 import tkinter as tk
 from tkinter import filedialog, font, messagebox, scrolledtext, ttk
 
-from expert_system import evaluar_caso
-from fuzzy_engine import MARCADORES_NAT, fuzzificar_sco
-import test_cases
+from legacy.expert_system import evaluar_caso
+from legacy.fuzzy_engine import MARCADORES_NAT, fuzzificar_sco
+import legacy.test_cases as test_cases
 
 # ---------------------------------------------------------------------------
 # Paleta de colores y constantes visuales
@@ -663,7 +663,7 @@ class App(tk.Tk):
                        ensure_ascii=False, indent=2))
 
         # Pestaña Reglas (detalle de cada regla activada)
-        from knowledge_base import REGLAS
+        from legacy.knowledge_base import REGLAS
         idx = {r["id"]: r for r in REGLAS}
         lines = []
         for rid in reglas:
@@ -741,8 +741,8 @@ class App(tk.Tk):
         for row in self._tree.get_children():
             self._tree.delete(row)
 
-        from test_cases import CASOS
-        from test_cases import _validar_caso
+        from legacy.test_cases import CASOS
+        from legacy.test_cases import _validar_caso
 
         pasados = 0
         for caso in CASOS:
