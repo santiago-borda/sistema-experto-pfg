@@ -1,0 +1,696 @@
+{
+  "total_casos": 28,
+  "tasa_acierto": 1.0,
+  "concordancia_kappa": 1.0,
+  "tiempo_promedio_ms": 0.45368846428723536,
+  "tiempo_p95_ms": 0.08814200000983874,
+  "por_categoria": {
+    "baseline_apta": {
+      "correctos": 2,
+      "total": 2
+    },
+    "zona_gris_borde": {
+      "correctos": 9,
+      "total": 9
+    },
+    "marcador_reactivo": {
+      "correctos": 5,
+      "total": 5
+    },
+    "nat_ventana": {
+      "correctos": 3,
+      "total": 3
+    },
+    "sifilis_algoritmo": {
+      "correctos": 3,
+      "total": 3
+    },
+    "riesgo_epidemiologico": {
+      "correctos": 1,
+      "total": 1
+    },
+    "zona_gris_repeticion": {
+      "correctos": 3,
+      "total": 3
+    },
+    "interferencia_fisica": {
+      "correctos": 2,
+      "total": 2
+    }
+  },
+  "casos": [
+    {
+      "case_id": "EV01",
+      "category": "baseline_apta",
+      "correct": true,
+      "inference_time_ms": 11.230062000009866,
+      "expected_unit": "Apta",
+      "actual_unit": "Apta",
+      "unit_match": true,
+      "donor_match": true,
+      "pending_match": true,
+      "trace_match": true,
+      "error": null,
+      "details": {
+        "expected_rule_ids": [
+          "R1"
+        ],
+        "triggered_rules": [
+          "R1"
+        ],
+        "expected_donor": "Habilitado",
+        "actual_donor": "Habilitado"
+      }
+    },
+    {
+      "case_id": "EV02",
+      "category": "baseline_apta",
+      "correct": true,
+      "inference_time_ms": 0.07958299997312679,
+      "expected_unit": "Apta",
+      "actual_unit": "Apta",
+      "unit_match": true,
+      "donor_match": true,
+      "pending_match": true,
+      "trace_match": true,
+      "error": null,
+      "details": {
+        "expected_rule_ids": [
+          "R1"
+        ],
+        "triggered_rules": [
+          "R1"
+        ],
+        "expected_donor": "Habilitado",
+        "actual_donor": "Habilitado"
+      }
+    },
+    {
+      "case_id": "EV03",
+      "category": "zona_gris_borde",
+      "correct": true,
+      "inference_time_ms": 0.05768299999431292,
+      "expected_unit": "Apta",
+      "actual_unit": "Apta",
+      "unit_match": true,
+      "donor_match": true,
+      "pending_match": true,
+      "trace_match": true,
+      "error": null,
+      "details": {
+        "expected_rule_ids": [
+          "R1"
+        ],
+        "triggered_rules": [
+          "R1"
+        ],
+        "expected_donor": "Habilitado",
+        "actual_donor": "Habilitado"
+      }
+    },
+    {
+      "case_id": "EV04",
+      "category": "zona_gris_borde",
+      "correct": true,
+      "inference_time_ms": 0.0618230000100084,
+      "expected_unit": null,
+      "actual_unit": null,
+      "unit_match": true,
+      "donor_match": true,
+      "pending_match": true,
+      "trace_match": true,
+      "error": null,
+      "details": {
+        "expected_rule_ids": [
+          "R2_alta_certeza"
+        ],
+        "triggered_rules": [
+          "R2_alta_certeza"
+        ],
+        "expected_donor": null,
+        "actual_donor": null
+      }
+    },
+    {
+      "case_id": "EV05",
+      "category": "zona_gris_borde",
+      "correct": true,
+      "inference_time_ms": 0.056344999990187716,
+      "expected_unit": null,
+      "actual_unit": null,
+      "unit_match": true,
+      "donor_match": true,
+      "pending_match": true,
+      "trace_match": true,
+      "error": null,
+      "details": {
+        "expected_rule_ids": [
+          "R2_alta_certeza"
+        ],
+        "triggered_rules": [
+          "R2_alta_certeza"
+        ],
+        "expected_donor": null,
+        "actual_donor": null
+      }
+    },
+    {
+      "case_id": "EV06",
+      "category": "zona_gris_borde",
+      "correct": true,
+      "inference_time_ms": 0.05224500000622356,
+      "expected_unit": null,
+      "actual_unit": null,
+      "unit_match": true,
+      "donor_match": true,
+      "pending_match": true,
+      "trace_match": true,
+      "error": null,
+      "details": {
+        "expected_rule_ids": [
+          "R2_alta_certeza"
+        ],
+        "triggered_rules": [
+          "R2_alta_certeza"
+        ],
+        "expected_donor": null,
+        "actual_donor": null
+      }
+    },
+    {
+      "case_id": "EV07",
+      "category": "zona_gris_borde",
+      "correct": true,
+      "inference_time_ms": 0.04900900000848196,
+      "expected_unit": null,
+      "actual_unit": null,
+      "unit_match": true,
+      "donor_match": true,
+      "pending_match": true,
+      "trace_match": true,
+      "error": null,
+      "details": {
+        "expected_rule_ids": [
+          "R2_baja_certeza"
+        ],
+        "triggered_rules": [
+          "R2_baja_certeza"
+        ],
+        "expected_donor": null,
+        "actual_donor": null
+      }
+    },
+    {
+      "case_id": "EV08",
+      "category": "zona_gris_borde",
+      "correct": true,
+      "inference_time_ms": 0.05684399999950074,
+      "expected_unit": null,
+      "actual_unit": null,
+      "unit_match": true,
+      "donor_match": true,
+      "pending_match": true,
+      "trace_match": true,
+      "error": null,
+      "details": {
+        "expected_rule_ids": [
+          "R2_baja_certeza"
+        ],
+        "triggered_rules": [
+          "R2_baja_certeza"
+        ],
+        "expected_donor": null,
+        "actual_donor": null
+      }
+    },
+    {
+      "case_id": "EV09",
+      "category": "zona_gris_borde",
+      "correct": true,
+      "inference_time_ms": 0.04670900000292022,
+      "expected_unit": null,
+      "actual_unit": null,
+      "unit_match": true,
+      "donor_match": true,
+      "pending_match": true,
+      "trace_match": true,
+      "error": null,
+      "details": {
+        "expected_rule_ids": [
+          "R2_critica"
+        ],
+        "triggered_rules": [
+          "R2_critica"
+        ],
+        "expected_donor": null,
+        "actual_donor": null
+      }
+    },
+    {
+      "case_id": "EV10",
+      "category": "zona_gris_borde",
+      "correct": true,
+      "inference_time_ms": 0.04641200001742618,
+      "expected_unit": null,
+      "actual_unit": null,
+      "unit_match": true,
+      "donor_match": true,
+      "pending_match": true,
+      "trace_match": true,
+      "error": null,
+      "details": {
+        "expected_rule_ids": [
+          "R2_critica"
+        ],
+        "triggered_rules": [
+          "R2_critica"
+        ],
+        "expected_donor": null,
+        "actual_donor": null
+      }
+    },
+    {
+      "case_id": "EV11",
+      "category": "zona_gris_borde",
+      "correct": true,
+      "inference_time_ms": 0.05894299999908981,
+      "expected_unit": "Descarte",
+      "actual_unit": "Descarte",
+      "unit_match": true,
+      "donor_match": true,
+      "pending_match": true,
+      "trace_match": true,
+      "error": null,
+      "details": {
+        "expected_rule_ids": [
+          "R7",
+          "R17"
+        ],
+        "triggered_rules": [
+          "R7",
+          "R17"
+        ],
+        "expected_donor": "Diferido_Permanente",
+        "actual_donor": "Diferido_Permanente"
+      }
+    },
+    {
+      "case_id": "EV12",
+      "category": "marcador_reactivo",
+      "correct": true,
+      "inference_time_ms": 0.04994799999735733,
+      "expected_unit": "Descarte",
+      "actual_unit": "Descarte",
+      "unit_match": true,
+      "donor_match": true,
+      "pending_match": true,
+      "trace_match": true,
+      "error": null,
+      "details": {
+        "expected_rule_ids": [
+          "R11"
+        ],
+        "triggered_rules": [
+          "R11"
+        ],
+        "expected_donor": "Diferido_Permanente",
+        "actual_donor": "Diferido_Permanente"
+      }
+    },
+    {
+      "case_id": "EV13",
+      "category": "marcador_reactivo",
+      "correct": true,
+      "inference_time_ms": 0.0896760000159702,
+      "expected_unit": "Descarte",
+      "actual_unit": "Descarte",
+      "unit_match": true,
+      "donor_match": true,
+      "pending_match": true,
+      "trace_match": true,
+      "error": null,
+      "details": {
+        "expected_rule_ids": [
+          "R12"
+        ],
+        "triggered_rules": [
+          "R12"
+        ],
+        "expected_donor": "Diferido_Permanente",
+        "actual_donor": "Diferido_Permanente"
+      }
+    },
+    {
+      "case_id": "EV14",
+      "category": "marcador_reactivo",
+      "correct": true,
+      "inference_time_ms": 0.08814200000983874,
+      "expected_unit": "Descarte",
+      "actual_unit": "Descarte",
+      "unit_match": true,
+      "donor_match": true,
+      "pending_match": true,
+      "trace_match": true,
+      "error": null,
+      "details": {
+        "expected_rule_ids": [
+          "R14"
+        ],
+        "triggered_rules": [
+          "R14"
+        ],
+        "expected_donor": "Diferido_Temporal",
+        "actual_donor": "Diferido_Temporal"
+      }
+    },
+    {
+      "case_id": "EV15",
+      "category": "marcador_reactivo",
+      "correct": true,
+      "inference_time_ms": 0.04758800000104202,
+      "expected_unit": "Descarte",
+      "actual_unit": "Descarte",
+      "unit_match": true,
+      "donor_match": true,
+      "pending_match": true,
+      "trace_match": true,
+      "error": null,
+      "details": {
+        "expected_rule_ids": [
+          "R15"
+        ],
+        "triggered_rules": [
+          "R15"
+        ],
+        "expected_donor": "Diferido_Permanente",
+        "actual_donor": "Diferido_Permanente"
+      }
+    },
+    {
+      "case_id": "EV16",
+      "category": "marcador_reactivo",
+      "correct": true,
+      "inference_time_ms": 0.04540800000540912,
+      "expected_unit": "Descarte",
+      "actual_unit": "Descarte",
+      "unit_match": true,
+      "donor_match": true,
+      "pending_match": true,
+      "trace_match": true,
+      "error": null,
+      "details": {
+        "expected_rule_ids": [
+          "R16"
+        ],
+        "triggered_rules": [
+          "R16"
+        ],
+        "expected_donor": "Diferido_Permanente",
+        "actual_donor": "Diferido_Permanente"
+      }
+    },
+    {
+      "case_id": "EV17",
+      "category": "nat_ventana",
+      "correct": true,
+      "inference_time_ms": 0.04839900000774833,
+      "expected_unit": "Descarte",
+      "actual_unit": "Descarte",
+      "unit_match": true,
+      "donor_match": true,
+      "pending_match": true,
+      "trace_match": true,
+      "error": null,
+      "details": {
+        "expected_rule_ids": [
+          "R4"
+        ],
+        "triggered_rules": [
+          "R4"
+        ],
+        "expected_donor": "Diferido_Permanente",
+        "actual_donor": "Diferido_Permanente"
+      }
+    },
+    {
+      "case_id": "EV18",
+      "category": "nat_ventana",
+      "correct": true,
+      "inference_time_ms": 0.05807299999105453,
+      "expected_unit": "Descarte",
+      "actual_unit": "Descarte",
+      "unit_match": true,
+      "donor_match": true,
+      "pending_match": true,
+      "trace_match": true,
+      "error": null,
+      "details": {
+        "expected_rule_ids": [
+          "R5"
+        ],
+        "triggered_rules": [
+          "R4",
+          "R5",
+          "R16"
+        ],
+        "expected_donor": "Diferido_Permanente",
+        "actual_donor": "Diferido_Permanente"
+      }
+    },
+    {
+      "case_id": "EV19",
+      "category": "nat_ventana",
+      "correct": true,
+      "inference_time_ms": 0.05207000000950757,
+      "expected_unit": "Descarte",
+      "actual_unit": "Descarte",
+      "unit_match": true,
+      "donor_match": true,
+      "pending_match": true,
+      "trace_match": true,
+      "error": null,
+      "details": {
+        "expected_rule_ids": [
+          "R7"
+        ],
+        "triggered_rules": [
+          "R7",
+          "R17"
+        ],
+        "expected_donor": "Diferido_Permanente",
+        "actual_donor": "Diferido_Permanente"
+      }
+    },
+    {
+      "case_id": "EV20",
+      "category": "sifilis_algoritmo",
+      "correct": true,
+      "inference_time_ms": 0.051286999990907134,
+      "expected_unit": null,
+      "actual_unit": null,
+      "unit_match": true,
+      "donor_match": true,
+      "pending_match": true,
+      "trace_match": true,
+      "error": null,
+      "details": {
+        "expected_rule_ids": [
+          "R8"
+        ],
+        "triggered_rules": [
+          "R8"
+        ],
+        "expected_donor": null,
+        "actual_donor": null
+      }
+    },
+    {
+      "case_id": "EV21",
+      "category": "sifilis_algoritmo",
+      "correct": true,
+      "inference_time_ms": 0.05528999997750361,
+      "expected_unit": "Descarte",
+      "actual_unit": "Descarte",
+      "unit_match": true,
+      "donor_match": true,
+      "pending_match": true,
+      "trace_match": true,
+      "error": null,
+      "details": {
+        "expected_rule_ids": [
+          "R9"
+        ],
+        "triggered_rules": [
+          "R8",
+          "R9"
+        ],
+        "expected_donor": "Diferido_Temporal",
+        "actual_donor": "Diferido_Temporal"
+      }
+    },
+    {
+      "case_id": "EV22",
+      "category": "sifilis_algoritmo",
+      "correct": true,
+      "inference_time_ms": 0.04879599998730555,
+      "expected_unit": "Descarte",
+      "actual_unit": "Descarte",
+      "unit_match": true,
+      "donor_match": true,
+      "pending_match": true,
+      "trace_match": true,
+      "error": null,
+      "details": {
+        "expected_rule_ids": [
+          "R10"
+        ],
+        "triggered_rules": [
+          "R10"
+        ],
+        "expected_donor": "Diferido_Temporal",
+        "actual_donor": "Diferido_Temporal"
+      }
+    },
+    {
+      "case_id": "EV23",
+      "category": "riesgo_epidemiologico",
+      "correct": true,
+      "inference_time_ms": 0.04793800002289572,
+      "expected_unit": "Descarte",
+      "actual_unit": "Descarte",
+      "unit_match": true,
+      "donor_match": true,
+      "pending_match": true,
+      "trace_match": true,
+      "error": null,
+      "details": {
+        "expected_rule_ids": [
+          "R6"
+        ],
+        "triggered_rules": [
+          "R6"
+        ],
+        "expected_donor": "Diferido_Temporal",
+        "actual_donor": "Diferido_Temporal"
+      }
+    },
+    {
+      "case_id": "EV24",
+      "category": "zona_gris_repeticion",
+      "correct": true,
+      "inference_time_ms": 0.06567799999857016,
+      "expected_unit": "Descarte",
+      "actual_unit": "Descarte",
+      "unit_match": true,
+      "donor_match": true,
+      "pending_match": true,
+      "trace_match": true,
+      "error": null,
+      "details": {
+        "expected_rule_ids": [
+          "R3"
+        ],
+        "triggered_rules": [
+          "R2_alta_certeza",
+          "R3"
+        ],
+        "expected_donor": "Diferido_Temporal",
+        "actual_donor": "Diferido_Temporal"
+      }
+    },
+    {
+      "case_id": "EV25",
+      "category": "zona_gris_repeticion",
+      "correct": true,
+      "inference_time_ms": 0.05591900000467831,
+      "expected_unit": "Descarte",
+      "actual_unit": "Descarte",
+      "unit_match": true,
+      "donor_match": true,
+      "pending_match": true,
+      "trace_match": true,
+      "error": null,
+      "details": {
+        "expected_rule_ids": [
+          "R18"
+        ],
+        "triggered_rules": [
+          "R2_alta_certeza",
+          "R18"
+        ],
+        "expected_donor": "Diferido_Temporal",
+        "actual_donor": "Diferido_Temporal"
+      }
+    },
+    {
+      "case_id": "EV26",
+      "category": "zona_gris_repeticion",
+      "correct": true,
+      "inference_time_ms": 0.05421700001306817,
+      "expected_unit": "Descarte",
+      "actual_unit": "Descarte",
+      "unit_match": true,
+      "donor_match": true,
+      "pending_match": true,
+      "trace_match": true,
+      "error": null,
+      "details": {
+        "expected_rule_ids": [
+          "R19"
+        ],
+        "triggered_rules": [
+          "R2_alta_certeza",
+          "R19"
+        ],
+        "expected_donor": "Diferido_Permanente",
+        "actual_donor": "Diferido_Permanente"
+      }
+    },
+    {
+      "case_id": "EV27",
+      "category": "interferencia_fisica",
+      "correct": true,
+      "inference_time_ms": 0.026254000005110356,
+      "expected_unit": "Cuarentena",
+      "actual_unit": "Cuarentena",
+      "unit_match": true,
+      "donor_match": true,
+      "pending_match": true,
+      "trace_match": true,
+      "error": null,
+      "details": {
+        "expected_rule_ids": [
+          "R20"
+        ],
+        "triggered_rules": [
+          "R20"
+        ],
+        "expected_donor": null,
+        "actual_donor": null
+      }
+    },
+    {
+      "case_id": "EV28",
+      "category": "interferencia_fisica",
+      "correct": true,
+      "inference_time_ms": 0.022935999993478617,
+      "expected_unit": "Cuarentena",
+      "actual_unit": "Cuarentena",
+      "unit_match": true,
+      "donor_match": true,
+      "pending_match": true,
+      "trace_match": true,
+      "error": null,
+      "details": {
+        "expected_rule_ids": [
+          "R20"
+        ],
+        "triggered_rules": [
+          "R20"
+        ],
+        "expected_donor": null,
+        "actual_donor": null
+      }
+    }
+  ]
+}

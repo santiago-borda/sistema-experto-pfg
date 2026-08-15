@@ -1,0 +1,323 @@
+"""
+contracts.py — Capa de tipado estático del SE-ITT.
+
+Materializa sample_input.schema.json, working_memory_facts.schema.json,
+rule.schema.json y verdict.schema.json como modelos Pydantic v2, con
+invariantes de dominio ejecutables (INV-01..08, ver domain_model.md). Esta
+capa es la que impide "vibe coding" (Consigna 2):
+ningún hecho puede circular por el Inference Engine sin pasar por estos
+validadores, y ninguna violación de invariante puede pasar en silencio.
+
+Requiere: pydantic >= 2.0
+"""
+
+from __future__ import annotations
+
+from datetime import datetime
+from enum import StrEnum
+from typing import Literal
+
+from pydantic import BaseModel, Field, model_validator, ConfigDict
+
+
+# ─────────────────────────────────────────────────────────────────────────
+# Excepciones explícitas de dominio (Consigna 2: manejo explícito, no
+# excepciones genéricas ni silenciadas)
+# ─────────────────────────────────────────────────────────────────────────
+
+class SEITTDomainError(ValueError):
+    """Raíz de la jerarquía de excepciones de dominio del SE-ITT.
+
+    Hereda de ValueError (no de Exception) DELIBERADAMENTE: Pydantic v2 solo
+    envuelve automáticamente en ValidationError las excepciones que heredan
+    de ValueError/TypeError/AssertionError levantadas dentro de un
+    @model_validator. Es la forma correcta de propagar violaciones de
+    invariante de dominio como errores de validación de contrato, en vez de
+    excepciones no controladas (Consigna 2: manejo explícito de excepciones).
+    """
+
+
+class DomainInvariantViolation(SEITTDomainError):
+    """Se violó un invariante formal descrito en domain_model.md."""
+
+    def __init__(self, invariant_id: str, detail: str):
+        self.invariant_id = invariant_id
+        self.detail = detail
+        super().__init__(f"[{invariant_id}] {detail}")
+
+
+class SCOLabelInconsistencyError(DomainInvariantViolation):
+    """sco_label no coincide con la función de membresía formal de sco_value."""
+
+    def __init__(self, sco_value: float, declared_label: str, expected_label: str):
+        super().__init__(
+            invariant_id="INV-STRUCT-SCO",
+            detail=(
+                f"sco_value={sco_value} implica etiqueta '{expected_label}' "
+                f"por función de membresía, pero se declaró '{declared_label}'."
+            ),
+        )
+
+
+# ─────────────────────────────────────────────────────────────────────────
+# Enumeraciones de dominio (vocabulario cerrado — ver domain_model.md §1)
+# ─────────────────────────────────────────────────────────────────────────
+
+class SCOLabel(StrEnum):
+    NO_REACTIVO = "No Reactivo"
+    ZONA_GRIS = "Zona Gris"
+    REACTIVO = "Reactivo"
+
+
+class PhysicalIntegrity(StrEnum):
+    NORMAL = "Normal"
+    HEMOLIZADA = "Hemolizada"
+    LIPEMICA = "Lipemica"
+
+
+# Valores de calidad de muestra que disparan R20 (guard clause, INV-02).
+# CORRECCIÓN respecto al código legado: knowledge_base.py compara contra el
+# string literal "Hemolizada o Lipémica" (acoplamiento frágil a un valor
+# mágico compuesto). Se reemplaza por un conjunto cerrado + pertenencia IN.
+INTERFERENCE_VALUES: frozenset[PhysicalIntegrity] = frozenset(
+    {PhysicalIntegrity.HEMOLIZADA, PhysicalIntegrity.LIPEMICA}
+)
+
+
+class Marker(StrEnum):
+    HIV = "HIV"
+    HBV = "HBV"
+    HCV = "HCV"
+    SIFILIS = "Sifilis"
+    CHAGAS = "Chagas"
+    HTLV_I_II = "HTLV_I_II"
+    BRUCELOSIS = "Brucelosis"
+
+
+# Marcadores para los que el ensayo NAT es clínicamente aplicable (INV-08,
+# README - Regla de Negocio Estricta #5). Para el resto, nat debe ser
+# estructuralmente "No Aplica".
+NAT_APPLICABLE_MARKERS: frozenset[Marker] = frozenset({Marker.HIV, Marker.HBV, Marker.HCV})
+
+
+class UnitDisposition(StrEnum):
+    """Disposición de la UNIDAD de sangre. Eje independiente de DonorDisposition."""
+
+    APTA = "Apta"
+    DESCARTE = "Descarte"
+    CUARENTENA = "Cuarentena"
+
+
+class DonorDisposition(StrEnum):
+    """Disposición del DONANTE. Puede ser None cuando unit_disposition=Cuarentena
+    (rechazo técnico: aún no se evaluó al donante en absoluto)."""
+
+    HABILITADO = "Habilitado"
+    DIFERIDO_TEMPORAL = "Diferido_Temporal"
+    DIFERIDO_PERMANENTE = "Diferido_Permanente"
+
+
+# ─────────────────────────────────────────────────────────────────────────
+# INV-07 — Arbitraje por peso de decisión (fiel al inference_engine.py real:
+# NO es "primera regla por prioridad gana", sino "máximo peso entre todas
+# las reglas terminales disparadas gana"; R20 es el único corto-circuito).
+# ─────────────────────────────────────────────────────────────────────────
+
+def decision_weight(unit: UnitDisposition, donor: DonorDisposition | None) -> int:
+    """Jerarquía de arbitraje: Cuarentena > Descarte+Permanente >
+    Descarte+Temporal > Descarte (sin estado de donante) > Apta."""
+    if unit == UnitDisposition.CUARENTENA:
+        return 4
+    if unit == UnitDisposition.DESCARTE and donor == DonorDisposition.DIFERIDO_PERMANENTE:
+        return 3
+    if unit == UnitDisposition.DESCARTE and donor == DonorDisposition.DIFERIDO_TEMPORAL:
+        return 2
+    if unit == UnitDisposition.DESCARTE:
+        return 1
+    return 0  # Apta / Habilitado
+
+
+class NATResult(StrEnum):
+    REACTIVO = "Reactivo"
+    NO_REACTIVO = "No Reactivo"
+    NO_APLICA = "No Aplica"
+
+
+class InputSource(StrEnum):
+    ANALYZER_DIRECT = "analyzer_direct"
+    MEDGEMMA_EXTRACTION = "medgemma_extraction"
+
+
+# Límites normativos estrictos de Zona Gris (README — Regla estricta #2)
+ZONA_GRIS_LOWER: float = 0.9
+ZONA_GRIS_UPPER: float = 1.1
+
+
+def expected_sco_label(sco_value: float) -> SCOLabel:
+    """Implementación ejecutable de la función formal §2 de domain_model.md."""
+    if sco_value < ZONA_GRIS_LOWER:
+        return SCOLabel.NO_REACTIVO
+    if sco_value <= ZONA_GRIS_UPPER:
+        return SCOLabel.ZONA_GRIS
+    return SCOLabel.REACTIVO
+
+
+# ─────────────────────────────────────────────────────────────────────────
+# Modelos de hechos de entrada (SampleInputFacts)
+# ─────────────────────────────────────────────────────────────────────────
+
+class DuplicateResult(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    sco_value: float = Field(ge=0)
+    sco_label: SCOLabel
+
+    @model_validator(mode="after")
+    def check_label_consistency(self) -> "DuplicateResult":
+        expected = expected_sco_label(self.sco_value)
+        if self.sco_label != expected:
+            raise SCOLabelInconsistencyError(self.sco_value, self.sco_label, expected)
+        return self
+
+
+class SifilisAlgorithm(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    vdrl_reactive: bool
+    clia_reactive: bool
+
+
+class MarkerResult(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    marker: Marker
+    sco_value: float = Field(ge=0)
+    sco_label: SCOLabel
+    fuzzy_certainty: float | None = Field(default=None, ge=0, le=1)
+    duplicate_result: DuplicateResult | None = None
+    nat_result: NATResult = NATResult.NO_APLICA
+    sifilis_algorithm: SifilisAlgorithm | None = None
+
+    @model_validator(mode="after")
+    def check_label_consistency(self) -> "MarkerResult":
+        expected = expected_sco_label(self.sco_value)
+        if self.sco_label != expected:
+            raise SCOLabelInconsistencyError(self.sco_value, self.sco_label, expected)
+        return self
+
+    @model_validator(mode="after")
+    def check_sifilis_algorithm_presence(self) -> "MarkerResult":
+        if self.marker == Marker.SIFILIS and self.sifilis_algorithm is None and self.sco_label != SCOLabel.NO_REACTIVO:
+            # No es un error duro (puede no requerirse aún el algoritmo confirmatorio),
+            # pero se deja el punto de extensión documentado para INV-05.
+            pass
+        return self
+
+    @model_validator(mode="after")
+    def check_nat_applicability(self) -> "MarkerResult":
+        """INV-08, aplicado en el contrato de entrada (defensa temprana,
+        antes de que el hecho llegue siquiera al Fuzzy Engine)."""
+        if self.marker not in NAT_APPLICABLE_MARKERS and self.nat_result != NATResult.NO_APLICA:
+            raise DomainInvariantViolation(
+                invariant_id="INV-08-NAT-APLICABILIDAD",
+                detail=(
+                    f"nat_result='{self.nat_result}' no es válido para marker '{self.marker}'; "
+                    f"NAT solo aplica a {sorted(m.value for m in NAT_APPLICABLE_MARKERS)}."
+                ),
+            )
+        return self
+
+
+class SampleInputFacts(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    sample_id: str = Field(pattern=r"^[A-Z0-9-]{6,32}$")
+    donor_id: str | None = None
+    physical_integrity: PhysicalIntegrity
+    marker_results: list[MarkerResult] = Field(min_length=1)
+    epidemiological_risk_flag: bool = False
+    source: InputSource
+    extraction_confidence: float | None = Field(default=None, ge=0, le=1)
+
+    @model_validator(mode="after")
+    def check_extraction_confidence_required(self) -> "SampleInputFacts":
+        if self.source == InputSource.MEDGEMMA_EXTRACTION and self.extraction_confidence is None:
+            raise DomainInvariantViolation(
+                invariant_id="INV-STRUCT-EXTRACTION",
+                detail="extraction_confidence es obligatorio cuando source=medgemma_extraction.",
+            )
+        return self
+
+
+# ─────────────────────────────────────────────────────────────────────────
+# WorkingMemoryFacts — vocabulario interno real del Inference Engine
+# (fiel a inference_engine.py / knowledge_base.py, ver working_memory_facts
+# .schema.json). Se construye a partir de UNA entrada de MarkerResult +
+# campos a nivel de muestra; es lo que consumen los antecedentes de la KB.
+# ─────────────────────────────────────────────────────────────────────────
+
+class WorkingMemoryFacts(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    calidad_muestra: PhysicalIntegrity
+    marcador: Marker
+    sco: SCOLabel
+    sco_inicial: SCOLabel
+    sco_inicial_valor: float | None = Field(default=None, ge=0)
+    sco_repeticion: SCOLabel | None = None
+    sco_repeticion_valor: float | None = Field(default=None, ge=0)
+    certeza_sco: float | None = Field(
+        default=None, ge=0, le=100,
+        description="Se calcula para las 3 etiquetas (No Reactivo/Zona Gris/Reactivo), "
+                     "no exclusiva de Zona Gris. Ver domain_model.md §2.",
+    )
+    nat: NATResult
+    riesgo: bool
+    vdrl: NATResult | None = None
+    clia: NATResult | None = None
+
+    @model_validator(mode="after")
+    def check_nat_applicability(self) -> "WorkingMemoryFacts":
+        """INV-08: el NAT solo es clínicamente aplicable a HIV, HBV, HCV."""
+        if self.marcador not in NAT_APPLICABLE_MARKERS and self.nat != NATResult.NO_APLICA:
+            raise DomainInvariantViolation(
+                invariant_id="INV-08-NAT-APLICABILIDAD",
+                detail=(
+                    f"nat='{self.nat}' no es válido para marcador '{self.marcador}'; "
+                    f"NAT solo aplica a {sorted(m.value for m in NAT_APPLICABLE_MARKERS)}."
+                ),
+            )
+        return self
+
+
+# ─────────────────────────────────────────────────────────────────────────
+# Modelo de veredicto de salida (bidimensional: unidad × donante, INV-07)
+# ─────────────────────────────────────────────────────────────────────────
+
+class InferenceVerdict(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    sample_id: str
+    final_unit_disposition: UnitDisposition
+    final_donor_disposition: DonorDisposition | None = None
+    epidemiological_status: str | None = None
+    triggered_rules: list[str] = Field(min_length=1)
+    explanation_log: list[str] = Field(min_length=1)
+    certainty_index: float | None = Field(default=None, ge=0, le=1)
+    timestamp: datetime
+    engine_version: str
+
+    @model_validator(mode="after")
+    def check_donor_disposition_presence(self) -> "InferenceVerdict":
+        """Toda disposición != Cuarentena debe traer estado de donante
+        explícito (ninguna regla terminal de la KB deja al donante sin
+        resolver salvo el rechazo técnico, ver R20)."""
+        if self.final_unit_disposition != UnitDisposition.CUARENTENA and self.final_donor_disposition is None:
+            raise DomainInvariantViolation(
+                invariant_id="INV-07-ARBITRAJE-PESO",
+                detail=(
+                    f"final_unit_disposition='{self.final_unit_disposition}' requiere "
+                    f"final_donor_disposition explícito (solo Cuarentena admite null)."
+                ),
+            )
+        return self

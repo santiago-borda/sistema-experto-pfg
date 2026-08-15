@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://seitt.ucp.edu.ar/schemas/working_memory_facts.schema.json",
+  "title": "WorkingMemoryFacts",
+  "description": "Hechos internos, planos, de UN marcador evaluado en un ciclo de forward chaining. Es el vocabulario real que consumen los antecedentes de kb_rules.json (fiel a inference_engine.py / knowledge_base.py). Se deriva determinísticamente de UNA entrada de SampleInputFacts.marker_results[] más los campos a nivel de muestra (physical_integrity, epidemiological_risk_flag), mediante una función de transformación en el Fuzzy Engine (equivalente a fuzzy_engine.construir_hechos()). Esta capa de traducción es la que desacopla el contrato externo (lo que produce MedGemma o el analizador) del vocabulario interno del motor.",
+  "type": "object",
+  "required": ["calidad_muestra", "marcador", "sco", "sco_inicial", "riesgo", "nat"],
+  "additionalProperties": false,
+  "properties": {
+    "calidad_muestra": {
+      "type": "string",
+      "enum": ["Normal", "Hemolizada", "Lipemica"],
+      "description": "CORRECCIÓN respecto al código legado: knowledge_base.py compara R20 contra el string literal 'Hemolizada o Lipémica'. Se reemplaza por enum cerrado + operador IN en la regla (ver R20 en kb_rules.json, legacy_notes)."
+    },
+    "marcador": {
+      "type": "string",
+      "enum": ["HIV", "HBV", "HCV", "Sifilis", "Chagas", "HTLV_I_II", "Brucelosis"]
+    },
+    "sco": {
+      "type": "string",
+      "enum": ["No Reactivo", "Zona Gris", "Reactivo"],
+      "description": "Clasificación S/CO vigente para el marcador en el ciclo actual de evaluación."
+    },
+    "sco_inicial": {
+      "type": "string",
+      "enum": ["No Reactivo", "Zona Gris", "Reactivo"]
+    },
+    "sco_inicial_valor": { "type": ["number", "null"], "minimum": 0 },
+    "sco_repeticion": {
+      "type": ["string", "null"],
+      "enum": ["No Reactivo", "Zona Gris", "Reactivo", null],
+      "description": "CORRECCIÓN: código legado usa la clave 'repeticion' en R3 y 'sco_repeticion' en R18/R19 para el mismo concepto. Se unifica a 'sco_repeticion' en toda la KB."
+    },
+    "sco_repeticion_valor": { "type": ["number", "null"], "minimum": 0 },
+    "certeza_sco": {
+      "type": ["number", "null"],
+      "minimum": 0,
+      "maximum": 100,
+      "description": "µ_ZG(sco_inicial_valor) × 100 — grado de pertenencia porcentual a Zona Gris según la función de membresía trapezoidal (domain_model.md §2). Solo se define cuando sco_inicial = 'Zona Gris'."
+    },
+    "nat": {
+      "type": "string",
+      "enum": ["Reactivo", "No Reactivo", "No Aplica"],
+      "description": "Debe ser 'No Aplica' salvo para HIV, HBV, HCV (README - Regla estricta #5 / INV-08)."
+    },
+    "riesgo": {
+      "type": "boolean",
+      "description": "CORRECCIÓN: código legado usa strings 'Sí'/'No'. Se migra a boolean (tipado estricto, Consigna 2)."
+    },
+    "vdrl": { "type": ["string", "null"], "enum": ["Reactivo", "No Reactivo", null] },
+    "clia": { "type": ["string", "null"], "enum": ["Reactivo", "No Reactivo", null] }
+  },
+  "allOf": [
+    {
+      "if": { "not": { "properties": { "marcador": { "enum": ["HIV", "HBV", "HCV"] } }, "required": ["marcador"] } },
+      "then": { "properties": { "nat": { "const": "No Aplica" } } }
+    }
+  ]
+}

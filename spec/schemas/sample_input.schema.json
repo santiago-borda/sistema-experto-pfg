@@ -1,0 +1,111 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://seitt.ucp.edu.ar/schemas/sample_input.schema.json",
+  "title": "SampleInputFacts",
+  "description": "Contrato único de hechos de entrada a la memoria de trabajo del Inference Engine SE-ITT, post-fuzzificación. Es indiferente al origen del dato (analizador químico directo vs. extracción MedGemma) — esta indiferencia es la que garantiza la Consigna 5 (No-Wrapper LLM): MedGemma solo puede emitir instancias válidas de este schema, jamás un veredicto.",
+  "type": "object",
+  "required": ["sample_id", "physical_integrity", "marker_results", "source"],
+  "additionalProperties": false,
+  "properties": {
+    "sample_id": {
+      "type": "string",
+      "pattern": "^[A-Z0-9-]{6,32}$",
+      "description": "Identificador único de unidad, no vinculante a identidad del donante (anonimización operativa)."
+    },
+    "donor_id": { "type": "string" },
+    "physical_integrity": { "$ref": "#/$defs/PhysicalIntegrity" },
+    "marker_results": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/MarkerResult" }
+    },
+    "epidemiological_risk_flag": {
+      "type": "boolean",
+      "default": false,
+      "description": "Riesgo epidemiológico declarado en anamnesis (grupo de riesgo, conducta reciente, viaje a zona endémica)."
+    },
+    "source": {
+      "type": "string",
+      "enum": ["analyzer_direct", "medgemma_extraction"]
+    },
+    "extraction_confidence": {
+      "type": ["number", "null"],
+      "minimum": 0,
+      "maximum": 1,
+      "description": "Confianza de extracción NLP de MedGemma. Solo aplica si source=medgemma_extraction. NUNCA debe ser confundida ni combinada aritméticamente con fuzzy_certainty (separación estricta modelo neuronal / módulo simbólico, Consigna 5)."
+    }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "source": { "const": "medgemma_extraction" } } },
+      "then": { "required": ["extraction_confidence"] }
+    }
+  ],
+  "$defs": {
+    "PhysicalIntegrity": {
+      "type": "string",
+      "enum": ["Normal", "Hemolizada", "Lipemica", "Hemolizada_Lipemica"]
+    },
+    "MarkerResult": {
+      "type": "object",
+      "required": ["marker", "sco_value", "sco_label"],
+      "additionalProperties": false,
+      "properties": {
+        "marker": {
+          "type": "string",
+          "enum": ["HIV", "HBV", "HCV", "Sifilis", "Chagas"]
+        },
+        "sco_value": { "type": "number", "minimum": 0 },
+        "sco_label": {
+          "type": "string",
+          "enum": ["No Reactivo", "Zona Gris", "Reactivo"],
+          "description": "Etiqueta lingüística resultante de la fuzzificación. Único vocabulario permitido (Regla de Negocio Estricta #1 del README)."
+        },
+        "fuzzy_certainty": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Grado de pertenencia µ(x) calculado por el Fuzzy Engine sobre la función de membresía dominante."
+        },
+        "duplicate_result": {
+          "oneOf": [
+            { "type": "null" },
+            { "$ref": "#/$defs/DuplicateResult" }
+          ]
+        },
+        "nat_result": {
+          "type": "string",
+          "enum": ["Reactivo", "No Reactivo", "No Aplica"],
+          "default": "No Aplica"
+        },
+        "sifilis_algorithm": {
+          "oneOf": [
+            { "type": "null" },
+            { "$ref": "#/$defs/SifilisAlgorithm" }
+          ]
+        }
+      }
+    },
+    "DuplicateResult": {
+      "type": "object",
+      "required": ["sco_value", "sco_label"],
+      "additionalProperties": false,
+      "properties": {
+        "sco_value": { "type": "number", "minimum": 0 },
+        "sco_label": {
+          "type": "string",
+          "enum": ["No Reactivo", "Zona Gris", "Reactivo"]
+        }
+      }
+    },
+    "SifilisAlgorithm": {
+      "type": "object",
+      "required": ["vdrl_reactive", "clia_reactive"],
+      "additionalProperties": false,
+      "properties": {
+        "vdrl_reactive": { "type": "boolean" },
+        "clia_reactive": { "type": "boolean" }
+      }
+    }
+  }
+}

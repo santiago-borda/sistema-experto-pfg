@@ -1,0 +1,132 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://seitt.ucp.edu.ar/schemas/rule.schema.json",
+  "title": "ProductionRule",
+  "description": "DSL declarativo para las reglas de la Knowledge Base del SE-ITT. Toda regla debe existir como instancia validada de este schema ANTES de su implementación en el Inference Engine (Consigna 1: Spec Driven Development). El motor de inferencia debe interpretar estas instancias, no reglas hardcodeadas en Python.",
+  "type": "object",
+  "required": ["rule_id", "description", "priority", "legal_reference", "antecedent", "consequent", "invariant_tags"],
+  "additionalProperties": false,
+  "properties": {
+    "rule_id": {
+      "type": "string",
+      "pattern": "^R[0-9]{1,2}(_[a-z_]+)?$",
+      "description": "Formato fiel al código legado (R1..R20, con sufijos para variantes como R2_alta_certeza). Se preserva para trazabilidad directa con test_cases.py existente."
+    },
+    "description": { "type": "string" },
+    "legacy_notes": {
+      "type": ["string", "null"],
+      "description": "Notas de corrección respecto a la implementación original (knowledge_base.py), cuando la formalización expuso un defecto o inconsistencia. Null si la regla es fiel 1:1 al código legado."
+    },
+    "priority": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100,
+      "description": "Orden de EVALUACIÓN (mayor = primero), no de corte. El veredicto final se resuelve por arbitraje de peso de decisión (INV-07), salvo R20 que es el único corto-circuito real del sistema (guard clause de integridad física)."
+    },
+    "legal_reference": {
+      "type": "array",
+      "items": { "type": "string" },
+      "minItems": 1,
+      "description": "Artículo/anexo de Ley 22.990 o Res. 1507/2015 que fundamenta la regla. Obligatorio: toda regla de negocio debe ser trazable a norma (marco normativo del proyecto)."
+    },
+    "antecedent": { "$ref": "#/$defs/Condition" },
+    "consequent": { "$ref": "#/$defs/Consequent" },
+    "invariant_tags": {
+      "type": "array",
+      "minItems": 0,
+      "description": "Vacío es válido: no toda regla de reactividad simple por marcador involucra un invariante transversal formalizado. Forzar una etiqueta en esos casos sería una relación artificial.",
+      "items": {
+        "type": "string",
+        "enum": [
+          "INV-01-ZONA-GRIS-MONOTONA",
+          "INV-02-GUARD-FISICO",
+          "INV-03-AMBIGUEDAD-DUPLICADO",
+          "INV-04-VENTANA-NAT",
+          "INV-05-SIFILIS-ALGORITMO",
+          "INV-06-RIESGO-EPIDEMIOLOGICO",
+          "INV-07-ARBITRAJE-PESO",
+          "INV-08-NAT-APLICABILIDAD"
+        ]
+      },
+      "description": "Vínculo explícito a los invariantes formalizados en domain_model.md. Permite trazabilidad requerimiento -> regla -> invariante -> caso de prueba."
+    }
+  },
+  "$defs": {
+    "Condition": {
+      "oneOf": [
+        { "$ref": "#/$defs/AtomicCondition" },
+        { "$ref": "#/$defs/CompoundCondition" }
+      ]
+    },
+    "AtomicCondition": {
+      "type": "object",
+      "required": ["fact_path", "operator", "value"],
+      "additionalProperties": false,
+      "properties": {
+        "fact_path": {
+          "type": "string",
+          "description": "Nombre de campo sobre WorkingMemoryFacts (working_memory_facts.schema.json), ej: 'calidad_muestra', 'sco_inicial', 'certeza_sco'. NO opera directamente sobre SampleInputFacts — esa traducción la realiza el Fuzzy Engine antes de invocar al Inference Engine."
+        },
+        "operator": {
+          "type": "string",
+          "enum": ["EQ", "NEQ", "GT", "GTE", "LT", "LTE", "IN"]
+        },
+        "value": {}
+      }
+    },
+    "CompoundCondition": {
+      "type": "object",
+      "required": ["operator", "conditions"],
+      "additionalProperties": false,
+      "properties": {
+        "operator": { "type": "string", "enum": ["AND", "OR", "NOT"] },
+        "conditions": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/Condition" }
+        }
+      }
+    },
+    "Consequent": {
+      "type": "object",
+      "required": ["rule_type", "explanation_template"],
+      "additionalProperties": false,
+      "properties": {
+        "rule_type": {
+          "type": "string",
+          "enum": ["terminal", "intermediate"],
+          "description": "'terminal' produce un candidato a veredicto (unit_disposition + donor_disposition), sujeto a arbitraje INV-07. 'intermediate' (ej. R2_*, R8) solo registra una acción clínica en el log y NO produce candidato a veredicto — el forward chaining continúa."
+        },
+        "unit_disposition": {
+          "type": ["string", "null"],
+          "enum": ["Apta", "Descarte", "Cuarentena", null],
+          "description": "Obligatorio (no-null) si rule_type=terminal."
+        },
+        "donor_disposition": {
+          "type": ["string", "null"],
+          "enum": ["Habilitado", "Diferido_Temporal", "Diferido_Permanente", null],
+          "description": "null es válido para unit_disposition=Cuarentena (R20: la muestra se rechaza técnicamente, el donante no recibe disposición todavía)."
+        },
+        "epidemiological_status": { "type": ["string", "null"] },
+        "action": {
+          "type": ["string", "null"],
+          "description": "Obligatorio (no-null) si rule_type=intermediate. Acción clínica solicitada (ej. 'Realizar CLIA confirmatorio')."
+        },
+        "explanation_template": {
+          "type": "string",
+          "description": "Plantilla en lenguaje natural para el Explanation Subsystem. Placeholders admitidos: {marcador}, {sco_value}, {sco_label}, {rule_id}."
+        }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "rule_type": { "const": "terminal" } } },
+          "then": { "required": ["unit_disposition"] }
+        },
+        {
+          "if": { "properties": { "rule_type": { "const": "intermediate" } } },
+          "then": { "required": ["action"] }
+        }
+      ]
+    }
+  }
+}

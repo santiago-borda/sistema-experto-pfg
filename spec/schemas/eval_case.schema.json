@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://seitt.ucp.edu.ar/schemas/eval_case.schema.json",
+  "title": "EvalCase",
+  "description": "Caso de evaluación del Eval Harness (Consigna 3). 'expected' es el criterio clínico experto (ground truth) contra el que se mide Tasa de Acierto y concordancia. category clasifica el caso para reportar métricas desagregadas, con foco reforzado en Zona Gris.",
+  "type": "object",
+  "required": ["case_id", "category", "inputs", "expected"],
+  "additionalProperties": false,
+  "properties": {
+    "case_id": { "type": "string" },
+    "category": {
+      "type": "string",
+      "enum": [
+        "baseline_apta",
+        "zona_gris_borde",
+        "zona_gris_repeticion",
+        "marcador_reactivo",
+        "nat_ventana",
+        "sifilis_algoritmo",
+        "riesgo_epidemiologico",
+        "interferencia_fisica"
+      ]
+    },
+    "notes": { "type": "string" },
+    "inputs": {
+      "type": "object",
+      "required": ["sample_id", "calidad_muestra", "marcador", "riesgo"],
+      "properties": {
+        "sample_id": { "type": "string" },
+        "calidad_muestra": { "type": "string", "enum": ["Normal", "Hemolizada", "Lipemica"] },
+        "marcador": { "type": "string", "enum": ["HIV", "HBV", "HCV", "Sifilis", "Chagas", "HTLV_I_II", "Brucelosis"] },
+        "riesgo": { "type": "boolean" },
+        "sco_inicial_valor": { "type": ["number", "null"] },
+        "sco_repeticion_valor": { "type": ["number", "null"] },
+        "nat": { "type": ["string", "null"], "enum": ["Reactivo", "No Reactivo", null] },
+        "vdrl": { "type": ["string", "null"], "enum": ["Reactivo", "No Reactivo", null] },
+        "clia": { "type": ["string", "null"], "enum": ["Reactivo", "No Reactivo", null] }
+      }
+    },
+    "expected": {
+      "type": "object",
+      "required": ["final_unit_disposition", "expected_rule_ids"],
+      "properties": {
+        "final_unit_disposition": { "type": ["string", "null"], "enum": ["Apta", "Descarte", "Cuarentena", null] },
+        "final_donor_disposition": { "type": ["string", "null"], "enum": ["Habilitado", "Diferido_Temporal", "Diferido_Permanente", null] },
+        "has_pending_action": { "type": "boolean", "default": false },
+        "expected_rule_ids": {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 1,
+          "description": "Al menos una de estas reglas debe estar en triggered_rules (verificación de trazabilidad, no solo de disposición final)."
+        }
+      }
+    }
+  }
+}

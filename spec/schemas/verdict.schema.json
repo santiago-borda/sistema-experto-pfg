@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://seitt.ucp.edu.ar/schemas/verdict.schema.json",
+  "title": "InferenceVerdict",
+  "description": "Contrato de salida del Inference Engine hacia el Explanation Subsystem y hacia MedGemma (fase post-analítica, traducción a lenguaje natural). Este es el ÚNICO artefacto que MedGemma puede leer para redactar el reporte final — nunca los hechos crudos ni la KB (principio de mínima superficie de exposición al módulo neuronal).",
+  "type": "object",
+  "required": ["sample_id", "triggered_rules", "explanation_log", "timestamp", "engine_version"],
+  "additionalProperties": false,
+  "properties": {
+    "sample_id": { "type": "string" },
+    "final_unit_disposition": {
+      "type": ["string", "null"],
+      "enum": ["Apta", "Descarte", "Cuarentena", null],
+      "description": "Eje 1 del veredicto bidimensional (INV-07). null significa que el ciclo de forward chaining solo disparó reglas de acción intermedia (ej. R2_*, R8) sin alcanzar ninguna regla terminal — ver pending_action."
+    },
+    "final_donor_disposition": {
+      "type": ["string", "null"],
+      "enum": ["Habilitado", "Diferido_Temporal", "Diferido_Permanente", null],
+      "description": "Eje 2. null permitido cuando final_unit_disposition='Cuarentena' o cuando final_unit_disposition=null."
+    },
+    "pending_action": {
+      "type": ["string", "null"],
+      "description": "Acción clínica solicitada por la última regla intermedia disparada (ej. 'Repetir análisis por duplicado'), cuando final_unit_disposition=null. Debe ser null si final_unit_disposition tiene valor."
+    },
+    "epidemiological_status": { "type": ["string", "null"] },
+    "triggered_rules": {
+      "type": "array",
+      "items": { "type": "string", "pattern": "^RN-[0-9]{2}$" },
+      "minItems": 1,
+      "description": "Secuencia ORDENADA de reglas activadas (auditoría secuencial reconstruible)."
+    },
+    "explanation_log": {
+      "type": "array",
+      "items": { "type": "string" },
+      "minItems": 1
+    },
+    "certainty_index": {
+      "type": ["number", "null"],
+      "minimum": 0,
+      "maximum": 1,
+      "description": "Índice de certeza difusa agregado que motivó el veredicto, cuando aplica (relevante en Zona Gris)."
+    },
+    "timestamp": { "type": "string", "format": "date-time" },
+    "engine_version": {
+      "type": "string",
+      "description": "Versión semántica del par (KB, Inference Engine) que produjo el veredicto — requisito de reproducibilidad de auditoría."
+    }
+  }
+}
