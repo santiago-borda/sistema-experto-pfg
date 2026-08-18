@@ -31,6 +31,13 @@ from contracts import (
     DomainInvariantViolation,
     UnitDisposition,
     DonorDisposition,
+    Marker,
+    PhysicalIntegrity,
+    SCOLabel,
+    NATResult,
+    InputSource,
+    certainty_to_percent,
+    percent_to_certainty,
     decision_weight,
 )
 
@@ -232,6 +239,145 @@ try:
     record("veredicto Descarte con donor=None -> rechazado", False, "no lanzó excepción")
 except ValidationError:
     record("veredicto Descarte con donor=None -> rechazado", True)
+
+
+# ── 6. Conformidad cruzada schema <-> contracts.py ──────────────────────
+# El resto del arnés valida los JSON Schema y los modelos Pydantic por
+# separado; este bloque es el que verifica que AMBOS describan el mismo
+# dominio, requisito previo a que MedGemma escriba sobre sample_input
+# .schema.json (Fase 3, Paso 1).
+print("\n[6] Conformidad cruzada schema <-> contracts.py")
+
+sample_schema = load_json(SCHEMAS_DIR / "sample_input.schema.json")
+verdict_schema = load_json(SCHEMAS_DIR / "verdict.schema.json")
+validator_sample = jsonschema.Draft202012Validator(sample_schema)
+validator_verdict = jsonschema.Draft202012Validator(verdict_schema)
+
+
+def enum_isomorphism(label: str, py_enum, json_enum_values: list) -> None:
+    """6a. Isomorfismo de enums: igualdad de CONJUNTOS (no inclusión) entre
+    un enum Pydantic y su equivalente JSON Schema. Reporta la diferencia
+    simétrica completa si falla, para que el drift sea diagnosticable de
+    un vistazo (no solo 'no coinciden')."""
+    py_set = {member.value for member in py_enum}
+    json_set = {v for v in json_enum_values if v is not None}
+    diff = py_set.symmetric_difference(json_set)
+    ok = len(diff) == 0
+    record(f"isomorfismo de enum: {label}", ok,
+           "" if ok else f"diferencia simétrica: {sorted(diff)}")
+
+
+enum_isomorphism(
+    "Marker <-> MarkerResult.marker",
+    Marker, sample_schema["$defs"]["MarkerResult"]["properties"]["marker"]["enum"],
+)
+enum_isomorphism(
+    "PhysicalIntegrity <-> $defs.PhysicalIntegrity",
+    PhysicalIntegrity, sample_schema["$defs"]["PhysicalIntegrity"]["enum"],
+)
+enum_isomorphism(
+    "SCOLabel <-> MarkerResult.sco_label",
+    SCOLabel, sample_schema["$defs"]["MarkerResult"]["properties"]["sco_label"]["enum"],
+)
+enum_isomorphism(
+    "NATResult <-> MarkerResult.nat_result",
+    NATResult, sample_schema["$defs"]["MarkerResult"]["properties"]["nat_result"]["enum"],
+)
+enum_isomorphism(
+    "InputSource <-> source",
+    InputSource, sample_schema["properties"]["source"]["enum"],
+)
+enum_isomorphism(
+    "UnitDisposition <-> verdict.final_unit_disposition",
+    UnitDisposition, verdict_schema["properties"]["final_unit_disposition"]["enum"],
+)
+enum_isomorphism(
+    "DonorDisposition <-> verdict.final_donor_disposition",
+    DonorDisposition, verdict_schema["properties"]["final_donor_disposition"]["enum"],
+)
+
+# 6b. Round-trip positivo: instancia válida de Pydantic -> model_dump
+#     (mode="json") -> debe validar contra el JSON Schema equivalente.
+# exclude_none=True: varios campos opcionales (ej. donor_id,
+# fuzzy_certainty) están tipados "str | None" / "float | None" en Pydantic
+# pero declarados sin "null" en el JSON Schema (solo se permite omitirlos,
+# no enviarlos como None explícito) — un payload real omite el campo
+# ausente en vez de enviar null, que es lo que exclude_none reproduce.
+sample_instance = SampleInputFacts(
+    sample_id="ABC123",
+    physical_integrity="Normal",
+    marker_results=[
+        MarkerResult(marker="HIV", sco_value=0.5, sco_label="No Reactivo", fuzzy_certainty=0.75),
+    ],
+    source="analyzer_direct",
+)
+sample_dump = sample_instance.model_dump(mode="json", exclude_none=True)
+sample_errors = sorted(validator_sample.iter_errors(sample_dump), key=lambda e: e.path)
+record(
+    "round-trip: SampleInputFacts válido -> conforma sample_input.schema.json",
+    len(sample_errors) == 0,
+    "" if not sample_errors else "; ".join(e.message for e in sample_errors),
+)
+
+verdict_instance = InferenceVerdict(
+    sample_id="ABC123",
+    final_unit_disposition="Cuarentena",
+    final_donor_disposition=None,
+    triggered_rules=["R20"],
+    explanation_log=["Rechazo técnico por hemólisis."],
+    timestamp="2026-08-14T10:00:00",
+    engine_version="0.1.0",
+)
+verdict_dump = verdict_instance.model_dump(mode="json", exclude_none=True)
+verdict_errors = sorted(validator_verdict.iter_errors(verdict_dump), key=lambda e: e.path)
+record(
+    "round-trip: InferenceVerdict válido -> conforma verdict.schema.json",
+    len(verdict_errors) == 0,
+    "" if not verdict_errors else "; ".join(e.message for e in verdict_errors),
+)
+
+# 6c. Round-trip negativo: un marcador fuera del enum debe ser rechazado
+#     por AMBOS validadores. Esto es lo que detecta drift FUTURO (un
+#     tercer marcador agregado a un lado y no al otro), no solo el actual.
+invalid_marker_payload = {
+    "sample_id": "ABC123",
+    "physical_integrity": "Normal",
+    "marker_results": [
+        {"marker": "MarcadorInexistente", "sco_value": 0.5, "sco_label": "No Reactivo"},
+    ],
+    "source": "analyzer_direct",
+}
+pydantic_rejected = False
+try:
+    SampleInputFacts.model_validate(invalid_marker_payload)
+except ValidationError:
+    pydantic_rejected = True
+jsonschema_rejected = not validator_sample.is_valid(invalid_marker_payload)
+record(
+    "round-trip negativo: marcador fuera de enum rechazado por Pydantic Y jsonschema",
+    pydantic_rejected and jsonschema_rejected,
+    "" if (pydantic_rejected and jsonschema_rejected)
+    else f"pydantic_rechazo={pydantic_rejected}, jsonschema_rechazo={jsonschema_rejected}",
+)
+
+# 6d. Idempotencia de conversión µ <-> porcentaje, a precisión completa
+#     (sin tolerancia por redondeo). Muestra curada (no aleatoria): 100.0
+#     no es potencia de 2, por lo que mu*100/100 no es exacto para
+#     cualquier float — se eligen valores que sí lo son, cubriendo los
+#     bordes de banda de certeza (0.3/0.45) y los extremos [0,1].
+idempotence_samples = [0.0, 1.0, 0.5, 0.25, 0.75, 0.9, 0.1, 0.45, 0.3, 0.7778, 0.68, 0.29999, 0.44999]
+idempotence_ok = True
+idempotence_detail = ""
+for mu in idempotence_samples:
+    round_tripped = percent_to_certainty(certainty_to_percent(mu))
+    if round_tripped != mu:
+        idempotence_ok = False
+        idempotence_detail = f"mu={mu} -> percent_to_certainty(certainty_to_percent(mu))={round_tripped}"
+        break
+record(
+    "idempotencia percent_to_certainty(certainty_to_percent(mu)) == mu, sin redondeo",
+    idempotence_ok, idempotence_detail,
+)
 
 
 # ── Resumen ─────────────────────────────────────────────────────────────

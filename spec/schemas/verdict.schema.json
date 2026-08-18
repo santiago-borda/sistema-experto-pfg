@@ -25,9 +25,9 @@
     "epidemiological_status": { "type": ["string", "null"] },
     "triggered_rules": {
       "type": "array",
-      "items": { "type": "string", "pattern": "^RN-[0-9]{2}$" },
+      "items": { "type": "string", "pattern": "^R[0-9]{1,2}(_[a-z_]+)?$" },
       "minItems": 1,
-      "description": "Secuencia ORDENADA de reglas activadas (auditoría secuencial reconstruible)."
+      "description": "Secuencia ORDENADA de reglas activadas (auditoría secuencial reconstruible). Patrón idéntico a rule_id en rule.schema.json (CORRECCIÓN: el patrón previo '^RN-[0-9]{2}$' no coincidía con ningún rule_id real de kb_rules.json — formato 'R1', 'R2_alta_certeza', etc. — y habría rechazado el 100% de los veredictos reales)."
     },
     "explanation_log": {
       "type": "array",
