@@ -66,7 +66,7 @@
           "type": "number",
           "minimum": 0,
           "maximum": 1,
-          "description": "Grado de pertenencia µ(x) calculado por el Fuzzy Engine sobre la función de membresía dominante."
+          "description": "Grado de pertenencia µ(x) ∈ [0,1] calculado por el Fuzzy Engine sobre la función de membresía dominante (rampa lineal, NO trapecio simétrico — ver domain_model.md §2). Equivalente porcentual en el vocabulario interno de la KB: certeza_sco (working_memory_facts.schema.json, ∈ [0,100]). La única conversión permitida entre ambas representaciones es certainty_to_percent()/percent_to_certainty() (spec/contracts.py) — nunca aritmética ad hoc."
         },
         "duplicate_result": {
           "oneOf": [

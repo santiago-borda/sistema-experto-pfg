@@ -36,7 +36,7 @@
       "type": ["number", "null"],
       "minimum": 0,
       "maximum": 100,
-      "description": "µ_ZG(sco_inicial_valor) × 100 — grado de pertenencia porcentual a Zona Gris según la función de membresía trapezoidal (domain_model.md §2). Solo se define cuando sco_inicial = 'Zona Gris'."
+      "description": "Certeza difusa en representación porcentual ∈ [0,100]: µ(x) × 100, donde µ(x) es la rampa lineal de membresía dominante para la etiqueta sco_inicial vigente (NO trapecio simétrico — ver domain_model.md §2). Se calcula para las 3 etiquetas (No Reactivo/Zona Gris/Reactivo), no exclusiva de Zona Gris. Equivalente en el contrato externo: fuzzy_certainty (sample_input.schema.json, µ ∈ [0,1]). La única conversión permitida entre ambas representaciones es certainty_to_percent()/percent_to_certainty() (spec/contracts.py) — nunca aritmética ad hoc."
     },
     "nat": {
       "type": "string",

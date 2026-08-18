@@ -163,6 +163,44 @@ def expected_sco_label(sco_value: float) -> SCOLabel:
 
 
 # ─────────────────────────────────────────────────────────────────────────
+# Conversión µ (contrato externo) <-> porcentaje (vocabulario interno KB)
+#
+# Reexporta el par de spec/contracts.py (fuente de verdad): dos
+# representaciones de la misma certeza difusa coexisten a propósito —
+# fuzzy_certainty (sample_input.schema.json) usa µ ∈ [0,1], forma canónica
+# del contrato externo; certeza_sco (working_memory_facts.schema.json) usa
+# porcentaje ∈ [0,100], que es lo que consumen los antecedentes de
+# kb_rules.json (bandas 45%/30%). Ninguna otra multiplicación o división
+# por 100 debe existir en el código: estas dos funciones son el único
+# punto de conversión permitido.
+# ─────────────────────────────────────────────────────────────────────────
+
+def certainty_to_percent(mu: float) -> float:
+    """Única conversión permitida entre el grado de pertenencia del
+    contrato externo (µ ∈ [0,1]) y certeza_sco (porcentaje ∈ [0,100]).
+    Sin redondeo: el redondeo a 2 decimales es exclusivamente de
+    presentación (ver domain_model.md §2, bug de precisión corregido)."""
+    if not (0.0 <= mu <= 1.0):
+        raise DomainInvariantViolation(
+            invariant_id="INV-STRUCT-CERTEZA",
+            detail=f"mu={mu} fuera de rango [0,1] (grado de pertenencia µ del contrato externo).",
+        )
+    return mu * 100.0
+
+
+def percent_to_certainty(pct: float) -> float:
+    """Inversa de certainty_to_percent: certeza_sco (porcentaje ∈ [0,100],
+    vocabulario interno) -> µ (grado de pertenencia ∈ [0,1], contrato
+    externo). Sin redondeo, misma justificación que certainty_to_percent."""
+    if not (0.0 <= pct <= 100.0):
+        raise DomainInvariantViolation(
+            invariant_id="INV-STRUCT-CERTEZA",
+            detail=f"pct={pct} fuera de rango [0,100] (certeza_sco porcentual del vocabulario interno).",
+        )
+    return pct / 100.0
+
+
+# ─────────────────────────────────────────────────────────────────────────
 # Modelos de hechos de entrada (SampleInputFacts)
 # ─────────────────────────────────────────────────────────────────────────
 

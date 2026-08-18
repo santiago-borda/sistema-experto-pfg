@@ -32,6 +32,7 @@ from domain import (
     WorkingMemoryFacts,
     ZONA_GRIS_LOWER,
     ZONA_GRIS_UPPER,
+    certainty_to_percent,
 )
 
 # Amplitud de la banda de No Reactivo usada para normalizar la certeza hacia
@@ -62,15 +63,15 @@ def fuzzificar_sco(sco_valor: float) -> tuple[SCOLabel, float]:
         raise ValueError(f"sco_valor={sco_valor} inválido: S/CO no puede ser negativo.")
 
     if sco_valor < ZONA_GRIS_LOWER:
-        certeza = min(100.0, ((ZONA_GRIS_LOWER - sco_valor) / _NO_REACTIVO_SPAN) * 100)
-        return SCOLabel.NO_REACTIVO, certeza
+        mu = min(1.0, (ZONA_GRIS_LOWER - sco_valor) / _NO_REACTIVO_SPAN)
+        return SCOLabel.NO_REACTIVO, certainty_to_percent(mu)
 
     if sco_valor <= ZONA_GRIS_UPPER:
-        certeza = ((ZONA_GRIS_UPPER - sco_valor) / (ZONA_GRIS_UPPER - ZONA_GRIS_LOWER)) * 100
-        return SCOLabel.ZONA_GRIS, certeza
+        mu = (ZONA_GRIS_UPPER - sco_valor) / (ZONA_GRIS_UPPER - ZONA_GRIS_LOWER)
+        return SCOLabel.ZONA_GRIS, certainty_to_percent(mu)
 
-    certeza = min(100.0, ((sco_valor - ZONA_GRIS_UPPER) / _REACTIVO_SPAN) * 100)
-    return SCOLabel.REACTIVO, certeza
+    mu = min(1.0, (sco_valor - ZONA_GRIS_UPPER) / _REACTIVO_SPAN)
+    return SCOLabel.REACTIVO, certainty_to_percent(mu)
 
 
 def normalizar_calidad_muestra(calidad_muestra: str) -> PhysicalIntegrity:
