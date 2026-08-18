@@ -40,6 +40,14 @@ legacy/       Código original (main.py CustomTkinter, expert_system.py,
               actualizaron a rutas absolutas (`from legacy.xxx import ...`)
               como parte del `git mv` a este directorio, ya que ahora es
               un paquete y los imports relativos del root ya no resuelven.
+  test_cases_manual/       6 casos de prueba manuales armados durante el
+                            TP2 grupal, anteriores al Eval Harness formal.
+                            Ya no se ejecutan por ningún script — fueron
+                            superados por seitt_core/eval/eval_dataset.json
+                            (28 casos, con criterio experto formalizado y
+                            foco en Zona Gris). Se conservan solo como
+                            referencia histórica de qué escenarios se
+                            probaban antes de la Consigna 3.
 
 spec/         Fase 0: especificación formal.
   domain_model.md          Invariantes (INV-01..08), fórmulas, hallazgos
