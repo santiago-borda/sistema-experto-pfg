@@ -44,7 +44,8 @@
   "$defs": {
     "PhysicalIntegrity": {
       "type": "string",
-      "enum": ["Normal", "Hemolizada", "Lipemica", "Hemolizada_Lipemica"]
+      "enum": ["Normal", "Hemolizada", "Lipemica"],
+      "description": "Hemólisis y lipemia son clínicamente equivalentes a efectos de R20 (ambas pertenecen a INTERFERENCE_VALUES y disparan el mismo corto-circuito por INV-02); un valor compuesto reintroduciría exactamente el acoplamiento por magic string que domain_model.md §4bis.4 documenta como corregido. Si en el futuro se necesita registrar ambas condiciones simultáneas, va como campo separado, no como miembro de enum."
     },
     "MarkerResult": {
       "type": "object",
@@ -53,7 +54,7 @@
       "properties": {
         "marker": {
           "type": "string",
-          "enum": ["HIV", "HBV", "HCV", "Sifilis", "Chagas"]
+          "enum": ["HIV", "HBV", "HCV", "Sifilis", "Chagas", "HTLV_I_II", "Brucelosis"]
         },
         "sco_value": { "type": "number", "minimum": 0 },
         "sco_label": {
