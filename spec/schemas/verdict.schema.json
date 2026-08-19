@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://seitt.ucp.edu.ar/schemas/verdict.schema.json",
   "title": "InferenceVerdict",
-  "description": "Contrato de salida del Inference Engine hacia el Explanation Subsystem y hacia MedGemma (fase post-analítica, traducción a lenguaje natural). Este es el ÚNICO artefacto que MedGemma puede leer para redactar el reporte final — nunca los hechos crudos ni la KB (principio de mínima superficie de exposición al módulo neuronal).",
+  "description": "Contrato de salida del Inference Engine hacia el Explanation Subsystem y hacia MedGemma (fase post-analítica, traducción a lenguaje natural). Este es el ÚNICO artefacto que MedGemma puede leer para redactar el reporte final — nunca los hechos crudos ni la KB (principio de mínima superficie de exposición al módulo neuronal). Política de opcionales (Paso 1.5.3): final_unit_disposition y pending_action se representan por AUSENCIA de la clave, nunca null, y esto es estructural (INV-15, ver domain_model.md §4quater) — se serializan con model_dump(exclude_none=True). final_donor_disposition, epidemiological_status y certainty_index siguen la misma convención en la práctica (mismo exclude_none), pero su 'type' todavía admite null explícito por compatibilidad más laxa; no se estrechó su schema en este paso.",
   "type": "object",
   "required": ["sample_id", "triggered_rules", "explanation_log", "timestamp", "engine_version"],
   "additionalProperties": false,

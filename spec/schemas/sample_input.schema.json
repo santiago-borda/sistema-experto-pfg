@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://seitt.ucp.edu.ar/schemas/sample_input.schema.json",
   "title": "SampleInputFacts",
-  "description": "Contrato único de hechos de entrada a la memoria de trabajo del Inference Engine SE-ITT, post-fuzzificación. Es indiferente al origen del dato (analizador químico directo vs. extracción MedGemma) — esta indiferencia es la que garantiza la Consigna 5 (No-Wrapper LLM): MedGemma solo puede emitir instancias válidas de este schema, jamás un veredicto.",
+  "description": "Contrato único de hechos de entrada a la memoria de trabajo del Inference Engine SE-ITT, post-fuzzificación. Es indiferente al origen del dato (analizador químico directo vs. extracción MedGemma) — esta indiferencia es la que garantiza la Consigna 5 (No-Wrapper LLM): MedGemma solo puede emitir instancias válidas de este schema, jamás un veredicto. Política de opcionales (Paso 1.5.3): todo campo no listado en 'required' se representa por AUSENCIA de la clave, nunca por null explícito.",
   "type": "object",
   "required": ["sample_id", "physical_integrity", "marker_results", "source"],
   "additionalProperties": false,
@@ -12,7 +12,10 @@
       "pattern": "^[A-Z0-9-]{6,32}$",
       "description": "Identificador único de unidad, no vinculante a identidad del donante (anonimización operativa)."
     },
-    "donor_id": { "type": "string" },
+    "donor_id": {
+      "type": "string",
+      "description": "Opcional: se OMITE la clave cuando no se dispone del dato, nunca se envía null explícito (política de ausencia, Paso 1.5.3 — spec/contracts.py rechaza {\"donor_id\": null} tanto como este schema)."
+    },
     "physical_integrity": { "$ref": "#/$defs/PhysicalIntegrity" },
     "marker_results": {
       "type": "array",
@@ -66,7 +69,7 @@
           "type": "number",
           "minimum": 0,
           "maximum": 1,
-          "description": "Grado de pertenencia µ(x) ∈ [0,1] calculado por el Fuzzy Engine sobre la función de membresía dominante (rampa lineal, NO trapecio simétrico — ver domain_model.md §2). Equivalente porcentual en el vocabulario interno de la KB: certeza_sco (working_memory_facts.schema.json, ∈ [0,100]). La única conversión permitida entre ambas representaciones es certainty_to_percent()/percent_to_certainty() (spec/contracts.py) — nunca aritmética ad hoc."
+          "description": "Grado de pertenencia µ(x) ∈ [0,1] calculado por el Fuzzy Engine sobre la función de membresía dominante (rampa lineal, NO trapecio simétrico — ver domain_model.md §2). Equivalente porcentual en el vocabulario interno de la KB: certeza_sco (working_memory_facts.schema.json, ∈ [0,100]). La única conversión permitida entre ambas representaciones es certainty_to_percent()/percent_to_certainty() (spec/contracts.py) — nunca aritmética ad hoc. Opcional: se OMITE la clave cuando no aplica, nunca null explícito (política de ausencia, Paso 1.5.3)."
         },
         "duplicate_result": {
           "oneOf": [

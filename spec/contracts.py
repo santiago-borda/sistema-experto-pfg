@@ -200,6 +200,31 @@ def percent_to_certainty(pct: float) -> float:
 
 
 # ─────────────────────────────────────────────────────────────────────────
+# Política de campos opcionales: AUSENCIA de la clave, nunca null explícito
+# (Paso 1.5.3, hallazgo schema<->contracts (2) del Paso 1). donor_id y
+# fuzzy_certainty son los únicos campos donde el JSON Schema es más
+# estricto que Pydantic (no declaran "null" en su "type"): sin este
+# validador, Pydantic aceptaría {"donor_id": null} en silencio mientras
+# jsonschema lo rechaza — exactamente el drift que 6c ahora detecta.
+# ─────────────────────────────────────────────────────────────────────────
+
+def _reject_explicit_null(data: object, fields: tuple[str, ...]) -> object:
+    """Rechaza null explícito para los `fields` dados; la ausencia de la
+    clave sigue siendo válida (el campo usa su default)."""
+    if isinstance(data, dict):
+        for field_name in fields:
+            if field_name in data and data[field_name] is None:
+                raise DomainInvariantViolation(
+                    invariant_id="INV-STRUCT-AUSENCIA",
+                    detail=(
+                        f"'{field_name}' debe representarse por AUSENCIA de la clave, "
+                        f"nunca por null explícito."
+                    ),
+                )
+    return data
+
+
+# ─────────────────────────────────────────────────────────────────────────
 # Modelos de hechos de entrada (SampleInputFacts)
 # ─────────────────────────────────────────────────────────────────────────
 
@@ -234,6 +259,14 @@ class MarkerResult(BaseModel):
     duplicate_result: DuplicateResult | None = None
     nat_result: NATResult = NATResult.NO_APLICA
     sifilis_algorithm: SifilisAlgorithm | None = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def check_fuzzy_certainty_not_explicit_null(cls, data: object) -> object:
+        """Política de ausencia (Paso 1.5.3): fuzzy_certainty se omite,
+        nunca se envía como null explícito (sample_input.schema.json no
+        declara "null" en su type)."""
+        return _reject_explicit_null(data, ("fuzzy_certainty",))
 
     @model_validator(mode="after")
     def check_label_consistency(self) -> "MarkerResult":
@@ -275,6 +308,14 @@ class SampleInputFacts(BaseModel):
     epidemiological_risk_flag: bool = False
     source: InputSource
     extraction_confidence: float | None = Field(default=None, ge=0, le=1)
+
+    @model_validator(mode="before")
+    @classmethod
+    def check_donor_id_not_explicit_null(cls, data: object) -> object:
+        """Política de ausencia (Paso 1.5.3): donor_id se omite, nunca se
+        envía como null explícito (sample_input.schema.json no declara
+        "null" en su type)."""
+        return _reject_explicit_null(data, ("donor_id",))
 
     @model_validator(mode="after")
     def check_extraction_confidence_required(self) -> "SampleInputFacts":

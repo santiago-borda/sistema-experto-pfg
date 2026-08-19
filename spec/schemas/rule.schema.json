@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://seitt.ucp.edu.ar/schemas/rule.schema.json",
   "title": "ProductionRule",
-  "description": "DSL declarativo para las reglas de la Knowledge Base del SE-ITT. Toda regla debe existir como instancia validada de este schema ANTES de su implementación en el Inference Engine (Consigna 1: Spec Driven Development). El motor de inferencia debe interpretar estas instancias, no reglas hardcodeadas en Python.",
+  "description": "DSL declarativo para las reglas de la Knowledge Base del SE-ITT. Toda regla debe existir como instancia validada de este schema ANTES de su implementación en el Inference Engine (Consigna 1: Spec Driven Development). El motor de inferencia debe interpretar estas instancias, no reglas hardcodeadas en Python. Excepción deliberada a la política de ausencia (Paso 1.5.3): kb_rules.json es autoría humana directa, no un contrato serializado desde Pydantic — sus campos opcionales (legacy_notes, action, unit_disposition, donor_disposition, epidemiological_status) se escriben con null explícito por legibilidad de la KB como dato versionado, no por ausencia de clave.",
   "type": "object",
   "required": ["rule_id", "description", "priority", "legal_reference", "antecedent", "consequent", "invariant_tags"],
   "additionalProperties": false,

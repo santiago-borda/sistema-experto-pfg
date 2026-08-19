@@ -244,6 +244,53 @@ try:
 except ValidationError:
     record("veredicto Descarte con donor=None -> rechazado", True)
 
+# 5d. INV-15: veredicto PENDIENTE (final_unit_disposition ausente,
+#     pending_action presente) es VÁLIDO. Antes de la unificación del
+#     Paso 1.5, esto no era construible en spec/contracts.py
+#     (final_unit_disposition era requerido) — el bloque [5] certificaba
+#     un modelo que no podía representar TC11/TC12.
+try:
+    InferenceVerdict(
+        sample_id="ABC123",
+        pending_action="Repetir análisis por duplicado.",
+        triggered_rules=["R2_alta_certeza"],
+        explanation_log=["HIV en Zona Gris, alta certeza: se solicita repetición."],
+        timestamp="2026-08-14T10:00:00",
+        engine_version="0.1.0",
+    )
+    record("INV-15: veredicto pendiente (unit ausente, pending_action presente) (válido)", True)
+except ValidationError as e:
+    record("INV-15: veredicto pendiente (unit ausente, pending_action presente) (válido)", False, str(e))
+
+# 5e. INV-15: final_unit_disposition Y pending_action presentes -> rechazado.
+try:
+    InferenceVerdict(
+        sample_id="ABC123",
+        final_unit_disposition="Apta",
+        final_donor_disposition="Habilitado",
+        pending_action="Repetir análisis por duplicado.",
+        triggered_rules=["R7"],
+        explanation_log=["Todos los marcadores no reactivos."],
+        timestamp="2026-08-14T10:00:00",
+        engine_version="0.1.0",
+    )
+    record("INV-15: unit_disposition Y pending_action presentes -> rechazado", False, "no lanzó excepción")
+except ValidationError:
+    record("INV-15: unit_disposition Y pending_action presentes -> rechazado", True)
+
+# 5f. INV-15: final_unit_disposition Y pending_action ausentes -> rechazado.
+try:
+    InferenceVerdict(
+        sample_id="ABC123",
+        triggered_rules=["R7"],
+        explanation_log=["Todos los marcadores no reactivos."],
+        timestamp="2026-08-14T10:00:00",
+        engine_version="0.1.0",
+    )
+    record("INV-15: unit_disposition Y pending_action ausentes -> rechazado", False, "no lanzó excepción")
+except ValidationError:
+    record("INV-15: unit_disposition Y pending_action ausentes -> rechazado", True)
+
 
 # ── 6. Conformidad cruzada schema <-> contracts.py ──────────────────────
 # El resto del arnés valida los JSON Schema y los modelos Pydantic por
@@ -340,6 +387,24 @@ record(
     "" if not verdict_errors else "; ".join(e.message for e in verdict_errors),
 )
 
+# 6b'. Round-trip positivo sobre un veredicto PENDIENTE (INV-15), no solo
+#      terminal — el bloque [6] original solo probaba la forma terminal.
+pending_verdict_instance = InferenceVerdict(
+    sample_id="ABC123",
+    pending_action="Repetir análisis por duplicado.",
+    triggered_rules=["R2_alta_certeza"],
+    explanation_log=["HIV en Zona Gris, alta certeza: se solicita repetición."],
+    timestamp="2026-08-14T10:00:00",
+    engine_version="0.1.0",
+)
+pending_verdict_dump = pending_verdict_instance.model_dump(mode="json", exclude_none=True)
+pending_verdict_errors = sorted(validator_verdict.iter_errors(pending_verdict_dump), key=lambda e: e.path)
+record(
+    "round-trip: InferenceVerdict pendiente (INV-15) -> conforma verdict.schema.json",
+    len(pending_verdict_errors) == 0,
+    "" if not pending_verdict_errors else "; ".join(e.message for e in pending_verdict_errors),
+)
+
 # 6c. Round-trip negativo: un marcador fuera del enum debe ser rechazado
 #     por AMBOS validadores. Esto es lo que detecta drift FUTURO (un
 #     tercer marcador agregado a un lado y no al otro), no solo el actual.
@@ -364,6 +429,34 @@ record(
     else f"pydantic_rechazo={pydantic_rejected}, jsonschema_rechazo={jsonschema_rejected}",
 )
 
+# 6c'. Round-trip negativo (Paso 1.5.3, cierre del hallazgo (2) del Paso
+#      1): donor_id=null explícito debe ser rechazado por AMBOS
+#      validadores. Antes del validador "before" agregado en Paso 1.5.3,
+#      Pydantic aceptaba esto en silencio (donor_id: str | None = None)
+#      mientras jsonschema ya lo rechazaba (type: "string", sin "null") —
+#      exactamente la asimetría que motivó la política de ausencia.
+null_donor_id_payload = {
+    "sample_id": "ABC123",
+    "donor_id": None,
+    "physical_integrity": "Normal",
+    "marker_results": [
+        {"marker": "HIV", "sco_value": 0.5, "sco_label": "No Reactivo"},
+    ],
+    "source": "analyzer_direct",
+}
+pydantic_rejected_donor_id = False
+try:
+    SampleInputFacts.model_validate(null_donor_id_payload)
+except ValidationError:
+    pydantic_rejected_donor_id = True
+jsonschema_rejected_donor_id = not validator_sample.is_valid(null_donor_id_payload)
+record(
+    "round-trip negativo: donor_id=null rechazado por Pydantic Y jsonschema (política de ausencia)",
+    pydantic_rejected_donor_id and jsonschema_rejected_donor_id,
+    "" if (pydantic_rejected_donor_id and jsonschema_rejected_donor_id)
+    else f"pydantic_rechazo={pydantic_rejected_donor_id}, jsonschema_rechazo={jsonschema_rejected_donor_id}",
+)
+
 # 6d. Idempotencia de conversión µ <-> porcentaje, a precisión completa
 #     (sin tolerancia por redondeo). Muestra curada (no aleatoria): 100.0
 #     no es potencia de 2, por lo que mu*100/100 no es exacto para
@@ -382,6 +475,37 @@ record(
     "idempotencia percent_to_certainty(certainty_to_percent(mu)) == mu, sin redondeo",
     idempotence_ok, idempotence_detail,
 )
+
+
+# ── 7. No-duplicación: seitt_core.domain reexporta, no redefine ─────────
+# Equivalente al isomorfismo de enums (6a), pero para clases: dos modelos
+# pueden ser estructuralmente idénticos y sin embargo ser objetos DISTINTOS
+# en sys.modules si cada módulo los define por su cuenta — exactamente lo
+# que le pasó a InferenceVerdict antes del Paso 1.5 (spec/contracts.py y
+# seitt_core/domain.py definían cada uno el suyo, divergieron en
+# silencio). Ninguna herramienta de igualdad estructural detecta ese
+# drift; solo una comparación de IDENTIDAD (is) lo hace.
+print("\n[7] No-duplicación de modelos de dominio (seitt_core.domain <-> spec.contracts)")
+
+import seitt_core.domain as seitt_domain  # noqa: E402
+import spec.contracts as spec_contracts  # noqa: E402
+
+for model_name in (
+    "DuplicateResult",
+    "SifilisAlgorithm",
+    "MarkerResult",
+    "SampleInputFacts",
+    "WorkingMemoryFacts",
+    "InferenceVerdict",
+):
+    domain_cls = getattr(seitt_domain, model_name)
+    contracts_cls = getattr(spec_contracts, model_name)
+    ok = domain_cls is contracts_cls
+    record(
+        f"identidad de objeto: seitt_core.domain.{model_name} IS spec.contracts.{model_name}",
+        ok,
+        "" if ok else f"seitt_core.domain.{model_name} y spec.contracts.{model_name} son clases DISTINTAS — domain.py redefine en vez de reexportar.",
+    )
 
 
 # ── Resumen ─────────────────────────────────────────────────────────────
