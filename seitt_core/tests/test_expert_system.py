@@ -18,6 +18,7 @@ clínica sobre un dataset representativo.
 
 import pytest
 
+from seitt_core.domain import SEITTDomainError
 from seitt_core.expert_system import evaluar_caso
 
 
@@ -166,6 +167,77 @@ class TestCasosBordeYReglasAdicionales:
         assert v.final_donor_disposition.value == "Diferido_Permanente"
 
 
+class TestNATPendiente:
+    """Fase 3, Paso 2 -- NATResult.PENDIENTE y R21.
+
+    Consulta a la bioquímica de referencia: si el panel serológico es no
+    reactivo pero el NAT todavía no está informado, la unidad NO se
+    libera; el flujo real espera el informe. Lo único que el pendiente
+    impide es la LIBERACIÓN, nunca el descarte.
+    """
+
+    def test_tc16_nat_pendiente_explicito_no_libera(self):
+        v = evaluar_caso(
+            sample_id="TC16", calidad_muestra="Normal", marcador="HIV",
+            sco_inicial_valor=0.2, nat="Pendiente", riesgo=False,
+        )
+        assert "R21" in _triggered(v)
+        assert v.final_unit_disposition is None
+        assert v.pending_action is not None
+        assert "NAT" in v.pending_action
+
+    def test_tc17_nat_omitido_equivale_a_pendiente(self):
+        """Sin default silencioso: omitir nat en un marcador NAT-aplicable
+        NO es 'No Aplica', es 'Pendiente' (INV-08). Mismo veredicto que
+        declararlo explícitamente."""
+        v = evaluar_caso(
+            sample_id="TC17", calidad_muestra="Normal", marcador="HIV",
+            sco_inicial_valor=0.2, riesgo=False,
+        )
+        assert "R21" in _triggered(v)
+        assert v.final_unit_disposition is None
+        assert v.pending_action is not None
+        assert "NAT" in v.pending_action
+
+    def test_tc18_nat_pendiente_no_bloquea_el_descarte(self):
+        """Un hallazgo serológico positivo no necesita el NAT para
+        justificar el descarte: R21 dispara igual, pero el veredicto
+        terminal se mantiene (y por INV-15 pending_action queda ausente)."""
+        v = evaluar_caso(
+            sample_id="TC18", calidad_muestra="Normal", marcador="HIV",
+            sco_inicial_valor=5.0, nat="Pendiente", riesgo=False,
+        )
+        assert "R21" in _triggered(v)
+        assert v.final_unit_disposition.value == "Descarte"
+        assert v.pending_action is None
+
+    def test_tc19_accion_pendiente_no_libera_aunque_r1_matchee(self):
+        """Cláusula de acción pendiente (INV-07, §4ter): una regla
+        intermedia invalida un candidato terminal Apta. Sífilis con VDRL
+        reactivo y CLIA no realizado matchea R1 por antecedente (sco No
+        Reactivo, nat No Aplica, sin riesgo), pero R8 dejó una acción
+        pendiente: la unidad no se libera."""
+        v = evaluar_caso(
+            sample_id="TC19", calidad_muestra="Normal", marcador="Sifilis",
+            riesgo=False, vdrl="Reactivo",
+        )
+        assert "R8" in _triggered(v)
+        assert v.final_unit_disposition is None
+        assert v.pending_action == "Realizar CLIA confirmatorio"
+
+    def test_tc20_marcador_no_nat_no_reactivo_es_apta(self):
+        """Regresión de §4bis hallazgo 10: antes del cierre del antecedente
+        de R1 con IN, ningún marcador no-NAT podía alcanzar Apta -- el
+        ciclo terminaba sin disparar ninguna regla."""
+        v = evaluar_caso(
+            sample_id="TC20", calidad_muestra="Normal", marcador="Chagas",
+            sco_inicial_valor=0.2, riesgo=False,
+        )
+        assert "R1" in _triggered(v)
+        assert v.final_unit_disposition.value == "Apta"
+        assert v.final_donor_disposition.value == "Habilitado"
+
+
 class TestInvariantesDeDominio:
     """Casos que deben levantar SEITTDomainError, no producir un veredicto."""
 
@@ -174,6 +246,25 @@ class TestInvariantesDeDominio:
             evaluar_caso(
                 sample_id="TCX", calidad_muestra="Normal", marcador="Chagas",
                 sco_inicial_valor=0.2, nat="Reactivo", riesgo=False,
+            )
+
+    def test_nat_pendiente_en_chagas_es_rechazado(self):
+        """INV-08 dirección 1: para un marcador no-NAT, 'Pendiente' es tan
+        inválido como un resultado -- el ensayo no corresponde."""
+        with pytest.raises(SEITTDomainError):
+            evaluar_caso(
+                sample_id="TCX", calidad_muestra="Normal", marcador="Chagas",
+                sco_inicial_valor=0.2, nat="Pendiente", riesgo=False,
+            )
+
+    def test_nat_no_aplica_en_marcador_nat_es_rechazado(self):
+        """INV-08 dirección 2 (endurecida en Fase 3, Paso 2): para
+        HIV/HBV/HCV el ensayo SÍ aplica, así que 'No Aplica' es una
+        violación -- si el informe no llegó, corresponde 'Pendiente'."""
+        with pytest.raises(SEITTDomainError):
+            evaluar_caso(
+                sample_id="TCX", calidad_muestra="Normal", marcador="HIV",
+                sco_inicial_valor=0.2, nat="No Aplica", riesgo=False,
             )
 
     def test_calidad_muestra_desconocida_es_rechazada(self):

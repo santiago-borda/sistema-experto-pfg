@@ -1,113 +1,686 @@
 [
-  { "case_id": "EV01", "category": "baseline_apta", "notes": "Tamizaje negativo completo, HIV.",
-    "inputs": {"sample_id":"EV01","calidad_muestra":"Normal","marcador":"HIV","riesgo":false,"sco_inicial_valor":0.2,"nat":"No Reactivo"},
-    "expected": {"final_unit_disposition":"Apta","final_donor_disposition":"Habilitado","has_pending_action":false,"expected_rule_ids":["R1"]} },
-
-  { "case_id": "EV02", "category": "baseline_apta", "notes": "Tamizaje negativo completo, HCV.",
-    "inputs": {"sample_id":"EV02","calidad_muestra":"Normal","marcador":"HCV","riesgo":false,"sco_inicial_valor":0.1,"nat":"No Reactivo"},
-    "expected": {"final_unit_disposition":"Apta","final_donor_disposition":"Habilitado","has_pending_action":false,"expected_rule_ids":["R1"]} },
-
-  { "case_id": "EV03", "category": "zona_gris_borde", "notes": "Justo por debajo del límite inferior de Zona Gris (0.899999): debe clasificar No Reactivo, no Zona Gris.",
-    "inputs": {"sample_id":"EV03","calidad_muestra":"Normal","marcador":"HIV","riesgo":false,"sco_inicial_valor":0.899999,"nat":"No Reactivo"},
-    "expected": {"final_unit_disposition":"Apta","final_donor_disposition":"Habilitado","has_pending_action":false,"expected_rule_ids":["R1"]} },
-
-  { "case_id": "EV04", "category": "zona_gris_borde", "notes": "Borde inferior exacto de Zona Gris (0.9): certeza=100%, banda alta.",
-    "inputs": {"sample_id":"EV04","calidad_muestra":"Normal","marcador":"HIV","riesgo":false,"sco_inicial_valor":0.9,"nat":"No Reactivo"},
-    "expected": {"final_unit_disposition":null,"final_donor_disposition":null,"has_pending_action":true,"expected_rule_ids":["R2_alta_certeza"]} },
-
-  { "case_id": "EV05", "category": "zona_gris_borde", "notes": "S/CO=1.00999: certeza=45.005%, justo por encima del umbral de 45 -> banda alta.",
-    "inputs": {"sample_id":"EV05","calidad_muestra":"Normal","marcador":"HIV","riesgo":false,"sco_inicial_valor":1.00999,"nat":"No Reactivo"},
-    "expected": {"final_unit_disposition":null,"final_donor_disposition":null,"has_pending_action":true,"expected_rule_ids":["R2_alta_certeza"]} },
-
-  { "case_id": "EV06", "category": "zona_gris_borde", "notes": "S/CO=1.01: certeza=45.0% exacto, límite inclusivo de banda alta.",
-    "inputs": {"sample_id":"EV06","calidad_muestra":"Normal","marcador":"HIV","riesgo":false,"sco_inicial_valor":1.01,"nat":"No Reactivo"},
-    "expected": {"final_unit_disposition":null,"final_donor_disposition":null,"has_pending_action":true,"expected_rule_ids":["R2_alta_certeza"]} },
-
-  { "case_id": "EV07", "category": "zona_gris_borde", "notes": "S/CO=1.010001: certeza=44.9995%, justo por debajo de 45 -> cae a banda baja.",
-    "inputs": {"sample_id":"EV07","calidad_muestra":"Normal","marcador":"HIV","riesgo":false,"sco_inicial_valor":1.010001,"nat":"No Reactivo"},
-    "expected": {"final_unit_disposition":null,"final_donor_disposition":null,"has_pending_action":true,"expected_rule_ids":["R2_baja_certeza"]} },
-
-  { "case_id": "EV08", "category": "zona_gris_borde", "notes": "S/CO=1.04: certeza=30.0% exacto, límite inclusivo de banda baja.",
-    "inputs": {"sample_id":"EV08","calidad_muestra":"Normal","marcador":"HIV","riesgo":false,"sco_inicial_valor":1.04,"nat":"No Reactivo"},
-    "expected": {"final_unit_disposition":null,"final_donor_disposition":null,"has_pending_action":true,"expected_rule_ids":["R2_baja_certeza"]} },
-
-  { "case_id": "EV09", "category": "zona_gris_borde", "notes": "S/CO=1.040001: certeza=29.9995%, justo por debajo de 30 -> cae a banda crítica.",
-    "inputs": {"sample_id":"EV09","calidad_muestra":"Normal","marcador":"HIV","riesgo":false,"sco_inicial_valor":1.040001,"nat":"No Reactivo"},
-    "expected": {"final_unit_disposition":null,"final_donor_disposition":null,"has_pending_action":true,"expected_rule_ids":["R2_critica"]} },
-
-  { "case_id": "EV10", "category": "zona_gris_borde", "notes": "Borde superior exacto de Zona Gris (1.1): certeza=0%, banda crítica.",
-    "inputs": {"sample_id":"EV10","calidad_muestra":"Normal","marcador":"HCV","riesgo":false,"sco_inicial_valor":1.1,"nat":"No Reactivo"},
-    "expected": {"final_unit_disposition":null,"final_donor_disposition":null,"has_pending_action":true,"expected_rule_ids":["R2_critica"]} },
-
-  { "case_id": "EV11", "category": "zona_gris_borde", "notes": "Justo por encima del límite superior de Zona Gris (1.100001): debe clasificar Reactivo, no Zona Gris.",
-    "inputs": {"sample_id":"EV11","calidad_muestra":"Normal","marcador":"HIV","riesgo":false,"sco_inicial_valor":1.100001,"nat":"No Reactivo"},
-    "expected": {"final_unit_disposition":"Descarte","final_donor_disposition":"Diferido_Permanente","has_pending_action":false,"expected_rule_ids":["R7","R17"]} },
-
-  { "case_id": "EV12", "category": "marcador_reactivo", "notes": "Chagas reactivo -> exclusión permanente.",
-    "inputs": {"sample_id":"EV12","calidad_muestra":"Normal","marcador":"Chagas","riesgo":false,"sco_inicial_valor":3.5},
-    "expected": {"final_unit_disposition":"Descarte","final_donor_disposition":"Diferido_Permanente","has_pending_action":false,"expected_rule_ids":["R11"]} },
-
-  { "case_id": "EV13", "category": "marcador_reactivo", "notes": "HTLV I/II reactivo -> exclusión permanente.",
-    "inputs": {"sample_id":"EV13","calidad_muestra":"Normal","marcador":"HTLV_I_II","riesgo":false,"sco_inicial_valor":2.0},
-    "expected": {"final_unit_disposition":"Descarte","final_donor_disposition":"Diferido_Permanente","has_pending_action":false,"expected_rule_ids":["R12"]} },
-
-  { "case_id": "EV14", "category": "marcador_reactivo", "notes": "Brucelosis reactiva -> diferimiento temporal (admite reingreso).",
-    "inputs": {"sample_id":"EV14","calidad_muestra":"Normal","marcador":"Brucelosis","riesgo":false,"sco_inicial_valor":4.0},
-    "expected": {"final_unit_disposition":"Descarte","final_donor_disposition":"Diferido_Temporal","has_pending_action":false,"expected_rule_ids":["R14"]} },
-
-  { "case_id": "EV15", "category": "marcador_reactivo", "notes": "HCV reactivo, NAT aún no evaluado -> descarte definitivo por serología.",
-    "inputs": {"sample_id":"EV15","calidad_muestra":"Normal","marcador":"HCV","riesgo":false,"sco_inicial_valor":2.0},
-    "expected": {"final_unit_disposition":"Descarte","final_donor_disposition":"Diferido_Permanente","has_pending_action":false,"expected_rule_ids":["R15"]} },
-
-  { "case_id": "EV16", "category": "marcador_reactivo", "notes": "HBV reactivo, NAT aún no evaluado -> descarte definitivo por serología.",
-    "inputs": {"sample_id":"EV16","calidad_muestra":"Normal","marcador":"HBV","riesgo":false,"sco_inicial_valor":2.5},
-    "expected": {"final_unit_disposition":"Descarte","final_donor_disposition":"Diferido_Permanente","has_pending_action":false,"expected_rule_ids":["R16"]} },
-
-  { "case_id": "EV17", "category": "nat_ventana", "notes": "NAT reactivo con serología No Reactiva -> periodo de ventana.",
-    "inputs": {"sample_id":"EV17","calidad_muestra":"Normal","marcador":"HIV","riesgo":false,"sco_inicial_valor":0.3,"nat":"Reactivo"},
-    "expected": {"final_unit_disposition":"Descarte","final_donor_disposition":"Diferido_Permanente","has_pending_action":false,"expected_rule_ids":["R4"]} },
-
-  { "case_id": "EV18", "category": "nat_ventana", "notes": "Serología y NAT ambos reactivos -> infección confirmada.",
-    "inputs": {"sample_id":"EV18","calidad_muestra":"Normal","marcador":"HBV","riesgo":false,"sco_inicial_valor":2.0,"nat":"Reactivo"},
-    "expected": {"final_unit_disposition":"Descarte","final_donor_disposition":"Diferido_Permanente","has_pending_action":false,"expected_rule_ids":["R5"]} },
-
-  { "case_id": "EV19", "category": "nat_ventana", "notes": "Serología reactiva, NAT no reactivo -> se prioriza seguridad del receptor.",
-    "inputs": {"sample_id":"EV19","calidad_muestra":"Normal","marcador":"HIV","riesgo":false,"sco_inicial_valor":2.0,"nat":"No Reactivo"},
-    "expected": {"final_unit_disposition":"Descarte","final_donor_disposition":"Diferido_Permanente","has_pending_action":false,"expected_rule_ids":["R7"]} },
-
-  { "case_id": "EV20", "category": "sifilis_algoritmo", "notes": "VDRL reactivo, CLIA aún no realizado -> acción intermedia, sin veredicto.",
-    "inputs": {"sample_id":"EV20","calidad_muestra":"Normal","marcador":"Sifilis","riesgo":false,"vdrl":"Reactivo"},
-    "expected": {"final_unit_disposition":null,"final_donor_disposition":null,"has_pending_action":true,"expected_rule_ids":["R8"]} },
-
-  { "case_id": "EV21", "category": "sifilis_algoritmo", "notes": "VDRL + CLIA reactivos -> infección confirmada, diferimiento temporal.",
-    "inputs": {"sample_id":"EV21","calidad_muestra":"Normal","marcador":"Sifilis","riesgo":false,"vdrl":"Reactivo","clia":"Reactivo"},
-    "expected": {"final_unit_disposition":"Descarte","final_donor_disposition":"Diferido_Temporal","has_pending_action":false,"expected_rule_ids":["R9"]} },
-
-  { "case_id": "EV22", "category": "sifilis_algoritmo", "notes": "Cicatriz serológica: VDRL no reactivo, CLIA reactivo.",
-    "inputs": {"sample_id":"EV22","calidad_muestra":"Normal","marcador":"Sifilis","riesgo":false,"vdrl":"No Reactivo","clia":"Reactivo"},
-    "expected": {"final_unit_disposition":"Descarte","final_donor_disposition":"Diferido_Temporal","has_pending_action":false,"expected_rule_ids":["R10"]} },
-
-  { "case_id": "EV23", "category": "riesgo_epidemiologico", "notes": "Serología negativa con riesgo conductual declarado -> precaución.",
-    "inputs": {"sample_id":"EV23","calidad_muestra":"Normal","marcador":"Chagas","riesgo":true,"sco_inicial_valor":0.1},
-    "expected": {"final_unit_disposition":"Descarte","final_donor_disposition":"Diferido_Temporal","has_pending_action":false,"expected_rule_ids":["R6"]} },
-
-  { "case_id": "EV24", "category": "zona_gris_repeticion", "notes": "Regla de Oro: Zona Gris inicial, repetición No Reactiva -> descarte igual.",
-    "inputs": {"sample_id":"EV24","calidad_muestra":"Normal","marcador":"HBV","riesgo":false,"sco_inicial_valor":1.0,"sco_repeticion_valor":0.3,"nat":"No Reactivo"},
-    "expected": {"final_unit_disposition":"Descarte","final_donor_disposition":"Diferido_Temporal","has_pending_action":false,"expected_rule_ids":["R3"]} },
-
-  { "case_id": "EV25", "category": "zona_gris_repeticion", "notes": "Persistencia de indeterminación: repetición también en Zona Gris.",
-    "inputs": {"sample_id":"EV25","calidad_muestra":"Normal","marcador":"HCV","riesgo":false,"sco_inicial_valor":1.0,"sco_repeticion_valor":0.95,"nat":"No Reactivo"},
-    "expected": {"final_unit_disposition":"Descarte","final_donor_disposition":"Diferido_Temporal","has_pending_action":false,"expected_rule_ids":["R18"]} },
-
-  { "case_id": "EV26", "category": "zona_gris_repeticion", "notes": "Confirmación por repetición reactiva.",
-    "inputs": {"sample_id":"EV26","calidad_muestra":"Normal","marcador":"HIV","riesgo":false,"sco_inicial_valor":1.0,"sco_repeticion_valor":3.0,"nat":"No Reactivo"},
-    "expected": {"final_unit_disposition":"Descarte","final_donor_disposition":"Diferido_Permanente","has_pending_action":false,"expected_rule_ids":["R19"]} },
-
-  { "case_id": "EV27", "category": "interferencia_fisica", "notes": "Muestra hemolizada -> rechazo técnico, corte inmediato.",
-    "inputs": {"sample_id":"EV27","calidad_muestra":"Hemolizada","marcador":"HIV","riesgo":false},
-    "expected": {"final_unit_disposition":"Cuarentena","final_donor_disposition":null,"has_pending_action":false,"expected_rule_ids":["R20"]} },
-
-  { "case_id": "EV28", "category": "interferencia_fisica", "notes": "Muestra lipémica -> mismo tratamiento que hemolizada.",
-    "inputs": {"sample_id":"EV28","calidad_muestra":"Lipemica","marcador":"HCV","riesgo":false},
-    "expected": {"final_unit_disposition":"Cuarentena","final_donor_disposition":null,"has_pending_action":false,"expected_rule_ids":["R20"]} }
+  {
+    "case_id": "EV01",
+    "category": "baseline_apta",
+    "notes": "Tamizaje negativo completo, HIV.",
+    "inputs": {
+      "sample_id": "EV01",
+      "calidad_muestra": "Normal",
+      "marcador": "HIV",
+      "riesgo": false,
+      "sco_inicial_valor": 0.2,
+      "nat": "No Reactivo"
+    },
+    "expected": {
+      "final_unit_disposition": "Apta",
+      "final_donor_disposition": "Habilitado",
+      "has_pending_action": false,
+      "expected_rule_ids": [
+        "R1"
+      ]
+    }
+  },
+  {
+    "case_id": "EV02",
+    "category": "baseline_apta",
+    "notes": "Tamizaje negativo completo, HCV.",
+    "inputs": {
+      "sample_id": "EV02",
+      "calidad_muestra": "Normal",
+      "marcador": "HCV",
+      "riesgo": false,
+      "sco_inicial_valor": 0.1,
+      "nat": "No Reactivo"
+    },
+    "expected": {
+      "final_unit_disposition": "Apta",
+      "final_donor_disposition": "Habilitado",
+      "has_pending_action": false,
+      "expected_rule_ids": [
+        "R1"
+      ]
+    }
+  },
+  {
+    "case_id": "EV03",
+    "category": "zona_gris_borde",
+    "notes": "Justo por debajo del límite inferior de Zona Gris (0.899999): debe clasificar No Reactivo, no Zona Gris.",
+    "inputs": {
+      "sample_id": "EV03",
+      "calidad_muestra": "Normal",
+      "marcador": "HIV",
+      "riesgo": false,
+      "sco_inicial_valor": 0.899999,
+      "nat": "No Reactivo"
+    },
+    "expected": {
+      "final_unit_disposition": "Apta",
+      "final_donor_disposition": "Habilitado",
+      "has_pending_action": false,
+      "expected_rule_ids": [
+        "R1"
+      ]
+    }
+  },
+  {
+    "case_id": "EV04",
+    "category": "zona_gris_borde",
+    "notes": "Borde inferior exacto de Zona Gris (0.9): certeza=100%, banda alta.",
+    "inputs": {
+      "sample_id": "EV04",
+      "calidad_muestra": "Normal",
+      "marcador": "HIV",
+      "riesgo": false,
+      "sco_inicial_valor": 0.9,
+      "nat": "No Reactivo"
+    },
+    "expected": {
+      "final_unit_disposition": null,
+      "final_donor_disposition": null,
+      "has_pending_action": true,
+      "expected_rule_ids": [
+        "R2_alta_certeza"
+      ]
+    }
+  },
+  {
+    "case_id": "EV05",
+    "category": "zona_gris_borde",
+    "notes": "S/CO=1.00999: certeza=45.005%, justo por encima del umbral de 45 -> banda alta.",
+    "inputs": {
+      "sample_id": "EV05",
+      "calidad_muestra": "Normal",
+      "marcador": "HIV",
+      "riesgo": false,
+      "sco_inicial_valor": 1.00999,
+      "nat": "No Reactivo"
+    },
+    "expected": {
+      "final_unit_disposition": null,
+      "final_donor_disposition": null,
+      "has_pending_action": true,
+      "expected_rule_ids": [
+        "R2_alta_certeza"
+      ]
+    }
+  },
+  {
+    "case_id": "EV06",
+    "category": "zona_gris_borde",
+    "notes": "S/CO=1.01: certeza=45.0% exacto, límite inclusivo de banda alta.",
+    "inputs": {
+      "sample_id": "EV06",
+      "calidad_muestra": "Normal",
+      "marcador": "HIV",
+      "riesgo": false,
+      "sco_inicial_valor": 1.01,
+      "nat": "No Reactivo"
+    },
+    "expected": {
+      "final_unit_disposition": null,
+      "final_donor_disposition": null,
+      "has_pending_action": true,
+      "expected_rule_ids": [
+        "R2_alta_certeza"
+      ]
+    }
+  },
+  {
+    "case_id": "EV07",
+    "category": "zona_gris_borde",
+    "notes": "S/CO=1.010001: certeza=44.9995%, justo por debajo de 45 -> cae a banda baja.",
+    "inputs": {
+      "sample_id": "EV07",
+      "calidad_muestra": "Normal",
+      "marcador": "HIV",
+      "riesgo": false,
+      "sco_inicial_valor": 1.010001,
+      "nat": "No Reactivo"
+    },
+    "expected": {
+      "final_unit_disposition": null,
+      "final_donor_disposition": null,
+      "has_pending_action": true,
+      "expected_rule_ids": [
+        "R2_baja_certeza"
+      ]
+    }
+  },
+  {
+    "case_id": "EV08",
+    "category": "zona_gris_borde",
+    "notes": "S/CO=1.04: certeza=30.0% exacto, límite inclusivo de banda baja.",
+    "inputs": {
+      "sample_id": "EV08",
+      "calidad_muestra": "Normal",
+      "marcador": "HIV",
+      "riesgo": false,
+      "sco_inicial_valor": 1.04,
+      "nat": "No Reactivo"
+    },
+    "expected": {
+      "final_unit_disposition": null,
+      "final_donor_disposition": null,
+      "has_pending_action": true,
+      "expected_rule_ids": [
+        "R2_baja_certeza"
+      ]
+    }
+  },
+  {
+    "case_id": "EV09",
+    "category": "zona_gris_borde",
+    "notes": "S/CO=1.040001: certeza=29.9995%, justo por debajo de 30 -> cae a banda crítica.",
+    "inputs": {
+      "sample_id": "EV09",
+      "calidad_muestra": "Normal",
+      "marcador": "HIV",
+      "riesgo": false,
+      "sco_inicial_valor": 1.040001,
+      "nat": "No Reactivo"
+    },
+    "expected": {
+      "final_unit_disposition": null,
+      "final_donor_disposition": null,
+      "has_pending_action": true,
+      "expected_rule_ids": [
+        "R2_critica"
+      ]
+    }
+  },
+  {
+    "case_id": "EV10",
+    "category": "zona_gris_borde",
+    "notes": "Borde superior exacto de Zona Gris (1.1): certeza=0%, banda crítica.",
+    "inputs": {
+      "sample_id": "EV10",
+      "calidad_muestra": "Normal",
+      "marcador": "HCV",
+      "riesgo": false,
+      "sco_inicial_valor": 1.1,
+      "nat": "No Reactivo"
+    },
+    "expected": {
+      "final_unit_disposition": null,
+      "final_donor_disposition": null,
+      "has_pending_action": true,
+      "expected_rule_ids": [
+        "R2_critica"
+      ]
+    }
+  },
+  {
+    "case_id": "EV11",
+    "category": "zona_gris_borde",
+    "notes": "Justo por encima del límite superior de Zona Gris (1.100001): debe clasificar Reactivo, no Zona Gris.",
+    "inputs": {
+      "sample_id": "EV11",
+      "calidad_muestra": "Normal",
+      "marcador": "HIV",
+      "riesgo": false,
+      "sco_inicial_valor": 1.100001,
+      "nat": "No Reactivo"
+    },
+    "expected": {
+      "final_unit_disposition": "Descarte",
+      "final_donor_disposition": "Diferido_Permanente",
+      "has_pending_action": false,
+      "expected_rule_ids": [
+        "R7",
+        "R17"
+      ]
+    }
+  },
+  {
+    "case_id": "EV12",
+    "category": "marcador_reactivo",
+    "notes": "Chagas reactivo -> exclusión permanente.",
+    "inputs": {
+      "sample_id": "EV12",
+      "calidad_muestra": "Normal",
+      "marcador": "Chagas",
+      "riesgo": false,
+      "sco_inicial_valor": 3.5
+    },
+    "expected": {
+      "final_unit_disposition": "Descarte",
+      "final_donor_disposition": "Diferido_Permanente",
+      "has_pending_action": false,
+      "expected_rule_ids": [
+        "R11"
+      ]
+    }
+  },
+  {
+    "case_id": "EV13",
+    "category": "marcador_reactivo",
+    "notes": "HTLV I/II reactivo -> exclusión permanente.",
+    "inputs": {
+      "sample_id": "EV13",
+      "calidad_muestra": "Normal",
+      "marcador": "HTLV_I_II",
+      "riesgo": false,
+      "sco_inicial_valor": 2.0
+    },
+    "expected": {
+      "final_unit_disposition": "Descarte",
+      "final_donor_disposition": "Diferido_Permanente",
+      "has_pending_action": false,
+      "expected_rule_ids": [
+        "R12"
+      ]
+    }
+  },
+  {
+    "case_id": "EV14",
+    "category": "marcador_reactivo",
+    "notes": "Brucelosis reactiva -> diferimiento temporal (admite reingreso).",
+    "inputs": {
+      "sample_id": "EV14",
+      "calidad_muestra": "Normal",
+      "marcador": "Brucelosis",
+      "riesgo": false,
+      "sco_inicial_valor": 4.0
+    },
+    "expected": {
+      "final_unit_disposition": "Descarte",
+      "final_donor_disposition": "Diferido_Temporal",
+      "has_pending_action": false,
+      "expected_rule_ids": [
+        "R14"
+      ]
+    }
+  },
+  {
+    "case_id": "EV15",
+    "category": "marcador_reactivo",
+    "notes": "HCV reactivo, NAT aún no evaluado -> descarte definitivo por serología.",
+    "inputs": {
+      "sample_id": "EV15",
+      "calidad_muestra": "Normal",
+      "marcador": "HCV",
+      "riesgo": false,
+      "sco_inicial_valor": 2.0
+    },
+    "expected": {
+      "final_unit_disposition": "Descarte",
+      "final_donor_disposition": "Diferido_Permanente",
+      "has_pending_action": false,
+      "expected_rule_ids": [
+        "R15"
+      ]
+    }
+  },
+  {
+    "case_id": "EV16",
+    "category": "marcador_reactivo",
+    "notes": "HBV reactivo, NAT aún no evaluado -> descarte definitivo por serología.",
+    "inputs": {
+      "sample_id": "EV16",
+      "calidad_muestra": "Normal",
+      "marcador": "HBV",
+      "riesgo": false,
+      "sco_inicial_valor": 2.5
+    },
+    "expected": {
+      "final_unit_disposition": "Descarte",
+      "final_donor_disposition": "Diferido_Permanente",
+      "has_pending_action": false,
+      "expected_rule_ids": [
+        "R16"
+      ]
+    }
+  },
+  {
+    "case_id": "EV17",
+    "category": "nat_ventana",
+    "notes": "NAT reactivo con serología No Reactiva -> periodo de ventana.",
+    "inputs": {
+      "sample_id": "EV17",
+      "calidad_muestra": "Normal",
+      "marcador": "HIV",
+      "riesgo": false,
+      "sco_inicial_valor": 0.3,
+      "nat": "Reactivo"
+    },
+    "expected": {
+      "final_unit_disposition": "Descarte",
+      "final_donor_disposition": "Diferido_Permanente",
+      "has_pending_action": false,
+      "expected_rule_ids": [
+        "R4"
+      ]
+    }
+  },
+  {
+    "case_id": "EV18",
+    "category": "nat_ventana",
+    "notes": "Serología y NAT ambos reactivos -> infección confirmada.",
+    "inputs": {
+      "sample_id": "EV18",
+      "calidad_muestra": "Normal",
+      "marcador": "HBV",
+      "riesgo": false,
+      "sco_inicial_valor": 2.0,
+      "nat": "Reactivo"
+    },
+    "expected": {
+      "final_unit_disposition": "Descarte",
+      "final_donor_disposition": "Diferido_Permanente",
+      "has_pending_action": false,
+      "expected_rule_ids": [
+        "R5"
+      ]
+    }
+  },
+  {
+    "case_id": "EV19",
+    "category": "nat_ventana",
+    "notes": "Serología reactiva, NAT no reactivo -> se prioriza seguridad del receptor.",
+    "inputs": {
+      "sample_id": "EV19",
+      "calidad_muestra": "Normal",
+      "marcador": "HIV",
+      "riesgo": false,
+      "sco_inicial_valor": 2.0,
+      "nat": "No Reactivo"
+    },
+    "expected": {
+      "final_unit_disposition": "Descarte",
+      "final_donor_disposition": "Diferido_Permanente",
+      "has_pending_action": false,
+      "expected_rule_ids": [
+        "R7"
+      ]
+    }
+  },
+  {
+    "case_id": "EV20",
+    "category": "sifilis_algoritmo",
+    "notes": "VDRL reactivo, CLIA aún no realizado -> acción intermedia, sin veredicto.",
+    "inputs": {
+      "sample_id": "EV20",
+      "calidad_muestra": "Normal",
+      "marcador": "Sifilis",
+      "riesgo": false,
+      "vdrl": "Reactivo"
+    },
+    "expected": {
+      "final_unit_disposition": null,
+      "final_donor_disposition": null,
+      "has_pending_action": true,
+      "expected_rule_ids": [
+        "R8"
+      ]
+    }
+  },
+  {
+    "case_id": "EV21",
+    "category": "sifilis_algoritmo",
+    "notes": "VDRL + CLIA reactivos -> infección confirmada, diferimiento temporal.",
+    "inputs": {
+      "sample_id": "EV21",
+      "calidad_muestra": "Normal",
+      "marcador": "Sifilis",
+      "riesgo": false,
+      "vdrl": "Reactivo",
+      "clia": "Reactivo"
+    },
+    "expected": {
+      "final_unit_disposition": "Descarte",
+      "final_donor_disposition": "Diferido_Temporal",
+      "has_pending_action": false,
+      "expected_rule_ids": [
+        "R9"
+      ]
+    }
+  },
+  {
+    "case_id": "EV22",
+    "category": "sifilis_algoritmo",
+    "notes": "Cicatriz serológica: VDRL no reactivo, CLIA reactivo.",
+    "inputs": {
+      "sample_id": "EV22",
+      "calidad_muestra": "Normal",
+      "marcador": "Sifilis",
+      "riesgo": false,
+      "vdrl": "No Reactivo",
+      "clia": "Reactivo"
+    },
+    "expected": {
+      "final_unit_disposition": "Descarte",
+      "final_donor_disposition": "Diferido_Temporal",
+      "has_pending_action": false,
+      "expected_rule_ids": [
+        "R10"
+      ]
+    }
+  },
+  {
+    "case_id": "EV23",
+    "category": "riesgo_epidemiologico",
+    "notes": "Serología negativa con riesgo conductual declarado -> precaución.",
+    "inputs": {
+      "sample_id": "EV23",
+      "calidad_muestra": "Normal",
+      "marcador": "Chagas",
+      "riesgo": true,
+      "sco_inicial_valor": 0.1
+    },
+    "expected": {
+      "final_unit_disposition": "Descarte",
+      "final_donor_disposition": "Diferido_Temporal",
+      "has_pending_action": false,
+      "expected_rule_ids": [
+        "R6"
+      ]
+    }
+  },
+  {
+    "case_id": "EV24",
+    "category": "zona_gris_repeticion",
+    "notes": "Regla de Oro: Zona Gris inicial, repetición No Reactiva -> descarte igual.",
+    "inputs": {
+      "sample_id": "EV24",
+      "calidad_muestra": "Normal",
+      "marcador": "HBV",
+      "riesgo": false,
+      "sco_inicial_valor": 1.0,
+      "sco_repeticion_valor": 0.3,
+      "nat": "No Reactivo"
+    },
+    "expected": {
+      "final_unit_disposition": "Descarte",
+      "final_donor_disposition": "Diferido_Temporal",
+      "has_pending_action": false,
+      "expected_rule_ids": [
+        "R3"
+      ]
+    }
+  },
+  {
+    "case_id": "EV25",
+    "category": "zona_gris_repeticion",
+    "notes": "Persistencia de indeterminación: repetición también en Zona Gris.",
+    "inputs": {
+      "sample_id": "EV25",
+      "calidad_muestra": "Normal",
+      "marcador": "HCV",
+      "riesgo": false,
+      "sco_inicial_valor": 1.0,
+      "sco_repeticion_valor": 0.95,
+      "nat": "No Reactivo"
+    },
+    "expected": {
+      "final_unit_disposition": "Descarte",
+      "final_donor_disposition": "Diferido_Temporal",
+      "has_pending_action": false,
+      "expected_rule_ids": [
+        "R18"
+      ]
+    }
+  },
+  {
+    "case_id": "EV26",
+    "category": "zona_gris_repeticion",
+    "notes": "Confirmación por repetición reactiva.",
+    "inputs": {
+      "sample_id": "EV26",
+      "calidad_muestra": "Normal",
+      "marcador": "HIV",
+      "riesgo": false,
+      "sco_inicial_valor": 1.0,
+      "sco_repeticion_valor": 3.0,
+      "nat": "No Reactivo"
+    },
+    "expected": {
+      "final_unit_disposition": "Descarte",
+      "final_donor_disposition": "Diferido_Permanente",
+      "has_pending_action": false,
+      "expected_rule_ids": [
+        "R19"
+      ]
+    }
+  },
+  {
+    "case_id": "EV27",
+    "category": "interferencia_fisica",
+    "notes": "Muestra hemolizada -> rechazo técnico, corte inmediato.",
+    "inputs": {
+      "sample_id": "EV27",
+      "calidad_muestra": "Hemolizada",
+      "marcador": "HIV",
+      "riesgo": false
+    },
+    "expected": {
+      "final_unit_disposition": "Cuarentena",
+      "final_donor_disposition": null,
+      "has_pending_action": false,
+      "expected_rule_ids": [
+        "R20"
+      ]
+    }
+  },
+  {
+    "case_id": "EV28",
+    "category": "interferencia_fisica",
+    "notes": "Muestra lipémica -> mismo tratamiento que hemolizada.",
+    "inputs": {
+      "sample_id": "EV28",
+      "calidad_muestra": "Lipemica",
+      "marcador": "HCV",
+      "riesgo": false
+    },
+    "expected": {
+      "final_unit_disposition": "Cuarentena",
+      "final_donor_disposition": null,
+      "has_pending_action": false,
+      "expected_rule_ids": [
+        "R20"
+      ]
+    }
+  },
+  {
+    "case_id": "EV29",
+    "category": "nat_ventana",
+    "notes": "HIV con serologia no reactiva y NAT solicitado pero no informado -> no se libera la unidad; se aguarda el informe (R21).",
+    "inputs": {
+      "sample_id": "EV29",
+      "calidad_muestra": "Normal",
+      "marcador": "HIV",
+      "riesgo": false,
+      "sco_inicial_valor": 0.2,
+      "nat": "Pendiente"
+    },
+    "expected": {
+      "final_unit_disposition": null,
+      "final_donor_disposition": null,
+      "has_pending_action": true,
+      "expected_rule_ids": [
+        "R21"
+      ]
+    }
+  },
+  {
+    "case_id": "EV30",
+    "category": "nat_ventana",
+    "notes": "HBV con NAT pendiente declarado explicitamente -> veredicto pendiente, no Apta.",
+    "inputs": {
+      "sample_id": "EV30",
+      "calidad_muestra": "Normal",
+      "marcador": "HBV",
+      "riesgo": false,
+      "sco_inicial_valor": 0.4,
+      "nat": "Pendiente"
+    },
+    "expected": {
+      "final_unit_disposition": null,
+      "final_donor_disposition": null,
+      "has_pending_action": true,
+      "expected_rule_ids": [
+        "R21"
+      ]
+    }
+  },
+  {
+    "case_id": "EV31",
+    "category": "nat_ventana",
+    "notes": "HCV con nat OMITIDO: sin default silencioso, la ausencia de informe es 'Pendiente' (INV-08), no 'No Aplica'. Mismo veredicto que EV29/EV30.",
+    "inputs": {
+      "sample_id": "EV31",
+      "calidad_muestra": "Normal",
+      "marcador": "HCV",
+      "riesgo": false,
+      "sco_inicial_valor": 0.3
+    },
+    "expected": {
+      "final_unit_disposition": null,
+      "final_donor_disposition": null,
+      "has_pending_action": true,
+      "expected_rule_ids": [
+        "R21"
+      ]
+    }
+  },
+  {
+    "case_id": "EV32",
+    "category": "nat_ventana",
+    "notes": "HIV con S/CO reactivo y NAT pendiente: el hallazgo serologico basta para descartar. El pendiente impide la liberacion, nunca el descarte.",
+    "inputs": {
+      "sample_id": "EV32",
+      "calidad_muestra": "Normal",
+      "marcador": "HIV",
+      "riesgo": false,
+      "sco_inicial_valor": 5.0,
+      "nat": "Pendiente"
+    },
+    "expected": {
+      "final_unit_disposition": "Descarte",
+      "final_donor_disposition": "Diferido_Permanente",
+      "has_pending_action": false,
+      "expected_rule_ids": [
+        "R17"
+      ]
+    }
+  },
+  {
+    "case_id": "EV33",
+    "category": "baseline_apta",
+    "notes": "Chagas no reactivo sin riesgo -> Apta. Regresion de par.4bis hallazgo 10: antes del cierre del antecedente de R1 con IN, ningun marcador no-NAT podia alcanzar Apta (el ciclo terminaba sin disparar ninguna regla).",
+    "inputs": {
+      "sample_id": "EV33",
+      "calidad_muestra": "Normal",
+      "marcador": "Chagas",
+      "riesgo": false,
+      "sco_inicial_valor": 0.2
+    },
+    "expected": {
+      "final_unit_disposition": "Apta",
+      "final_donor_disposition": "Habilitado",
+      "has_pending_action": false,
+      "expected_rule_ids": [
+        "R1"
+      ]
+    }
+  }
 ]
