@@ -45,7 +45,8 @@
           "INV-05-SIFILIS-ALGORITMO",
           "INV-06-RIESGO-EPIDEMIOLOGICO",
           "INV-07-ARBITRAJE-PESO",
-          "INV-08-NAT-APLICABILIDAD"
+          "INV-08-NAT-APLICABILIDAD",
+          "INV-15-FORMA-VEREDICTO"
         ]
       },
       "description": "Vínculo explícito a los invariantes formalizados en domain_model.md. Permite trazabilidad requerimiento -> regla -> invariante -> caso de prueba."

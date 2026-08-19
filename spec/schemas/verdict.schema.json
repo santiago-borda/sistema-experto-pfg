@@ -9,18 +9,18 @@
   "properties": {
     "sample_id": { "type": "string" },
     "final_unit_disposition": {
-      "type": ["string", "null"],
-      "enum": ["Apta", "Descarte", "Cuarentena", null],
-      "description": "Eje 1 del veredicto bidimensional (INV-07). null significa que el ciclo de forward chaining solo disparó reglas de acción intermedia (ej. R2_*, R8) sin alcanzar ninguna regla terminal — ver pending_action."
+      "type": "string",
+      "enum": ["Apta", "Descarte", "Cuarentena"],
+      "description": "Eje 1 del veredicto bidimensional (INV-07). AUSENTE (no null — política de representación de opcionales, ver donor_id) significa que el ciclo de forward chaining solo disparó reglas de acción intermedia (ej. R2_*, R8) sin alcanzar ninguna regla terminal — ver pending_action. INV-15: exactamente uno de {final_unit_disposition, pending_action} debe estar presente."
     },
     "final_donor_disposition": {
-      "type": ["string", "null"],
-      "enum": ["Habilitado", "Diferido_Temporal", "Diferido_Permanente", null],
-      "description": "Eje 2. null permitido cuando final_unit_disposition='Cuarentena' o cuando final_unit_disposition=null."
+      "type": "string",
+      "enum": ["Habilitado", "Diferido_Temporal", "Diferido_Permanente"],
+      "description": "Eje 2. Ausente cuando final_unit_disposition='Cuarentena' o cuando final_unit_disposition está ausente (veredicto pendiente, INV-15)."
     },
     "pending_action": {
-      "type": ["string", "null"],
-      "description": "Acción clínica solicitada por la última regla intermedia disparada (ej. 'Repetir análisis por duplicado'), cuando final_unit_disposition=null. Debe ser null si final_unit_disposition tiene valor."
+      "type": "string",
+      "description": "Acción clínica solicitada por la última regla intermedia disparada (ej. 'Repetir análisis por duplicado'), presente únicamente cuando final_unit_disposition está AUSENTE (INV-15, veredicto todavía no terminal). Ausente (no null) cuando final_unit_disposition tiene valor."
     },
     "epidemiological_status": { "type": ["string", "null"] },
     "triggered_rules": {

@@ -128,6 +128,24 @@ $$
 
 El veredicto final es $\arg\max_w$ entre las reglas terminales disparadas; en empate de peso, gana la de mayor `priority` (evaluada primero, no reemplazada por una posterior de igual peso — ver `_peso_decision` en `inference_engine.py`, comparación estrictamente `>`).
 
+## 4quater. INV-15 — Forma dual del veredicto (terminal vs. pendiente)
+
+Un `InferenceVerdict` tiene exactamente una de dos formas — nunca ambas, nunca ninguna:
+
+(i) **Terminal** — `final_unit_disposition` presente, `pending_action` ausente. El ciclo de forward chaining alcanzó una regla terminal; el veredicto es candidato al arbitraje por peso de decisión (INV-07).
+
+(ii) **Pendiente** — `final_unit_disposition` ausente, `pending_action` presente. El ciclo solo disparó reglas intermedias (`rule_type=intermediate`, ej. `R2_*`, `R8`) sin alcanzar ninguna terminal. Un veredicto pendiente **no participa** del arbitraje de INV-07: no es candidato, es una interrupción del ciclo que exige una acción clínica (repetición por duplicado, algoritmo confirmatorio) antes de poder emitir un veredicto terminal — confirmado contra `RuleEngine.evaluar()`: `decision_weight()` solo se invoca dentro de la rama `rule_type == "terminal"`.
+
+$$
+(final\_unit\_disposition \ne \bot) \;\oplus\; (pending\_action \ne \bot)
+$$
+
+Ambos presentes, o ambos ausentes, es una violación de invariante.
+
+**Retrofit de código a spec:** esta es la forma que ya imponía `check_pending_action_consistency()` en `seitt_core/domain.py.InferenceVerdict` desde antes de esta spec — no es un invariante nuevo, es la formalización de un validador que el código real ya ejecutaba, ahora promovido junto con el resto del modelo a `spec/contracts.py` como fuente única (`seitt_core/domain.py` reexporta, no redefine).
+
+---
+
 ## 5. Frontera de responsabilidad MedGemma ↔ Núcleo Simbólico
 
 ```
