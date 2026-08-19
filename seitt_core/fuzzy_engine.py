@@ -23,6 +23,7 @@ simétrico incorrecto -> rampa lineal real).
 from __future__ import annotations
 
 from .domain import (
+    DomainInvariantViolation,
     Marker,
     NATResult,
     NAT_APPLICABLE_MARKERS,
@@ -154,16 +155,22 @@ def construir_hechos(
     if marker in NAT_APPLICABLE_MARKERS:
         nat_final = NATResult(nat) if nat is not None else NATResult.PENDIENTE
         if nat_final == NATResult.NO_APLICA:
-            raise ValueError(
-                f"nat='No Aplica' no es válido para marcador '{marker}': el ensayo "
-                f"NAT sí aplica (INV-08). Si el informe aún no llegó, corresponde "
-                f"'{NATResult.PENDIENTE}'."
+            raise DomainInvariantViolation(
+                invariant_id="INV-08-NAT-APLICABILIDAD",
+                detail=(
+                    f"nat='No Aplica' no es válido para marcador '{marker}': el ensayo "
+                    f"NAT sí aplica. Si el informe aún no llegó, corresponde "
+                    f"'{NATResult.PENDIENTE}'."
+                ),
             )
     else:
         if nat is not None:
-            raise ValueError(
-                f"NAT provisto ('{nat}') para marcador '{marker}', pero NAT solo "
-                f"aplica a {sorted(m.value for m in NAT_APPLICABLE_MARKERS)} (INV-08)."
+            raise DomainInvariantViolation(
+                invariant_id="INV-08-NAT-APLICABILIDAD",
+                detail=(
+                    f"NAT provisto ('{nat}') para marcador '{marker}', pero NAT solo "
+                    f"aplica a {sorted(m.value for m in NAT_APPLICABLE_MARKERS)}."
+                ),
             )
         nat_final = NATResult.NO_APLICA
 

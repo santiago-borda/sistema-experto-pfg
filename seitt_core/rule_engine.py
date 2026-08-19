@@ -231,6 +231,30 @@ class RuleEngine:
                     best_weight = weight
                     best_candidate = fired_rule
 
+        # INV-07 — Una acción clínica pendiente invalida la LIBERACIÓN, nunca
+        # el descarte. Si disparó alguna regla intermedia (R2_*, R8, R21), el
+        # ciclo no puede cerrar en Apta: hay un paso del protocolo sin
+        # completar (repetición por duplicado, CLIA confirmatorio, informe
+        # NAT) y liberar la unidad equivaldría a afirmar un resultado que
+        # nadie leyó. Un candidato Descarte/Cuarentena NO se toca: un
+        # hallazgo positivo no necesita que se completen los pendientes para
+        # justificar el descarte.
+        #
+        # Antes de este arbitraje la propiedad se sostenía por coincidencia,
+        # no por diseño: R2_* no colisionaba con R1 porque exigen sco
+        # mutuamente excluyente ('Zona Gris' vs 'No Reactivo'), y R8 quedaba
+        # excluido solo porque R1 exigía nat EQ 'No Reactivo' y Sifilis tiene
+        # nat 'No Aplica'. Al cerrar el antecedente de R1 con IN (que sí
+        # admite 'No Aplica', necesario para que Chagas/HTLV/Brucelosis
+        # puedan ser Aptos), esa protección accidental desapareció y EV20
+        # (VDRL reactivo con CLIA pendiente) pasaba a liberarse como Apta.
+        if (
+            best_candidate is not None
+            and best_candidate.unit_disposition == UnitDisposition.APTA
+            and any(fr.rule_type == "intermediate" for fr in fired)
+        ):
+            best_candidate = None
+
         if best_candidate is None:
             return InferenceResult(
                 unit_disposition=None,

@@ -2,15 +2,32 @@
   {
     "rule_id": "R1",
     "description": "Tamizaje negativo completo, sin riesgo declarado -> unidad apta, donante habilitado. Regla por defecto (solo se alcanza si ninguna de mayor peso disparó).",
-    "legacy_notes": null,
+    "legacy_notes": "CORRECCION (Fase 3, Paso 2): el antecedente exigia nat EQ 'No Reactivo'. Al ser R1 la unica regla que produce Apta, ningun marcador no-NAT (Chagas, Sifilis, HTLV_I_II, Brucelosis) podia alcanzarla nunca: su nat es 'No Aplica' por INV-08, y el caso terminaba sin disparar NINGUNA regla (InferenceVerdict rechazaba el veredicto por triggered_rules vacio). Se reemplaza por pertenencia positiva IN ['No Reactivo','No Aplica'], que ademas excluye explicitamente 'Pendiente': con NAT no informado la unidad no se libera.",
     "priority": 1,
-    "legal_reference": ["Ley 22.990 - Art. 44 (criterios generales de aptitud) [verificar articulado oficial]"],
+    "legal_reference": [
+      "Ley 22.990 - Art. 44 (criterios generales de aptitud) [verificar articulado oficial]"
+    ],
     "antecedent": {
       "operator": "AND",
       "conditions": [
-        { "fact_path": "sco", "operator": "EQ", "value": "No Reactivo" },
-        { "fact_path": "nat", "operator": "EQ", "value": "No Reactivo" },
-        { "fact_path": "riesgo", "operator": "EQ", "value": false }
+        {
+          "fact_path": "sco",
+          "operator": "EQ",
+          "value": "No Reactivo"
+        },
+        {
+          "fact_path": "nat",
+          "operator": "IN",
+          "value": [
+            "No Reactivo",
+            "No Aplica"
+          ]
+        },
+        {
+          "fact_path": "riesgo",
+          "operator": "EQ",
+          "value": false
+        }
       ]
     },
     "consequent": {
@@ -21,19 +38,31 @@
       "explanation_template": "Marcador {marcador}: tamizaje negativo completo y ausencia de factores de riesgo epidemiológico. Regla {rule_id}: unidad apta.",
       "action": null
     },
-    "invariant_tags": ["INV-06-RIESGO-EPIDEMIOLOGICO"]
+    "invariant_tags": [
+      "INV-06-RIESGO-EPIDEMIOLOGICO"
+    ]
   },
   {
     "rule_id": "R2_alta_certeza",
     "description": "Zona Gris inicial con alta certeza de pertenencia (µ_ZG >= 45%, cerca del centro del trapecio): se ordena repetición estándar por duplicado. Regla de acción intermedia, no cierra el ciclo.",
     "legacy_notes": null,
     "priority": 16,
-    "legal_reference": ["Res. 1507/2015 - Anexo Zona Gris Analítica [verificar articulado oficial]"],
+    "legal_reference": [
+      "Res. 1507/2015 - Anexo Zona Gris Analítica [verificar articulado oficial]"
+    ],
     "antecedent": {
       "operator": "AND",
       "conditions": [
-        { "fact_path": "sco_inicial", "operator": "EQ", "value": "Zona Gris" },
-        { "fact_path": "certeza_sco", "operator": "GTE", "value": 45 }
+        {
+          "fact_path": "sco_inicial",
+          "operator": "EQ",
+          "value": "Zona Gris"
+        },
+        {
+          "fact_path": "certeza_sco",
+          "operator": "GTE",
+          "value": 45
+        }
       ]
     },
     "consequent": {
@@ -43,20 +72,36 @@
       "action": "Repetir análisis por duplicado",
       "explanation_template": "Marcador {marcador}: Zona Gris con certeza técnica alta ({certeza_sco}%). Regla {rule_id}: se ordena repetición estándar por duplicado."
     },
-    "invariant_tags": ["INV-01-ZONA-GRIS-MONOTONA"]
+    "invariant_tags": [
+      "INV-01-ZONA-GRIS-MONOTONA"
+    ]
   },
   {
     "rule_id": "R2_baja_certeza",
     "description": "Zona Gris inicial con certeza intermedia (30% <= µ_ZG < 45%, cercana a un borde del trapecio): se solicita nueva muestra en vez de repetir sobre el mismo tubo, por menor confiabilidad de la clasificación fuzzy.",
     "legacy_notes": null,
     "priority": 16,
-    "legal_reference": ["Res. 1507/2015 - Anexo Zona Gris Analítica [verificar articulado oficial]"],
+    "legal_reference": [
+      "Res. 1507/2015 - Anexo Zona Gris Analítica [verificar articulado oficial]"
+    ],
     "antecedent": {
       "operator": "AND",
       "conditions": [
-        { "fact_path": "sco_inicial", "operator": "EQ", "value": "Zona Gris" },
-        { "fact_path": "certeza_sco", "operator": "GTE", "value": 30 },
-        { "fact_path": "certeza_sco", "operator": "LT", "value": 45 }
+        {
+          "fact_path": "sco_inicial",
+          "operator": "EQ",
+          "value": "Zona Gris"
+        },
+        {
+          "fact_path": "certeza_sco",
+          "operator": "GTE",
+          "value": 30
+        },
+        {
+          "fact_path": "certeza_sco",
+          "operator": "LT",
+          "value": 45
+        }
       ]
     },
     "consequent": {
@@ -66,19 +111,31 @@
       "action": "Pedir nueva muestra (baja certeza técnica)",
       "explanation_template": "Marcador {marcador}: Zona Gris con certeza técnica baja ({certeza_sco}%). Regla {rule_id}: se solicita nueva muestra antes de repetir."
     },
-    "invariant_tags": ["INV-01-ZONA-GRIS-MONOTONA"]
+    "invariant_tags": [
+      "INV-01-ZONA-GRIS-MONOTONA"
+    ]
   },
   {
     "rule_id": "R2_critica",
     "description": "Zona Gris inicial con certeza crítica (µ_ZG < 30%, muy cerca del límite Reactivo del trapecio): la clasificación fuzzy es demasiado inestable para confiar en un duplicado sobre el mismo tubo.",
     "legacy_notes": null,
     "priority": 16,
-    "legal_reference": ["Res. 1507/2015 - Anexo Zona Gris Analítica [verificar articulado oficial]"],
+    "legal_reference": [
+      "Res. 1507/2015 - Anexo Zona Gris Analítica [verificar articulado oficial]"
+    ],
     "antecedent": {
       "operator": "AND",
       "conditions": [
-        { "fact_path": "sco_inicial", "operator": "EQ", "value": "Zona Gris" },
-        { "fact_path": "certeza_sco", "operator": "LT", "value": 30 }
+        {
+          "fact_path": "sco_inicial",
+          "operator": "EQ",
+          "value": "Zona Gris"
+        },
+        {
+          "fact_path": "certeza_sco",
+          "operator": "LT",
+          "value": 30
+        }
       ]
     },
     "consequent": {
@@ -88,19 +145,31 @@
       "action": "Solicitar nueva muestra del donante (certeza técnica insuficiente, valor próximo al límite Reactivo)",
       "explanation_template": "Marcador {marcador}: Zona Gris con certeza técnica crítica ({certeza_sco}%). Regla {rule_id}: se solicita nueva muestra del donante."
     },
-    "invariant_tags": ["INV-01-ZONA-GRIS-MONOTONA"]
+    "invariant_tags": [
+      "INV-01-ZONA-GRIS-MONOTONA"
+    ]
   },
   {
     "rule_id": "R3",
     "description": "Regla de Oro (post-duplicado, resultado No Reactivo). Si la lectura inicial fue Zona Gris, la unidad se descarta SIEMPRE aunque el duplicado dé No Reactivo (monotonía de precaución).",
     "legacy_notes": "Código legado usa la clave 'repeticion'; unificada a 'sco_repeticion' para consistencia con R18/R19 (hallazgo de inconsistencia de nombres de campo que podía impedir el disparo de esta regla).",
     "priority": 12,
-    "legal_reference": ["Res. 1507/2015 - Anexo Zona Gris Analítica [verificar articulado oficial]"],
+    "legal_reference": [
+      "Res. 1507/2015 - Anexo Zona Gris Analítica [verificar articulado oficial]"
+    ],
     "antecedent": {
       "operator": "AND",
       "conditions": [
-        { "fact_path": "sco_inicial", "operator": "EQ", "value": "Zona Gris" },
-        { "fact_path": "sco_repeticion", "operator": "EQ", "value": "No Reactivo" }
+        {
+          "fact_path": "sco_inicial",
+          "operator": "EQ",
+          "value": "Zona Gris"
+        },
+        {
+          "fact_path": "sco_repeticion",
+          "operator": "EQ",
+          "value": "No Reactivo"
+        }
       ]
     },
     "consequent": {
@@ -111,15 +180,24 @@
       "explanation_template": "Marcador {marcador}: Zona Gris inicial con repetición No Reactiva. Regla {rule_id}: descarte obligatorio por precaución (Regla de Oro), independientemente del resultado del duplicado.",
       "action": null
     },
-    "invariant_tags": ["INV-01-ZONA-GRIS-MONOTONA", "INV-03-AMBIGUEDAD-DUPLICADO"]
+    "invariant_tags": [
+      "INV-01-ZONA-GRIS-MONOTONA",
+      "INV-03-AMBIGUEDAD-DUPLICADO"
+    ]
   },
   {
     "rule_id": "R4",
     "description": "NAT reactivo (aplica solo a HIV/HBV/HCV, INV-08): sospecha de periodo de ventana serológica, descarte permanente por mayor sensibilidad analítica del NAT.",
     "legacy_notes": null,
     "priority": 11,
-    "legal_reference": ["Ley 22.990 - Art. 45 (tamizaje obligatorio NAT) [verificar articulado oficial]"],
-    "antecedent": { "fact_path": "nat", "operator": "EQ", "value": "Reactivo" },
+    "legal_reference": [
+      "Ley 22.990 - Art. 45 (tamizaje obligatorio NAT) [verificar articulado oficial]"
+    ],
+    "antecedent": {
+      "fact_path": "nat",
+      "operator": "EQ",
+      "value": "Reactivo"
+    },
     "consequent": {
       "rule_type": "terminal",
       "unit_disposition": "Descarte",
@@ -128,19 +206,32 @@
       "explanation_template": "Marcador {marcador}: NAT reactivo. Regla {rule_id}: descarte por sospecha de periodo de ventana inmunológica.",
       "action": null
     },
-    "invariant_tags": ["INV-04-VENTANA-NAT", "INV-08-NAT-APLICABILIDAD"]
+    "invariant_tags": [
+      "INV-04-VENTANA-NAT",
+      "INV-08-NAT-APLICABILIDAD"
+    ]
   },
   {
     "rule_id": "R5",
     "description": "Serología y biología molecular concordantes en reactividad: infección confirmada.",
     "legacy_notes": null,
     "priority": 10,
-    "legal_reference": ["Ley 22.990 - Art. 45 [verificar articulado oficial]"],
+    "legal_reference": [
+      "Ley 22.990 - Art. 45 [verificar articulado oficial]"
+    ],
     "antecedent": {
       "operator": "AND",
       "conditions": [
-        { "fact_path": "sco", "operator": "EQ", "value": "Reactivo" },
-        { "fact_path": "nat", "operator": "EQ", "value": "Reactivo" }
+        {
+          "fact_path": "sco",
+          "operator": "EQ",
+          "value": "Reactivo"
+        },
+        {
+          "fact_path": "nat",
+          "operator": "EQ",
+          "value": "Reactivo"
+        }
       ]
     },
     "consequent": {
@@ -151,19 +242,31 @@
       "explanation_template": "Marcador {marcador}: serología y NAT reactivos concordantes. Regla {rule_id}: infección confirmada, descarte definitivo.",
       "action": null
     },
-    "invariant_tags": ["INV-04-VENTANA-NAT"]
+    "invariant_tags": [
+      "INV-04-VENTANA-NAT"
+    ]
   },
   {
     "rule_id": "R6",
     "description": "Serología no reactiva pero con riesgo epidemiológico declarado en anamnesis: se prioriza el principio de precaución sobre el resultado analítico negativo (posible ventana silente).",
     "legacy_notes": "riesgo migrado de string 'Sí'/'No' a boolean (tipado estricto, Consigna 2 - No Vibe Coding).",
     "priority": 2,
-    "legal_reference": ["Ley 22.990 - Art. 47 (criterios de exclusión de donantes) [verificar articulado oficial]"],
+    "legal_reference": [
+      "Ley 22.990 - Art. 47 (criterios de exclusión de donantes) [verificar articulado oficial]"
+    ],
     "antecedent": {
       "operator": "AND",
       "conditions": [
-        { "fact_path": "sco", "operator": "EQ", "value": "No Reactivo" },
-        { "fact_path": "riesgo", "operator": "EQ", "value": true }
+        {
+          "fact_path": "sco",
+          "operator": "EQ",
+          "value": "No Reactivo"
+        },
+        {
+          "fact_path": "riesgo",
+          "operator": "EQ",
+          "value": true
+        }
       ]
     },
     "consequent": {
@@ -174,19 +277,31 @@
       "explanation_template": "Marcador {marcador}: serología No Reactiva pero con riesgo conductual declarado. Regla {rule_id}: descarte preventivo, posible ventana silente.",
       "action": null
     },
-    "invariant_tags": ["INV-06-RIESGO-EPIDEMIOLOGICO"]
+    "invariant_tags": [
+      "INV-06-RIESGO-EPIDEMIOLOGICO"
+    ]
   },
   {
     "rule_id": "R7",
     "description": "Reactividad serológica persistente pese a NAT no reactivo: se prioriza la seguridad del receptor por sobre la ausencia de confirmación molecular.",
     "legacy_notes": null,
     "priority": 9,
-    "legal_reference": ["Ley 22.990 - Art. 45 [verificar articulado oficial]"],
+    "legal_reference": [
+      "Ley 22.990 - Art. 45 [verificar articulado oficial]"
+    ],
     "antecedent": {
       "operator": "AND",
       "conditions": [
-        { "fact_path": "sco", "operator": "EQ", "value": "Reactivo" },
-        { "fact_path": "nat", "operator": "EQ", "value": "No Reactivo" }
+        {
+          "fact_path": "sco",
+          "operator": "EQ",
+          "value": "Reactivo"
+        },
+        {
+          "fact_path": "nat",
+          "operator": "EQ",
+          "value": "No Reactivo"
+        }
       ]
     },
     "consequent": {
@@ -197,19 +312,31 @@
       "explanation_template": "Marcador {marcador}: serología reactiva con NAT no reactivo. Regla {rule_id}: se prioriza la seguridad del receptor, descarte definitivo.",
       "action": null
     },
-    "invariant_tags": ["INV-04-VENTANA-NAT"]
+    "invariant_tags": [
+      "INV-04-VENTANA-NAT"
+    ]
   },
   {
     "rule_id": "R8",
     "description": "Algoritmo tradicional de sífilis, paso 1: VDRL reactivo requiere confirmación treponémica (CLIA) antes de cualquier disposición. Regla de acción intermedia.",
     "legacy_notes": null,
     "priority": 19,
-    "legal_reference": ["Res. 1507/2015 - Anexo Algoritmo Serológico de Sífilis [verificar articulado oficial]"],
+    "legal_reference": [
+      "Res. 1507/2015 - Anexo Algoritmo Serológico de Sífilis [verificar articulado oficial]"
+    ],
     "antecedent": {
       "operator": "AND",
       "conditions": [
-        { "fact_path": "marcador", "operator": "EQ", "value": "Sifilis" },
-        { "fact_path": "vdrl", "operator": "EQ", "value": "Reactivo" }
+        {
+          "fact_path": "marcador",
+          "operator": "EQ",
+          "value": "Sifilis"
+        },
+        {
+          "fact_path": "vdrl",
+          "operator": "EQ",
+          "value": "Reactivo"
+        }
       ]
     },
     "consequent": {
@@ -219,19 +346,31 @@
       "action": "Realizar CLIA confirmatorio",
       "explanation_template": "Sífilis: VDRL reactivo. Regla {rule_id}: se requiere prueba treponémica confirmatoria (CLIA) antes de disposición."
     },
-    "invariant_tags": ["INV-05-SIFILIS-ALGORITMO"]
+    "invariant_tags": [
+      "INV-05-SIFILIS-ALGORITMO"
+    ]
   },
   {
     "rule_id": "R9",
     "description": "Algoritmo de sífilis confirmado: VDRL + CLIA ambos reactivos. Diferimiento temporal (no permanente): a diferencia de otros marcadores, sífilis admite reingreso del donante tras tratamiento y alta médica.",
     "legacy_notes": null,
     "priority": 18,
-    "legal_reference": ["Res. 1507/2015 - Anexo Algoritmo Serológico de Sífilis [verificar articulado oficial]"],
+    "legal_reference": [
+      "Res. 1507/2015 - Anexo Algoritmo Serológico de Sífilis [verificar articulado oficial]"
+    ],
     "antecedent": {
       "operator": "AND",
       "conditions": [
-        { "fact_path": "vdrl", "operator": "EQ", "value": "Reactivo" },
-        { "fact_path": "clia", "operator": "EQ", "value": "Reactivo" }
+        {
+          "fact_path": "vdrl",
+          "operator": "EQ",
+          "value": "Reactivo"
+        },
+        {
+          "fact_path": "clia",
+          "operator": "EQ",
+          "value": "Reactivo"
+        }
       ]
     },
     "consequent": {
@@ -242,19 +381,31 @@
       "explanation_template": "Sífilis: VDRL y CLIA reactivos concordantes. Regla {rule_id}: infección confirmada, diferimiento temporal del donante hasta alta médica.",
       "action": null
     },
-    "invariant_tags": ["INV-05-SIFILIS-ALGORITMO"]
+    "invariant_tags": [
+      "INV-05-SIFILIS-ALGORITMO"
+    ]
   },
   {
     "rule_id": "R10",
     "description": "Cicatriz serológica o infección muy temprana: VDRL no reactivo pero CLIA reactivo. La unidad no es apta pese a la discordancia, mismo desenlace que R9.",
     "legacy_notes": null,
     "priority": 17,
-    "legal_reference": ["Res. 1507/2015 - Anexo Algoritmo Serológico de Sífilis [verificar articulado oficial]"],
+    "legal_reference": [
+      "Res. 1507/2015 - Anexo Algoritmo Serológico de Sífilis [verificar articulado oficial]"
+    ],
     "antecedent": {
       "operator": "AND",
       "conditions": [
-        { "fact_path": "vdrl", "operator": "EQ", "value": "No Reactivo" },
-        { "fact_path": "clia", "operator": "EQ", "value": "Reactivo" }
+        {
+          "fact_path": "vdrl",
+          "operator": "EQ",
+          "value": "No Reactivo"
+        },
+        {
+          "fact_path": "clia",
+          "operator": "EQ",
+          "value": "Reactivo"
+        }
       ]
     },
     "consequent": {
@@ -265,19 +416,31 @@
       "explanation_template": "Sífilis: VDRL no reactivo, CLIA reactivo (posible cicatriz serológica o infección temprana). Regla {rule_id}: unidad no apta, diferimiento temporal.",
       "action": null
     },
-    "invariant_tags": ["INV-05-SIFILIS-ALGORITMO"]
+    "invariant_tags": [
+      "INV-05-SIFILIS-ALGORITMO"
+    ]
   },
   {
     "rule_id": "R11",
     "description": "Chagas reactivo: descarte permanente, sin vía de reingreso del donante.",
     "legacy_notes": null,
     "priority": 8,
-    "legal_reference": ["Ley 22.990 - Art. 46 (Chagas) [verificar articulado oficial]"],
+    "legal_reference": [
+      "Ley 22.990 - Art. 46 (Chagas) [verificar articulado oficial]"
+    ],
     "antecedent": {
       "operator": "AND",
       "conditions": [
-        { "fact_path": "marcador", "operator": "EQ", "value": "Chagas" },
-        { "fact_path": "sco", "operator": "EQ", "value": "Reactivo" }
+        {
+          "fact_path": "marcador",
+          "operator": "EQ",
+          "value": "Chagas"
+        },
+        {
+          "fact_path": "sco",
+          "operator": "EQ",
+          "value": "Reactivo"
+        }
       ]
     },
     "consequent": {
@@ -295,12 +458,22 @@
     "description": "HTLV I/II reactivo: descarte permanente.",
     "legacy_notes": null,
     "priority": 7,
-    "legal_reference": ["Ley 22.990 - Art. 46 (HTLV) [verificar articulado oficial]"],
+    "legal_reference": [
+      "Ley 22.990 - Art. 46 (HTLV) [verificar articulado oficial]"
+    ],
     "antecedent": {
       "operator": "AND",
       "conditions": [
-        { "fact_path": "marcador", "operator": "EQ", "value": "HTLV_I_II" },
-        { "fact_path": "sco", "operator": "EQ", "value": "Reactivo" }
+        {
+          "fact_path": "marcador",
+          "operator": "EQ",
+          "value": "HTLV_I_II"
+        },
+        {
+          "fact_path": "sco",
+          "operator": "EQ",
+          "value": "Reactivo"
+        }
       ]
     },
     "consequent": {
@@ -318,12 +491,22 @@
     "description": "Zona Gris con NAT reactivo: la biología molecular confirma que la duda serológica es una infección real, no un artefacto analítico.",
     "legacy_notes": null,
     "priority": 15,
-    "legal_reference": ["Ley 22.990 - Art. 45 [verificar articulado oficial]"],
+    "legal_reference": [
+      "Ley 22.990 - Art. 45 [verificar articulado oficial]"
+    ],
     "antecedent": {
       "operator": "AND",
       "conditions": [
-        { "fact_path": "sco", "operator": "EQ", "value": "Zona Gris" },
-        { "fact_path": "nat", "operator": "EQ", "value": "Reactivo" }
+        {
+          "fact_path": "sco",
+          "operator": "EQ",
+          "value": "Zona Gris"
+        },
+        {
+          "fact_path": "nat",
+          "operator": "EQ",
+          "value": "Reactivo"
+        }
       ]
     },
     "consequent": {
@@ -334,19 +517,33 @@
       "explanation_template": "Marcador {marcador}: Zona Gris con NAT reactivo. Regla {rule_id}: confirmación molecular de infección real, descarte definitivo.",
       "action": null
     },
-    "invariant_tags": ["INV-01-ZONA-GRIS-MONOTONA", "INV-04-VENTANA-NAT", "INV-08-NAT-APLICABILIDAD"]
+    "invariant_tags": [
+      "INV-01-ZONA-GRIS-MONOTONA",
+      "INV-04-VENTANA-NAT",
+      "INV-08-NAT-APLICABILIDAD"
+    ]
   },
   {
     "rule_id": "R14",
     "description": "Brucelosis reactiva: al igual que sífilis, admite diferimiento temporal (no permanente) con reingreso tras certificado de tratamiento.",
     "legacy_notes": null,
     "priority": 6,
-    "legal_reference": ["Ley 22.990 - Art. 46 (Brucelosis) [verificar articulado oficial]"],
+    "legal_reference": [
+      "Ley 22.990 - Art. 46 (Brucelosis) [verificar articulado oficial]"
+    ],
     "antecedent": {
       "operator": "AND",
       "conditions": [
-        { "fact_path": "marcador", "operator": "EQ", "value": "Brucelosis" },
-        { "fact_path": "sco", "operator": "EQ", "value": "Reactivo" }
+        {
+          "fact_path": "marcador",
+          "operator": "EQ",
+          "value": "Brucelosis"
+        },
+        {
+          "fact_path": "sco",
+          "operator": "EQ",
+          "value": "Reactivo"
+        }
       ]
     },
     "consequent": {
@@ -364,12 +561,22 @@
     "description": "HCV reactivo: descarte permanente y notificación epidemiológica obligatoria.",
     "legacy_notes": null,
     "priority": 5,
-    "legal_reference": ["Ley 22.990 - Art. 46 (HCV) [verificar articulado oficial]"],
+    "legal_reference": [
+      "Ley 22.990 - Art. 46 (HCV) [verificar articulado oficial]"
+    ],
     "antecedent": {
       "operator": "AND",
       "conditions": [
-        { "fact_path": "marcador", "operator": "EQ", "value": "HCV" },
-        { "fact_path": "sco", "operator": "EQ", "value": "Reactivo" }
+        {
+          "fact_path": "marcador",
+          "operator": "EQ",
+          "value": "HCV"
+        },
+        {
+          "fact_path": "sco",
+          "operator": "EQ",
+          "value": "Reactivo"
+        }
       ]
     },
     "consequent": {
@@ -387,12 +594,22 @@
     "description": "HBV reactivo: descarte permanente, bloqueo del donante en registro nacional.",
     "legacy_notes": null,
     "priority": 4,
-    "legal_reference": ["Ley 22.990 - Art. 46 (HBV) [verificar articulado oficial]"],
+    "legal_reference": [
+      "Ley 22.990 - Art. 46 (HBV) [verificar articulado oficial]"
+    ],
     "antecedent": {
       "operator": "AND",
       "conditions": [
-        { "fact_path": "marcador", "operator": "EQ", "value": "HBV" },
-        { "fact_path": "sco", "operator": "EQ", "value": "Reactivo" }
+        {
+          "fact_path": "marcador",
+          "operator": "EQ",
+          "value": "HBV"
+        },
+        {
+          "fact_path": "sco",
+          "operator": "EQ",
+          "value": "Reactivo"
+        }
       ]
     },
     "consequent": {
@@ -410,12 +627,22 @@
     "description": "HIV reactivo: descarte permanente, derivación a infectología.",
     "legacy_notes": null,
     "priority": 3,
-    "legal_reference": ["Ley 22.990 - Art. 46 (HIV) [verificar articulado oficial]"],
+    "legal_reference": [
+      "Ley 22.990 - Art. 46 (HIV) [verificar articulado oficial]"
+    ],
     "antecedent": {
       "operator": "AND",
       "conditions": [
-        { "fact_path": "marcador", "operator": "EQ", "value": "HIV" },
-        { "fact_path": "sco", "operator": "EQ", "value": "Reactivo" }
+        {
+          "fact_path": "marcador",
+          "operator": "EQ",
+          "value": "HIV"
+        },
+        {
+          "fact_path": "sco",
+          "operator": "EQ",
+          "value": "Reactivo"
+        }
       ]
     },
     "consequent": {
@@ -433,8 +660,14 @@
     "description": "Regla de Oro (post-duplicado, resultado también Zona Gris). Persistencia de indeterminación: la unidad se descarta, el donante queda diferido temporal (no confirmado, pero tampoco descartable el riesgo).",
     "legacy_notes": null,
     "priority": 14,
-    "legal_reference": ["Res. 1507/2015 - Anexo Zona Gris Analítica [verificar articulado oficial]"],
-    "antecedent": { "fact_path": "sco_repeticion", "operator": "EQ", "value": "Zona Gris" },
+    "legal_reference": [
+      "Res. 1507/2015 - Anexo Zona Gris Analítica [verificar articulado oficial]"
+    ],
+    "antecedent": {
+      "fact_path": "sco_repeticion",
+      "operator": "EQ",
+      "value": "Zona Gris"
+    },
     "consequent": {
       "rule_type": "terminal",
       "unit_disposition": "Descarte",
@@ -443,15 +676,24 @@
       "explanation_template": "Repetición también en Zona Gris. Regla {rule_id}: persistencia de indeterminación inhabilita la unidad por protocolo de seguridad.",
       "action": null
     },
-    "invariant_tags": ["INV-01-ZONA-GRIS-MONOTONA", "INV-03-AMBIGUEDAD-DUPLICADO"]
+    "invariant_tags": [
+      "INV-01-ZONA-GRIS-MONOTONA",
+      "INV-03-AMBIGUEDAD-DUPLICADO"
+    ]
   },
   {
     "rule_id": "R19",
     "description": "Regla de Oro (post-duplicado, resultado Reactivo). El duplicado confirma reactividad: descarte permanente, ya no es solo precaución sino confirmación.",
     "legacy_notes": null,
     "priority": 13,
-    "legal_reference": ["Res. 1507/2015 - Anexo Zona Gris Analítica [verificar articulado oficial]"],
-    "antecedent": { "fact_path": "sco_repeticion", "operator": "EQ", "value": "Reactivo" },
+    "legal_reference": [
+      "Res. 1507/2015 - Anexo Zona Gris Analítica [verificar articulado oficial]"
+    ],
+    "antecedent": {
+      "fact_path": "sco_repeticion",
+      "operator": "EQ",
+      "value": "Reactivo"
+    },
     "consequent": {
       "rule_type": "terminal",
       "unit_disposition": "Descarte",
@@ -460,18 +702,25 @@
       "explanation_template": "Repetición confirma reactividad. Regla {rule_id}: descarte permanente, ya no es precaución sino confirmación analítica.",
       "action": null
     },
-    "invariant_tags": ["INV-01-ZONA-GRIS-MONOTONA"]
+    "invariant_tags": [
+      "INV-01-ZONA-GRIS-MONOTONA"
+    ]
   },
   {
     "rule_id": "R20",
     "description": "Guard clause de integridad física. Único corto-circuito real del sistema: deniega toda inferencia serológica, sin importar S/CO, NAT o riesgo. Máxima prioridad.",
     "legacy_notes": "Código legado compara contra el string literal 'Hemolizada o Lipémica' (acoplamiento frágil a un valor mágico compuesto). Se corrige a operador IN sobre el enum cerrado de calidad_muestra.",
     "priority": 20,
-    "legal_reference": ["Res. 1507/2015 - Anexo Control de Calidad Preanalítico [verificar articulado oficial]"],
+    "legal_reference": [
+      "Res. 1507/2015 - Anexo Control de Calidad Preanalítico [verificar articulado oficial]"
+    ],
     "antecedent": {
       "fact_path": "calidad_muestra",
       "operator": "IN",
-      "value": ["Hemolizada", "Lipemica"]
+      "value": [
+        "Hemolizada",
+        "Lipemica"
+      ]
     },
     "consequent": {
       "rule_type": "terminal",
@@ -481,6 +730,33 @@
       "explanation_template": "Muestra con calidad '{sco_label}' impide lectura óptica confiable. Regla {rule_id}: rechazo técnico, corte inmediato de toda evaluación serológica.",
       "action": null
     },
-    "invariant_tags": ["INV-02-GUARD-FISICO"]
+    "invariant_tags": [
+      "INV-02-GUARD-FISICO"
+    ]
+  },
+  {
+    "rule_id": "R21",
+    "description": "NAT solicitado y todavia no informado -> no se puede cerrar la evaluacion: se aguarda el informe. No produce candidato a veredicto (no bloquea el descarte por hallazgo serologico; solo impide la liberacion de la unidad).",
+    "legacy_notes": "Regla NUEVA (Fase 3, Paso 2), sin equivalente en knowledge_base.py legado. El legado no podia expresarla: NATResult no tenia el valor 'Pendiente' y construir_hechos() colapsaba el NAT ausente a 'No Aplica' por default silencioso.",
+    "priority": 15,
+    "legal_reference": [
+      "Ley 22.990 - Art. 45 (tamizaje obligatorio NAT) [verificar articulado oficial]"
+    ],
+    "antecedent": {
+      "fact_path": "nat",
+      "operator": "EQ",
+      "value": "Pendiente"
+    },
+    "consequent": {
+      "rule_type": "intermediate",
+      "unit_disposition": null,
+      "donor_disposition": null,
+      "epidemiological_status": null,
+      "action": "Aguardar informe NAT para cierre del caso",
+      "explanation_template": "Marcador {marcador}: ensayo NAT solicitado, informe pendiente. Regla {rule_id}: no se libera la unidad hasta contar con el resultado."
+    },
+    "invariant_tags": [
+      "INV-04-VENTANA-NAT"
+    ]
   }
 ]

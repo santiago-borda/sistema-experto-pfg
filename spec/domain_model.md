@@ -129,6 +129,7 @@ La confrontación de esta spec contra la implementación real (`knowledge_base.p
 7. **NAT aplicable solo a HIV/HBV/HCV** (README, regla estricta #5) no estaba formalizado como invariante ejecutable — ahora es **INV-08**, verificado tanto en `MarkerResult` (contrato externo) como en `WorkingMemoryFacts` (contrato interno).
 8. **Condiciones de R2_\* embebidas como `lambda` de Python en `knowledge_base.py`.** Rompe la promesa de "repositorio declarativo" que hacen los papers (§3.1): un `lambda` no es serializable, no es auditable por fuera de Python, y no puede versionarse como dato. El DSL de `rule.schema.json` ya lo resuelve con operadores `GTE`/`LT` explícitos sobre `certeza_sco` (ver R2_alta_certeza/baja/critica en `kb_rules.json`).
 9. **`certeza_sco` no es exclusiva de Zona Gris** (corrección de alcance, ver §2). Se calcula para las tres etiquetas; el modelo anterior de esta spec la restringía incorrectamente.
+10. **Ningún marcador no-NAT podía alcanzar `Apta`** (defecto latente, detectado en Fase 3 Paso 2). R1 es la única regla que produce `Apta` y su antecedente exigía `nat = No Reactivo`. Como Chagas, Sífilis, HTLV I/II y Brucelosis tienen `nat = No Aplica` por INV-08, R1 no podía disparar jamás para ellos: un Chagas no reactivo sin riesgo no disparaba **ninguna** regla y el ciclo terminaba con `triggered_rules` vacío, que `InferenceVerdict` rechaza (`ValidationError`). Ningún caso del Eval Harness lo cubría — todos los casos no-NAT del dataset esperaban `Descarte` o veredicto pendiente. Se corrige con pertenencia positiva `IN ["No Reactivo", "No Aplica"]`, que además excluye explícitamente `Pendiente`. Ese antecedente demasiado estricto era, sin embargo, *load-bearing por accidente*: ver la cláusula de acción pendiente en §4ter.
 
 ## 4ter. INV-07 — Arbitraje por peso de decisión (formalización del motor real)
 
@@ -145,6 +146,16 @@ w(\text{unidad}, \text{donante}) = \begin{cases}
 $$
 
 El veredicto final es $\arg\max_w$ entre las reglas terminales disparadas; en empate de peso, gana la de mayor `priority` (evaluada primero, no reemplazada por una posterior de igual peso — ver `_peso_decision` en `inference_engine.py`, comparación estrictamente `>`).
+
+**Cláusula de acción pendiente (Fase 3, Paso 2).** Una regla intermedia disparada invalida un candidato terminal `Apta`, y solo `Apta`:
+
+$$
+\exists\,r \in \text{fired} : rule\_type(r) = \text{intermediate} \;\land\; \arg\max_w = \text{Apta} \implies \text{veredicto pendiente (INV-15, forma ii)}
+$$
+
+Un pendiente impide la **liberación**, nunca el **descarte**: un hallazgo serológico positivo no necesita que se completen los pasos pendientes para justificar el descarte, de modo que un candidato `Descarte`/`Cuarentena` no se toca. Con una acción pendiente sin completar (repetición por duplicado, CLIA confirmatorio, informe NAT), liberar la unidad equivaldría a afirmar un resultado que nadie leyó.
+
+Antes de esta cláusula la propiedad se sostenía **por coincidencia, no por diseño**: `R2_*` no colisionaba con R1 porque exigen `sco` mutuamente excluyente (`Zona Gris` vs `No Reactivo`), y `R8` quedaba excluido únicamente porque R1 exigía `nat = No Reactivo` y Sífilis tiene `nat = No Aplica`. Al cerrar el antecedente de R1 con `IN ["No Reactivo", "No Aplica"]` — necesario para que Chagas, HTLV I/II, Sífilis y Brucelosis puedan alcanzar `Apta`, ver §4bis hallazgo 10 — esa protección accidental desapareció y un caso de VDRL reactivo con CLIA pendiente pasaba a liberarse como `Apta`. La cláusula lo convierte en una propiedad del árbitro, válida también para toda regla intermedia que se agregue en el futuro sin tener que recordar sincronizar el antecedente de R1.
 
 ## 4quater. INV-15 — Forma dual del veredicto (terminal vs. pendiente)
 
