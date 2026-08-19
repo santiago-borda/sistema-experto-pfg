@@ -1,0 +1,151 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://seitt.ucp.edu.ar/schemas/extraction_gate_report.schema.json",
+  "title": "ExtractionGateReport",
+  "description": "Evaluación SIMBÓLICA de un ExtractionEnvelope, producida íntegramente por el núcleo determinístico. MedGemma no participa de este objeto ni puede escribirlo. Responde tres preguntas: (a) ¿faltan campos clínicamente obligatorios?, (b) ¿alguna observación es inestable frente a perturbaciones plausibles de OCR/NLP?, (c) ¿la muestra califica para aprobación por lote (INV-11)? El gate NO decide clínicamente: decide qué necesita confirmación humana y con qué granularidad.",
+  "type": "object",
+  "required": [
+    "envelope_id",
+    "evaluated_at",
+    "engine_version",
+    "field_assessments",
+    "missing_required_fields",
+    "batch_eligible",
+    "batch_predicate"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "envelope_id": {
+      "type": "string",
+      "pattern": "^EV-[A-Z0-9]{8,24}$"
+    },
+    "evaluated_at": { "type": "string", "format": "date-time" },
+    "engine_version": { "type": "string" },
+    "kb_version": {
+      "type": "string",
+      "description": "Versión de kb_rules.json vigente al evaluar. La elegibilidad de lote depende de las reglas, no solo de los datos: el mismo envelope puede calificar bajo una KB y no bajo la siguiente."
+    },
+    "field_assessments": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/FieldAssessment" }
+    },
+    "missing_required_fields": {
+      "type": "array",
+      "minItems": 0,
+      "items": { "type": "string" },
+      "description": "Campos clínicamente obligatorios ausentes o listados en unresolved_fields del envelope. Si el array NO está vacío, el ExtractionAdapter aborta con IncompleteExtractionError: nunca se completa un default (INV-12)."
+    },
+    "batch_eligible": {
+      "type": "boolean",
+      "description": "Verdadero solo si TODAS las cláusulas de batch_predicate son verdaderas. Criterio clínico fijado por la bioquímica de referencia: el lote es exactamente el conjunto de unidades sin hallazgo por ninguna vía analítica."
+    },
+    "batch_predicate": {
+      "$ref": "#/$defs/BatchPredicate",
+      "description": "Traza booleana cláusula por cláusula. Se persiste aunque batch_eligible sea true: ante inspección, el registro debe poder justificar POR QUÉ la unidad calificó, no solo que calificó."
+    }
+  },
+  "$defs": {
+    "FieldAssessment": {
+      "type": "object",
+      "required": ["field_path", "requires_confirmation"],
+      "additionalProperties": false,
+      "properties": {
+        "field_path": { "type": "string" },
+        "requires_confirmation": {
+          "type": "boolean",
+          "description": "Si es true, la UI debe exigir confirmación explícita de ESTE campo, dígito por dígito cuando la causa es boundary_sensitivity."
+        },
+        "reasons": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "enum": [
+              "boundary_sensitivity",
+              "low_extraction_confidence",
+              "cross_field_inconsistency",
+              "unresolved_dependency"
+            ]
+          }
+        },
+        "boundary_analysis": { "$ref": "#/$defs/BoundaryAnalysis" }
+      }
+    },
+    "BoundaryAnalysis": {
+      "type": "object",
+      "required": ["observed_value", "observed_label", "unstable"],
+      "additionalProperties": false,
+      "properties": {
+        "observed_value": { "type": "number", "minimum": 0 },
+        "observed_label": {
+          "type": "string",
+          "enum": ["No Reactivo", "Zona Gris", "Reactivo"]
+        },
+        "unstable": {
+          "type": "boolean",
+          "description": "Verdadero si existe alguna perturbación plausible de OCR que cambie la etiqueta. Ver INV-10 en domain_model.md para la definición formal del conjunto de perturbaciones."
+        },
+        "divergent_perturbations": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["perturbed_value", "perturbed_label", "perturbation_kind"],
+            "additionalProperties": false,
+            "properties": {
+              "perturbed_value": { "type": "number", "minimum": 0 },
+              "perturbed_label": {
+                "type": "string",
+                "enum": ["No Reactivo", "Zona Gris", "Reactivo"]
+              },
+              "perturbation_kind": {
+                "type": "string",
+                "enum": [
+                  "decimal_shift",
+                  "last_digit_delta",
+                  "digit_confusion",
+                  "digit_transposition"
+                ]
+              }
+            }
+          },
+          "description": "Perturbaciones concretas que cambian la etiqueta. Se persisten para que el log de auditoría muestre el riesgo específico detectado (ej. '0.95 leído como 9.5 daría Reactivo'), no solo un flag genérico."
+        }
+      }
+    },
+    "BatchPredicate": {
+      "type": "object",
+      "description": "Cláusulas de INV-11. Todas deben ser verdaderas para que batch_eligible sea true.",
+      "required": [
+        "all_assays_non_reactive",
+        "no_pending_assay",
+        "physical_integrity_normal",
+        "no_epidemiological_risk",
+        "no_unresolved_fields",
+        "no_boundary_instability"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "all_assays_non_reactive": {
+          "type": "boolean",
+          "description": "Ningún hallazgo reactivo por NINGUNA vía: ni S/CO, ni NAT, ni VDRL, ni CLIA. Desde la unificación en AssayResult esta cláusula es una comprobación uniforme sobre los tres campos de ensayo, no tres casos especiales."
+        },
+        "no_pending_assay": {
+          "type": "boolean",
+          "description": "Ningún ensayo en estado Pendiente. Criterio de la bioquímica: con NAT no informado la unidad NO se libera, se espera el informe (R21)."
+        },
+        "physical_integrity_normal": { "type": "boolean" },
+        "no_epidemiological_risk": {
+          "type": "boolean",
+          "description": "Riesgo declarado en anamnesis dispara R6 (Descarte) aun sin hallazgo analítico; la unidad sale del lote a revisión individual."
+        },
+        "no_unresolved_fields": { "type": "boolean" },
+        "no_boundary_instability": {
+          "type": "boolean",
+          "description": "Ninguna observación inestable frente a perturbación de OCR. Sin esta cláusula, un falso No Reactivo por error de un dígito entraría al lote y se aprobaría en bloque sin que nadie mire ese campo: la aprobación por lote se volvería una ruta de bypass silencioso de R1."
+        }
+      }
+    }
+  }
+}

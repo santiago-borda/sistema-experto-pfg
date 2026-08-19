@@ -1,0 +1,101 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://seitt.ucp.edu.ar/schemas/extraction_envelope.schema.json",
+  "title": "ExtractionEnvelope",
+  "description": "Única superficie de escritura del módulo neuronal (MedGemma) hacia el SE-ITT. Contiene observaciones extraídas de un documento no estructurado, NUNCA conclusiones: no hay disposiciones, no hay etiquetas lingüísticas, no hay certeza difusa, no hay atestación humana. La traducción de este objeto a SampleInputFacts la realiza exclusivamente el ExtractionAdapter simbólico, previa evaluación del ExtractionGateReport y de una ValidationAttestation. Consigna 5 (No-Wrapper LLM): la frontera es física, forzada por schema, no por convención.",
+  "type": "object",
+  "required": [
+    "envelope_id",
+    "model_id",
+    "extracted_at",
+    "source_document",
+    "extracted_fields",
+    "unresolved_fields"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "envelope_id": {
+      "type": "string",
+      "pattern": "^EV-[A-Z0-9]{8,24}$",
+      "description": "Identificador único del acto de extracción. Referenciado por ExtractionGateReport y por ValidationAttestation."
+    },
+    "model_id": {
+      "type": "string",
+      "pattern": "^medgemma-[0-9]+(\\.[0-9]+)*-[0-9]+b$",
+      "description": "Modelo y variante que produjo la extracción (ej. 'medgemma-1.5-4b'). Se registra para reproducibilidad de auditoría (Consigna 4): un cambio de modelo debe ser visible en el log, no silencioso."
+    },
+    "extracted_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "source_document": {
+      "$ref": "#/$defs/SourceDocument"
+    },
+    "extracted_fields": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/ExtractedField" },
+      "description": "Observaciones extraídas. Cada una arrastra obligatoriamente su evidencia textual."
+    },
+    "unresolved_fields": {
+      "type": "array",
+      "minItems": 0,
+      "items": { "type": "string" },
+      "description": "Campos del contrato de entrada que el modelo NO pudo determinar a partir del documento. Es REQUIRED aunque esté vacío: la ausencia del array sería indistinguible de 'no hubo nada sin resolver', y esa ambigüedad es justamente lo que INV-12 prohíbe. El ExtractionAdapter rechaza el envelope si este array contiene algún campo clínicamente obligatorio — jamás completa un default."
+    }
+  },
+  "$defs": {
+    "SourceDocument": {
+      "type": "object",
+      "required": ["doc_type", "sha256"],
+      "additionalProperties": false,
+      "properties": {
+        "doc_type": {
+          "type": "string",
+          "enum": ["pdf", "image", "hl7_v2", "free_text"]
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$",
+          "description": "Hash del documento fuente. Permite reconstruir, ante inspección sanitaria, exactamente qué documento produjo qué hechos, y detectar si el documento fue alterado después de la extracción."
+        },
+        "page": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Página del documento fuente, cuando aplica. Opcional: se representa por AUSENCIA del campo, nunca por null (política de representación de opcionales, domain_model.md §1.5)."
+        }
+      }
+    },
+    "ExtractedField": {
+      "type": "object",
+      "required": ["field_path", "value", "confidence", "evidence_span"],
+      "additionalProperties": false,
+      "properties": {
+        "field_path": {
+          "type": "string",
+          "pattern": "^[a-z_]+(\\[[0-9]+\\])?(\\.[a-z_]+)*$",
+          "not": {
+            "pattern": "(sco_label|fuzzy_certainty|certeza_sco|unit_disposition|donor_disposition|pending_action|triggered_rules|human_validated|approver)"
+          },
+          "description": "Ruta del campo sobre SampleInputFacts que esta observación pretende poblar (ej. 'physical_integrity', 'marker_results[0].sco_value'). El 'not' es el corazón del contrato no-wrapper: MedGemma puede emitir el VALOR NUMÉRICO de un S/CO, pero NUNCA su etiqueta lingüística (eso es fuzzificación, potestad del Fuzzy Engine), ni la certeza difusa, ni disposición alguna, ni la atestación humana. Un envelope que intente escribir cualquiera de esas rutas no valida, y RuleEngine jamás llega a verlo."
+        },
+        "value": {
+          "type": ["string", "number", "boolean"],
+          "description": "Valor escalar observado. Deliberadamente NO se admiten objetos ni arrays anidados: cada observación debe ser una hoja atómica con su propia evidencia y su propia confianza, para que el bioquímico pueda validar o rechazar campo por campo."
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Autoevaluación de confianza del modelo neuronal sobre ESTA observación. NO es una certeza clínica ni un grado de pertenencia difuso: mide fidelidad de transcripción, no verosimilitud biológica. INV-09 prohíbe que este valor sea antecedente de ninguna regla."
+        },
+        "evidence_span": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 240,
+          "description": "Fragmento textual literal del documento fuente que justifica la observación. Obligatorio. Es lo que permite al bioquímico validar la ingesta sin releer el reporte completo, y lo que hace auditable la extracción ante inspección."
+        }
+      }
+    }
+  }
+}

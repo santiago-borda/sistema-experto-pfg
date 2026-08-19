@@ -70,6 +70,14 @@ for schema_file in [
     "working_memory_facts.schema.json",
     "rule.schema.json",
     "verdict.schema.json",
+    # Schemas pre-analíticos de la frontera neuro-simbólica. Todavía NO
+    # tienen contrato Pydantic ni round-trips: eso es el frente de
+    # integración MedGemma. Se registran acá para que no queden como
+    # schemas oscuros en el repo — al menos su validez sintáctica
+    # Draft 2020-12 se verifica en cada corrida.
+    "extraction_envelope.schema.json",
+    "extraction_gate_report.schema.json",
+    "validation_attestation.schema.json",
 ]:
     path = SCHEMAS_DIR / schema_file
     try:

@@ -32,8 +32,9 @@ LLM participe jamás de la inferencia clínica (arquitectura no-wrapper).
 ## Estructura del repo
 
 ```
-legacy/       Código original (main.py CustomTkinter, expert_system.py,
-              knowledge_base.py con reglas embebidas en lambdas, etc.)
+legacy/       Código original (main.py con tkinter+ttk estándar,
+              expert_system.py, knowledge_base.py con reglas embebidas
+              en lambdas, etc.)
               Se preserva como referencia histórica — no se modifica
               ningún comportamiento clínico, regla de negocio, ni valor
               de umbral. Única excepción: los imports internos se
@@ -67,6 +68,14 @@ seitt_core/   Fase 1: refactor del motor, DSL-driven (reemplaza a legacy/).
     eval_harness.py         Corre el dataset, mide métricas
     eval_report.json        Último reporte generado
 
+app/          Fase 3: interfaz de usuario nueva, arquitectura web.
+  api/                      Backend FastAPI. Adaptador HTTP sobre
+                            expert_system.evaluar_caso() — no reexporta
+                            el dominio directo: tiene sus propios modelos
+                            de request/response (app/api/schemas.py).
+  web/                      Frontend estático (HTML/CSS/JS plano, sin
+                            paso de build), servido por FastAPI.
+
 docs/         Papers académicos ya existentes (Poster, PIF, TP2) — leer
               con cautela, tienen discrepancias documentadas vs. el código
               real (ver domain_model.md §4bis).
@@ -95,9 +104,8 @@ defensa.
   `explicador.py`, `test_cases.py` — antes de agregar `spec/` y `seitt_core/`.
 - **No mergear `refactor/spec-driven-v2` a `main` todavía.** Quedan dos
   condiciones pendientes antes del merge: (1) Dockerización cerrada,
-  (2) contrato MedGemma↔Motor Difuso definido y `main.py` (GUI) adaptado
-  a la nueva firma de `expert_system.evaluar_caso()`. Recién ahí, un
-  commit final que documente la transición completa.
+  (2) contrato MedGemma↔Motor Difuso definido. Recién ahí, un commit
+  final que documente la transición completa.
 - Commits chicos y descriptivos por frente de trabajo (ej. "feat(spec):
   agrega working_memory_facts.schema.json", no un commit gigante con todo
   junto) — ayuda a que el `git log` sea legible como narrativa de
@@ -154,9 +162,28 @@ otra cosa — son la red de seguridad contra regresiones.
    harness, corrido en Windows con .venv).
 2. Dockerización + entorno reproducible (Consigna 4).
 3. Contrato JSON MedGemma ↔ Motor Difuso (extiende `sample_input.schema.json`).
-4. Adaptación de `main.py` (GUI) al nuevo `expert_system.evaluar_caso()` —
-   deliberadamente diferida hasta que el contrato MedGemma esté cerrado,
-   para no reescribir la UI dos veces.
+
+### Decisión de interfaz (Fase 3, Paso 3A)
+
+La GUI **no se adapta: se reemplaza**. Decisión explícita del titular del
+proyecto — Tkinter quedó anticuado para la demo. `legacy/main.py` se
+preserva sin cambios como referencia histórica del TP2, igual que el
+resto de `legacy/`; no se adapta a la nueva firma de `evaluar_caso()`.
+
+La interfaz nueva es web (FastAPI + frontend estático HTML/JS, sin
+framework de build) y vive en `app/`, hermano de `spec/`, `seitt_core/` y
+`legacy/`. La elección de FastAPI **no es cosmética**:
+
+- **Dockeriza de forma directa** (Consigna 4, próximo frente): un
+  contenedor headless sirve la API sin arrastrar ningún toolkit gráfico.
+  Por eso `fastapi`/`uvicorn` van como extra opcional en `pyproject.toml`,
+  no como dependencia principal — el núcleo se instala sin la capa de
+  presentación.
+- **Es el mismo tipo de borde por el que va a entrar la extracción
+  MedGemma**: la API es el "puerto" en su forma más literal. La
+  dependencia va siempre `app/ → seitt_core/`, nunca al revés, y
+  `seitt_core/` no importa nada de `app/` ni del borde neuronal (INV-13,
+  verificado por análisis AST en `tests/test_architecture.py`).
 
 ## Al recibir una tarea sobre este proyecto
 

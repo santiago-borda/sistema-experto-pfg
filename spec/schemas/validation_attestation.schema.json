@@ -1,0 +1,104 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://seitt.ucp.edu.ar/schemas/validation_attestation.schema.json",
+  "title": "ValidationAttestation",
+  "description": "Registro de la validación humana de una o más extracciones. Es el objeto que materializa la responsabilidad legal exclusiva del bioquímico (Ley 22.990): el SE-ITT es un CDSS y ninguna extracción alcanza el Inference Engine sin este registro (INV-11). Deliberadamente NO forma parte del ExtractionEnvelope: si el modelo neuronal pudiera escribir su propia atestación, la garantía sería vacía. Lo produce la capa de UI/adaptador simbólico y lo firma una persona identificada.",
+  "type": "object",
+  "required": [
+    "attestation_id",
+    "approval_mode",
+    "approved_at",
+    "approver_id",
+    "approver_credential",
+    "envelope_ids",
+    "sample_ids",
+    "engine_version",
+    "kb_version",
+    "gate_reports"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "attestation_id": {
+      "type": "string",
+      "pattern": "^AT-[A-Z0-9]{8,24}$"
+    },
+    "approval_mode": {
+      "type": "string",
+      "enum": ["individual", "batch"],
+      "description": "'batch' solo es admisible si TODOS los gate_reports referenciados tienen batch_eligible=true. Un solo elemento no elegible degrada el acto completo a revisión individual."
+    },
+    "approved_at": { "type": "string", "format": "date-time" },
+    "approver_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Identificador del profesional que aprueba. PRIMER Y ÚNICO dato nominal de persona real del sistema: el donante está anonimizado por diseño (sample_id no es vinculante a identidad). INV-14 prohíbe que este campo cruce jamás hacia el módulo neuronal en cualquier dirección."
+    },
+    "approver_credential": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Matrícula profesional habilitante. Es lo que hace oponible la firma ante inspección sanitaria."
+    },
+    "envelope_ids": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "pattern": "^EV-[A-Z0-9]{8,24}$" }
+    },
+    "sample_ids": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "pattern": "^[A-Z0-9-]{6,32}$" },
+      "description": "Unidades liberadas bajo esta firma. Requisito de trazabilidad: ante inspección debe poder reconstruirse QUÉ unidades se aprobaron en un mismo acto, no solo que hubo una aprobación."
+    },
+    "gate_reports": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/EmbeddedGateEvaluation" },
+      "description": "Copia inmutable de la evaluación del gate al momento de firmar. Se EMBEBE, no se referencia por id: el registro de auditoría debe ser autocontenido y no depender de que otro objeto siga existiendo o no haya cambiado."
+    },
+    "confirmed_fields": {
+      "type": "array",
+      "minItems": 0,
+      "items": {
+        "type": "object",
+        "required": ["sample_id", "field_path", "confirmed_value"],
+        "additionalProperties": false,
+        "properties": {
+          "sample_id": { "type": "string" },
+          "field_path": { "type": "string" },
+          "confirmed_value": { "type": ["string", "number", "boolean"] },
+          "corrected": {
+            "type": "boolean",
+            "description": "Verdadero si el humano CORRIGIÓ el valor extraído en vez de solo confirmarlo. Métrica directa de calidad de extracción: alimenta el eval del módulo neuronal con datos de producción."
+          }
+        }
+      },
+      "description": "Campos que el gate marcó requires_confirmation y que el profesional atendió uno a uno. Obligatoriamente vacío en approval_mode='batch': si algún campo requería confirmación, la muestra no era elegible para lote."
+    }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "approval_mode": { "const": "batch" } } },
+      "then": {
+        "properties": {
+          "confirmed_fields": { "maxItems": 0 }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "EmbeddedGateEvaluation": {
+      "type": "object",
+      "required": ["envelope_id", "sample_id", "batch_eligible", "batch_predicate"],
+      "additionalProperties": false,
+      "properties": {
+        "envelope_id": { "type": "string" },
+        "sample_id": { "type": "string" },
+        "batch_eligible": { "type": "boolean" },
+        "batch_predicate": {
+          "type": "object",
+          "description": "Traza booleana de INV-11 tal como se evaluó al firmar. Ver batch_predicate en extraction_gate_report.schema.json."
+        }
+      }
+    }
+  }
+}
