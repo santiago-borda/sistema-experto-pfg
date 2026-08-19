@@ -174,6 +174,62 @@ try:
 except ValidationError as e:
     record("INV-08: NAT No Aplica en Chagas (válido)", False, str(e))
 
+# 3i-3m. El default derivado de nat_result rellena SOLO la ausencia de la
+#     clave. Un valor provisto que viole INV-08 debe RECHAZARSE, nunca
+#     corregirse en silencio (eso sería reintroducir INV-12 del lado del
+#     contrato: el sistema "arreglando" un dato clínico que nadie verificó).
+
+
+def _invariant_id_of(exc: ValidationError) -> str | None:
+    """Extrae el invariant_id de la DomainInvariantViolation envuelta por
+    Pydantic. Permite afirmar POR QUÉ se rechazó, no solo que se rechazó."""
+    for err in exc.errors():
+        cause = err.get("ctx", {}).get("error")
+        if isinstance(cause, DomainInvariantViolation):
+            return cause.invariant_id
+    return None
+
+
+# 3i. Valor provisto que viola INV-08 -> rechazado, no reescrito.
+try:
+    MarkerResult(marker="Chagas", sco_value=0.2, sco_label="No Reactivo", nat_result="Reactivo")
+    record("nat_result provisto inválido -> rechazado, no reescrito", False, "no lanzó excepción")
+except ValidationError as e:
+    got = _invariant_id_of(e)
+    record("nat_result provisto inválido -> rechazado, no reescrito",
+           got == "INV-08-NAT-APLICABILIDAD", f"invariant_id={got}")
+
+# 3j. HIV + 'No Aplica' debe fallar POR INV-08 (dirección 2 endurecida),
+#     no pasar por una reescritura previa del validador de default.
+try:
+    MarkerResult(marker="HIV", sco_value=0.2, sco_label="No Reactivo", nat_result="No Aplica")
+    record("INV-08 dir.2: HIV + 'No Aplica' -> rechazado por INV-08", False, "no lanzó excepción")
+except ValidationError as e:
+    got = _invariant_id_of(e)
+    record("INV-08 dir.2: HIV + 'No Aplica' -> rechazado por INV-08",
+           got == "INV-08-NAT-APLICABILIDAD", f"invariant_id={got}")
+
+# 3k-3l. Ausencia de la clave sí se rellena, derivando del marcador.
+for marker_name, esperado in [("HIV", "Pendiente"), ("Chagas", "No Aplica")]:
+    try:
+        derivado = MarkerResult(marker=marker_name, sco_value=0.2, sco_label="No Reactivo").nat_result
+        record(f"nat_result ausente en {marker_name} -> derivado a '{esperado}'",
+               derivado.value == esperado, f"derivó a '{derivado.value}'")
+    except ValidationError as e:
+        record(f"nat_result ausente en {marker_name} -> derivado a '{esperado}'", False, str(e))
+
+# 3m. null explícito NO es ausencia: se rechaza por la política del Paso
+#     1.5.3, no se rellena.
+try:
+    MarkerResult.model_validate(
+        {"marker": "HIV", "sco_value": 0.2, "sco_label": "No Reactivo", "nat_result": None}
+    )
+    record("nat_result=null explícito -> rechazado (no se rellena)", False, "no lanzó excepción")
+except ValidationError as e:
+    got = _invariant_id_of(e)
+    record("nat_result=null explícito -> rechazado (no se rellena)",
+           got == "INV-STRUCT-AUSENCIA", f"invariant_id={got}")
+
 
 # ── 4. Banda de certeza difusa en Zona Gris (R2_alta/baja/critica) ─────
 print("\n[4] Umbrales exactos de banda de certeza (WorkingMemoryFacts)")
@@ -456,6 +512,55 @@ record(
     "" if (pydantic_rejected_donor_id and jsonschema_rejected_donor_id)
     else f"pydantic_rechazo={pydantic_rejected_donor_id}, jsonschema_rechazo={jsonschema_rejected_donor_id}",
 )
+
+# 6c''. INV-08 bidireccional, en round-trip contra AMBOS validadores y
+#      sobre AMBOS contratos (externo e interno). Un invariante que solo
+#      vive en Pydantic deja pasar por el schema exactamente los payloads
+#      que el motor rechaza — la misma asimetría que motivó la política de
+#      ausencia en el Paso 1.5.3, ahora aplicada a la aplicabilidad NAT.
+wmf_schema = load_json(SCHEMAS_DIR / "working_memory_facts.schema.json")
+validator_wmf = jsonschema.Draft202012Validator(wmf_schema)
+
+
+def inv08_round_trip(label: str, marker: str, nat_value: str, debe_ser_valido: bool) -> None:
+    """Verifica que jsonschema y Pydantic coincidan sobre un par
+    (marcador, valor de NAT), en el contrato externo y en el interno."""
+    externo = {
+        "sample_id": "ABC123",
+        "physical_integrity": "Normal",
+        "marker_results": [
+            {"marker": marker, "sco_value": 0.2, "sco_label": "No Reactivo",
+             "nat_result": nat_value},
+        ],
+        "source": "analyzer_direct",
+    }
+    interno = {
+        "calidad_muestra": "Normal", "marcador": marker, "sco": "No Reactivo",
+        "sco_inicial": "No Reactivo", "nat": nat_value, "riesgo": False,
+    }
+
+    for capa, payload, js_validator, modelo in (
+        ("externo/sample_input", externo, validator_sample, SampleInputFacts),
+        ("interno/working_memory_facts", interno, validator_wmf, WorkingMemoryFacts),
+    ):
+        js_ok = js_validator.is_valid(payload)
+        try:
+            modelo.model_validate(payload)
+            py_ok = True
+        except ValidationError:
+            py_ok = False
+        ok = (js_ok == debe_ser_valido) and (py_ok == debe_ser_valido)
+        verbo = "aceptado por" if debe_ser_valido else "rechazado por"
+        record(
+            f"INV-08 [{capa}]: {label} -> {verbo} jsonschema Y Pydantic",
+            ok, "" if ok else f"jsonschema_valido={js_ok}, pydantic_valido={py_ok}",
+        )
+
+
+inv08_round_trip("HIV + 'No Aplica'", "HIV", "No Aplica", debe_ser_valido=False)
+inv08_round_trip("Chagas + 'Pendiente'", "Chagas", "Pendiente", debe_ser_valido=False)
+inv08_round_trip("Chagas + 'Reactivo'", "Chagas", "Reactivo", debe_ser_valido=False)
+inv08_round_trip("HIV + 'Pendiente'", "HIV", "Pendiente", debe_ser_valido=True)
 
 # 6d. Idempotencia de conversión µ <-> porcentaje, a precisión completa
 #     (sin tolerancia por redondeo). Muestra curada (no aleatoria): 100.0
