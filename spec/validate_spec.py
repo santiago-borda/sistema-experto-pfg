@@ -22,8 +22,12 @@ from pathlib import Path
 import jsonschema
 from pydantic import ValidationError
 
-sys.path.insert(0, str(Path(__file__).parent))
-from contracts import (
+# Import calificado (paquete "spec" instalado en modo editable, ver
+# pyproject.toml) — NO "from contracts import ...". Es el mismo módulo
+# que importa seitt_core.domain (from spec.contracts import ...), lo que
+# garantiza que ambos resuelvan al MISMO objeto de clase en sys.modules
+# (identidad, no solo igualdad estructural) — ver bloque [7] más abajo.
+from spec.contracts import (
     SampleInputFacts,
     MarkerResult,
     WorkingMemoryFacts,

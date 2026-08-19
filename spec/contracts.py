@@ -328,15 +328,17 @@ class WorkingMemoryFacts(BaseModel):
 
 
 # ─────────────────────────────────────────────────────────────────────────
-# Modelo de veredicto de salida (bidimensional: unidad × donante, INV-07)
+# Modelo de veredicto de salida (bidimensional: unidad × donante, INV-07;
+# forma dual terminal/pendiente, INV-15)
 # ─────────────────────────────────────────────────────────────────────────
 
 class InferenceVerdict(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     sample_id: str
-    final_unit_disposition: UnitDisposition
+    final_unit_disposition: UnitDisposition | None = None
     final_donor_disposition: DonorDisposition | None = None
+    pending_action: str | None = None
     epidemiological_status: str | None = None
     triggered_rules: list[str] = Field(min_length=1)
     explanation_log: list[str] = Field(min_length=1)
@@ -346,15 +348,40 @@ class InferenceVerdict(BaseModel):
 
     @model_validator(mode="after")
     def check_donor_disposition_presence(self) -> "InferenceVerdict":
-        """Toda disposición != Cuarentena debe traer estado de donante
-        explícito (ninguna regla terminal de la KB deja al donante sin
-        resolver salvo el rechazo técnico, ver R20)."""
-        if self.final_unit_disposition != UnitDisposition.CUARENTENA and self.final_donor_disposition is None:
+        """Toda disposición != Cuarentena y != null debe traer estado de
+        donante explícito (ninguna regla terminal de la KB deja al donante
+        sin resolver salvo el rechazo técnico o un ciclo aún no terminal)."""
+        if (
+            self.final_unit_disposition is not None
+            and self.final_unit_disposition != UnitDisposition.CUARENTENA
+            and self.final_donor_disposition is None
+        ):
             raise DomainInvariantViolation(
                 invariant_id="INV-07-ARBITRAJE-PESO",
                 detail=(
                     f"final_unit_disposition='{self.final_unit_disposition}' requiere "
-                    f"final_donor_disposition explícito (solo Cuarentena admite null)."
+                    f"final_donor_disposition explícito (solo Cuarentena o ciclo "
+                    f"no-terminal admiten null)."
                 ),
+            )
+        return self
+
+    @model_validator(mode="after")
+    def check_pending_action_consistency(self) -> "InferenceVerdict":
+        """INV-15 (domain_model.md §4quater): pending_action y
+        final_unit_disposition son mutuamente excluyentes — exactamente
+        uno de los dos debe estar presente. O el ciclo terminó
+        (unit_disposition resuelto, candidato al arbitraje INV-07) o quedó
+        pendiente de una acción intermedia (R2_*, R8, no participa del
+        arbitraje) — nunca ambos, nunca ninguno."""
+        if self.final_unit_disposition is None and self.pending_action is None:
+            raise DomainInvariantViolation(
+                invariant_id="INV-15-FORMA-VEREDICTO",
+                detail="final_unit_disposition ausente requiere pending_action presente.",
+            )
+        if self.final_unit_disposition is not None and self.pending_action is not None:
+            raise DomainInvariantViolation(
+                invariant_id="INV-15-FORMA-VEREDICTO",
+                detail="pending_action debe estar ausente cuando final_unit_disposition está resuelto.",
             )
         return self

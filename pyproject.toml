@@ -1,0 +1,19 @@
+[project]
+name = "seitt"
+version = "0.1.0"
+description = "SE-ITT — Sistema Experto Hibrido basado en Logica Difusa para ITT en Bancos de Sangre (PFG, UCP)"
+requires-python = ">=3.12"
+dependencies = [
+    "pydantic>=2.0",
+    "jsonschema>=4.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["spec", "seitt_core"]
