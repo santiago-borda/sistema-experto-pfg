@@ -274,10 +274,10 @@ class MarkerResult(BaseModel):
     @model_validator(mode="before")
     @classmethod
     def check_fuzzy_certainty_not_explicit_null(cls, data: object) -> object:
-        """Política de ausencia (Paso 1.5.3): fuzzy_certainty se omite,
-        nunca se envía como null explícito (sample_input.schema.json no
-        declara "null" en su type)."""
-        return _reject_explicit_null(data, ("fuzzy_certainty",))
+        """Política de ausencia (Paso 1.5.3): fuzzy_certainty y nat_result
+        se omiten, nunca se envían como null explícito
+        (sample_input.schema.json no declara "null" en su type)."""
+        return _reject_explicit_null(data, ("fuzzy_certainty", "nat_result"))
 
     @model_validator(mode="before")
     @classmethod
@@ -289,8 +289,16 @@ class MarkerResult(BaseModel):
         marcador no-NAT y es ilegal para uno NAT-aplicable. Omitir
         nat_result en HIV/HBV/HCV significa "el ensayo corresponde y su
         informe todavía no llegó" -> Pendiente, nunca "No Aplica" (ese
-        default silencioso era el defecto que este paso corrige)."""
-        if isinstance(data, dict) and data.get("nat_result") is None and "marker" in data:
+        default silencioso era el defecto que este paso corrige).
+
+        Rellena EXCLUSIVAMENTE la ausencia de la clave. Un valor provisto
+        se respeta y, si viola INV-08, lo rechaza check_nat_applicability()
+        -- nunca se corrige en silencio (eso reintroduciría INV-12 del lado
+        del contrato). Un null explícito tampoco se rellena: lo rechaza
+        antes check_fuzzy_certainty_not_explicit_null() por la política de
+        ausencia (Paso 1.5.3), porque ausencia y null no son
+        intercambiables."""
+        if isinstance(data, dict) and "nat_result" not in data and "marker" in data:
             try:
                 marker = Marker(data["marker"])
             except ValueError:

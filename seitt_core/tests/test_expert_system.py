@@ -18,7 +18,9 @@ clínica sobre un dataset representativo.
 
 import pytest
 
-from seitt_core.domain import SEITTDomainError
+from pydantic import ValidationError
+
+from seitt_core.domain import MarkerResult, SEITTDomainError
 from seitt_core.expert_system import evaluar_caso
 
 
@@ -256,6 +258,28 @@ class TestInvariantesDeDominio:
                 sample_id="TCX", calidad_muestra="Normal", marcador="Chagas",
                 sco_inicial_valor=0.2, nat="Pendiente", riesgo=False,
             )
+
+    def test_nat_result_provisto_invalido_no_se_reescribe(self):
+        """El default derivado de nat_result rellena SOLO la ausencia de la
+        clave. Un valor provisto que viola INV-08 se rechaza; corregirlo en
+        silencio sería reintroducir INV-12 del lado del contrato -- el
+        sistema "arreglando" un dato clínico que nadie verificó."""
+        with pytest.raises(ValidationError) as exc:
+            MarkerResult(
+                marker="Chagas", sco_value=0.2, sco_label="No Reactivo",
+                nat_result="Reactivo",
+            )
+        assert "INV-08-NAT-APLICABILIDAD" in str(exc.value)
+
+    def test_nat_result_null_explicito_es_rechazado(self):
+        """Ausencia y null no son intercambiables (Paso 1.5.3): un null
+        explícito no se rellena con el derivado, se rechaza."""
+        with pytest.raises(ValidationError) as exc:
+            MarkerResult.model_validate({
+                "marker": "HIV", "sco_value": 0.2,
+                "sco_label": "No Reactivo", "nat_result": None,
+            })
+        assert "INV-STRUCT-AUSENCIA" in str(exc.value)
 
     def test_nat_no_aplica_en_marcador_nat_es_rechazado(self):
         """INV-08 dirección 2 (endurecida en Fase 3, Paso 2): para
