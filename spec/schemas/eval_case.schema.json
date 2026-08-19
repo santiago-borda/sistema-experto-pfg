@@ -32,7 +32,11 @@
         "riesgo": { "type": "boolean" },
         "sco_inicial_valor": { "type": ["number", "null"] },
         "sco_repeticion_valor": { "type": ["number", "null"] },
-        "nat": { "type": ["string", "null"], "enum": ["Reactivo", "No Reactivo", null] },
+        "nat": {
+          "type": ["string", "null"],
+          "enum": ["Reactivo", "No Reactivo", "Pendiente", null],
+          "description": "Argumento nat de evaluar_caso(). null/ausente para un marcador NAT-aplicable NO significa 'No Aplica': el Fuzzy Engine lo deriva a 'Pendiente' (INV-08). 'No Aplica' no es un valor pasable acá — es estado derivado del marcador, no dato de entrada."
+        },
         "vdrl": { "type": ["string", "null"], "enum": ["Reactivo", "No Reactivo", null] },
         "clia": { "type": ["string", "null"], "enum": ["Reactivo", "No Reactivo", null] }
       }

@@ -80,6 +80,24 @@ epidemiological\_risk\_flag \land (\forall m : sco\_label(m) = \text{No Reactivo
 $$
 El riesgo declarado en anamnesis puede forzar descarte incluso con serología limpia (precaución sobre sensibilidad analítica).
 
+### INV-08 — Aplicabilidad del ensayo NAT (bidireccional)
+
+El ensayo NAT es clínicamente aplicable **solo** a HIV, HBV y HCV (README — Regla de Negocio Estricta #5). El invariante tiene dos direcciones, ambas obligatorias:
+
+$$
+m \notin \{\text{HIV}, \text{HBV}, \text{HCV}\} \implies nat(m) = \text{No Aplica}
+$$
+
+$$
+m \in \{\text{HIV}, \text{HBV}, \text{HCV}\} \implies nat(m) \in \{\text{Reactivo}, \text{No Reactivo}, \text{Pendiente}\}
+$$
+
+Para un marcador no-NAT, tanto `Reactivo`/`No Reactivo` como `Pendiente` son violaciones: el ensayo no corresponde, y el único valor honesto es `No Aplica`. Para un marcador NAT-aplicable, `No Aplica` es **igual de inválido** que un resultado inventado: el ensayo sí corresponde, y su estado debe ser uno de los tres reales.
+
+**Segunda dirección — endurecimiento (Fase 3, Paso 2).** La formulación original solo verificaba la primera dirección. `Pendiente` (valor nuevo de `NATResult`) es lo que hace necesaria y verificable a la segunda: sin él, un marcador NAT-aplicable cuyo informe todavía no llegó no tenía ninguna representación honesta — `No Reactivo` afirma un resultado que nadie leyó, y `No Aplica` contradice la primera dirección. El defecto concreto que esto corrige: `fuzzy_engine.construir_hechos()` tenía `No Aplica` como default silencioso, lo que volvía indistinguible *"el ensayo no corresponde"* de *"el ensayo corresponde pero no fue informado"* — y permitía liberar una unidad (R1 → Apta) sin que nadie hubiera leído el NAT. Consulta a la bioquímica de referencia: con NAT no informado la unidad **no se libera**; el flujo real espera el informe (ver R21).
+
+Verificado en ambas direcciones y en las dos capas: `MarkerResult` (contrato externo) y `WorkingMemoryFacts` (contrato interno), más los `allOf` condicionales equivalentes en `sample_input.schema.json` y `working_memory_facts.schema.json`.
+
 ---
 
 ## 4. Matriz de trazabilidad (Requerimiento → Regla → Invariante → Caso de prueba)

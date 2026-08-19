@@ -40,8 +40,8 @@
     },
     "nat": {
       "type": "string",
-      "enum": ["Reactivo", "No Reactivo", "No Aplica"],
-      "description": "Debe ser 'No Aplica' salvo para HIV, HBV, HCV (README - Regla estricta #5 / INV-08)."
+      "enum": ["Reactivo", "No Reactivo", "No Aplica", "Pendiente"],
+      "description": "INV-08 (bidireccional): debe ser exactamente 'No Aplica' salvo para HIV, HBV, HCV (README - Regla estricta #5); y para esos tres 'No Aplica' es una violación — el ensayo aplica, y su estado es Reactivo, No Reactivo o Pendiente. 'Pendiente' = ensayo solicitado, informe no llegado: impide la liberación de la unidad (R21) pero no bloquea las reglas terminales de descarte."
     },
     "riesgo": {
       "type": "boolean",
@@ -54,6 +54,10 @@
     {
       "if": { "not": { "properties": { "marcador": { "enum": ["HIV", "HBV", "HCV"] } }, "required": ["marcador"] } },
       "then": { "properties": { "nat": { "const": "No Aplica" } } }
+    },
+    {
+      "if": { "properties": { "marcador": { "enum": ["HIV", "HBV", "HCV"] } }, "required": ["marcador"] },
+      "then": { "properties": { "nat": { "enum": ["Reactivo", "No Reactivo", "Pendiente"] } } }
     }
   ]
 }

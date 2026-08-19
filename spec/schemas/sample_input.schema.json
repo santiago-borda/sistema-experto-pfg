@@ -79,8 +79,8 @@
         },
         "nat_result": {
           "type": "string",
-          "enum": ["Reactivo", "No Reactivo", "No Aplica"],
-          "default": "No Aplica"
+          "enum": ["Reactivo", "No Reactivo", "No Aplica", "Pendiente"],
+          "description": "Estado del ensayo NAT. 'Pendiente' = el ensayo corresponde y fue solicitado, pero el informe todavía no llegó: la unidad NO se libera (R21). NO tiene default estático: se DERIVA del marcador por INV-08 (bidireccional) — 'Pendiente' si se omite para HIV/HBV/HCV, 'No Aplica' si se omite para el resto. 'No Aplica' es inválido para HIV/HBV/HCV y es el único valor válido para los demás marcadores."
         },
         "sifilis_algorithm": {
           "oneOf": [
@@ -88,7 +88,17 @@
             { "$ref": "#/$defs/SifilisAlgorithm" }
           ]
         }
-      }
+      },
+      "allOf": [
+        {
+          "if": { "not": { "properties": { "marker": { "enum": ["HIV", "HBV", "HCV"] } }, "required": ["marker"] } },
+          "then": { "properties": { "nat_result": { "const": "No Aplica" } } }
+        },
+        {
+          "if": { "properties": { "marker": { "enum": ["HIV", "HBV", "HCV"] } }, "required": ["marker"] },
+          "then": { "properties": { "nat_result": { "enum": ["Reactivo", "No Reactivo", "Pendiente"] } } }
+        }
+      ]
     },
     "DuplicateResult": {
       "type": "object",

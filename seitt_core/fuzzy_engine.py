@@ -145,14 +145,27 @@ def construir_hechos(
     elif sco_repeticion_label is not None:
         sco_repeticion_label_final = SCOLabel(sco_repeticion_label)
 
-    nat_final = NATResult.NO_APLICA
-    if marker in NAT_APPLICABLE_MARKERS and nat is not None:
-        nat_final = NATResult(nat)
-    elif marker not in NAT_APPLICABLE_MARKERS and nat is not None:
-        raise ValueError(
-            f"NAT provisto ('{nat}') para marcador '{marker}', pero NAT solo "
-            f"aplica a {sorted(m.value for m in NAT_APPLICABLE_MARKERS)} (INV-08)."
-        )
+    # INV-08 bidireccional: el estado de NAT se deriva del marcador, sin
+    # default silencioso. Para un marcador NAT-aplicable, la AUSENCIA de
+    # informe es "Pendiente" — nunca "No Aplica" (ese era el default
+    # silencioso que hacía indistinguible "el ensayo no corresponde" de
+    # "el ensayo corresponde pero todavía no lo informaron", y que dejaba
+    # liberar la unidad sin haber leído el NAT).
+    if marker in NAT_APPLICABLE_MARKERS:
+        nat_final = NATResult(nat) if nat is not None else NATResult.PENDIENTE
+        if nat_final == NATResult.NO_APLICA:
+            raise ValueError(
+                f"nat='No Aplica' no es válido para marcador '{marker}': el ensayo "
+                f"NAT sí aplica (INV-08). Si el informe aún no llegó, corresponde "
+                f"'{NATResult.PENDIENTE}'."
+            )
+    else:
+        if nat is not None:
+            raise ValueError(
+                f"NAT provisto ('{nat}') para marcador '{marker}', pero NAT solo "
+                f"aplica a {sorted(m.value for m in NAT_APPLICABLE_MARKERS)} (INV-08)."
+            )
+        nat_final = NATResult.NO_APLICA
 
     vdrl_final = NATResult(vdrl) if (marker == Marker.SIFILIS and vdrl is not None) else None
     clia_final = NATResult(clia) if (marker == Marker.SIFILIS and clia is not None) else None
