@@ -16,10 +16,10 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from domain import InferenceVerdict, percent_to_certainty
-from explicador import construir_explanation_log, resolver_pending_action
-from fuzzy_engine import construir_hechos
-from rule_engine import RuleEngine
+from .domain import InferenceVerdict, percent_to_certainty
+from .explicador import construir_explanation_log, resolver_pending_action
+from .fuzzy_engine import construir_hechos
+from .rule_engine import RuleEngine
 
 ENGINE_VERSION = "1.0.0-refactor"
 

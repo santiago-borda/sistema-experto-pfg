@@ -18,7 +18,7 @@ clínica sobre un dataset representativo.
 
 import pytest
 
-from expert_system import evaluar_caso
+from seitt_core.expert_system import evaluar_caso
 
 
 def _triggered(verdict) -> set[str]:

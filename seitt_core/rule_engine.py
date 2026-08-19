@@ -24,7 +24,7 @@ from typing import Any
 
 import jsonschema
 
-from domain import (
+from .domain import (
     DonorDisposition,
     SEITTDomainError,
     UnitDisposition,

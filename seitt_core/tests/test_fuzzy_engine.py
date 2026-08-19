@@ -5,8 +5,8 @@ no solo como comentario."""
 
 import pytest
 
-from domain import SCOLabel
-from fuzzy_engine import fuzzificar_sco
+from seitt_core.domain import SCOLabel
+from seitt_core.fuzzy_engine import fuzzificar_sco
 
 
 @pytest.mark.parametrize(

@@ -36,9 +36,8 @@ from pathlib import Path
 
 import jsonschema
 
-sys.path.insert(0, str(Path(__file__).parent.parent))
-from domain import SEITTDomainError  # noqa: E402
-from expert_system import evaluar_caso  # noqa: E402
+from seitt_core.domain import SEITTDomainError
+from seitt_core.expert_system import evaluar_caso
 
 _DATASET_PATH = Path(__file__).parent / "eval_dataset.json"
 _SCHEMA_PATH = Path(__file__).parent.parent.parent / "spec" / "schemas" / "eval_case.schema.json"

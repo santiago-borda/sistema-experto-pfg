@@ -22,7 +22,7 @@ simétrico incorrecto -> rampa lineal real).
 
 from __future__ import annotations
 
-from domain import (
+from .domain import (
     Marker,
     NATResult,
     NAT_APPLICABLE_MARKERS,

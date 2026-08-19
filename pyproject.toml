@@ -17,3 +17,16 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
 packages = ["spec", "seitt_core"]
+# Solo se empaquetan los modulos Python de spec/ y seitt_core/ (imports en
+# modo editable, ver "pip install -e ." en CLAUDE.md). Explicitamente NO
+# se declara package_data ni se activa include-package-data: los JSON
+# Schema (spec/schemas/), la KB (spec/rules/, seitt_core/rules/), los
+# datasets (seitt_core/eval/) y domain_model.md son artefactos de
+# especificacion / datos de runtime que el codigo lee via rutas relativas
+# a Path(__file__) (ver SCHEMAS_DIR en validate_spec.py, _DEFAULT_RULES_PATH
+# en rule_engine.py) — nunca via importlib.resources sobre el paquete
+# instalado. En modo editable esto funciona porque el arbol fuente no se
+# mueve; si en el futuro (Consigna 4, Docker) se construye una wheel real
+# para distribucion, esta lista de exclusion debe revisarse a proposito,
+# no heredarse por default de setuptools.
+include-package-data = false

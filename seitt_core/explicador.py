@@ -11,7 +11,7 @@ de presentación (UI), sin que esa decisión de formato contamine el contrato.
 
 from __future__ import annotations
 
-from rule_engine import InferenceResult
+from .rule_engine import InferenceResult
 
 
 def construir_explanation_log(resultado: InferenceResult) -> list[str]:
