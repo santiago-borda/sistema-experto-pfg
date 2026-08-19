@@ -32,7 +32,7 @@ from spec.contracts import (
     NAT_APPLICABLE_MARKERS,
     UnitDisposition,
     DonorDisposition,
-    NATResult,
+    AssayResult,
     InputSource,
     # Constantes y funciones de dominio
     ZONA_GRIS_LOWER,
@@ -61,7 +61,7 @@ __all__ = [
     "NAT_APPLICABLE_MARKERS",
     "UnitDisposition",
     "DonorDisposition",
-    "NATResult",
+    "AssayResult",
     "InputSource",
     "ZONA_GRIS_LOWER",
     "ZONA_GRIS_UPPER",

@@ -25,7 +25,7 @@ from __future__ import annotations
 from .domain import (
     DomainInvariantViolation,
     Marker,
-    NATResult,
+    AssayResult,
     NAT_APPLICABLE_MARKERS,
     PhysicalIntegrity,
     INTERFERENCE_VALUES,
@@ -153,14 +153,14 @@ def construir_hechos(
     # "el ensayo corresponde pero todavía no lo informaron", y que dejaba
     # liberar la unidad sin haber leído el NAT).
     if marker in NAT_APPLICABLE_MARKERS:
-        nat_final = NATResult(nat) if nat is not None else NATResult.PENDIENTE
-        if nat_final == NATResult.NO_APLICA:
+        nat_final = AssayResult(nat) if nat is not None else AssayResult.PENDIENTE
+        if nat_final == AssayResult.NO_APLICA:
             raise DomainInvariantViolation(
                 invariant_id="INV-08-NAT-APLICABILIDAD",
                 detail=(
                     f"nat='No Aplica' no es válido para marcador '{marker}': el ensayo "
                     f"NAT sí aplica. Si el informe aún no llegó, corresponde "
-                    f"'{NATResult.PENDIENTE}'."
+                    f"'{AssayResult.PENDIENTE}'."
                 ),
             )
     else:
@@ -172,10 +172,42 @@ def construir_hechos(
                     f"aplica a {sorted(m.value for m in NAT_APPLICABLE_MARKERS)}."
                 ),
             )
-        nat_final = NATResult.NO_APLICA
+        nat_final = AssayResult.NO_APLICA
 
-    vdrl_final = NATResult(vdrl) if (marker == Marker.SIFILIS and vdrl is not None) else None
-    clia_final = NATResult(clia) if (marker == Marker.SIFILIS and clia is not None) else None
+    # VDRL/CLIA: mismo criterio que nat, aplicado al algoritmo de sífilis
+    # (INV-05). La ausencia de informe en Sífilis es "Pendiente", no None.
+    # Antes, un vdrl/clia provisto para un marcador no-Sífilis se DESCARTABA
+    # EN SILENCIO (`... if marker == SIFILIS and vdrl is not None else None`):
+    # el dato entraba y desaparecía sin que nadie se enterara. Ahora se
+    # rechaza explícitamente.
+    ensayos_sifilis: dict[str, AssayResult] = {}
+    for campo, valor in (("vdrl", vdrl), ("clia", clia)):
+        if marker == Marker.SIFILIS:
+            ensayos_sifilis[campo] = (
+                AssayResult(valor) if valor is not None else AssayResult.PENDIENTE
+            )
+            if ensayos_sifilis[campo] == AssayResult.NO_APLICA:
+                raise DomainInvariantViolation(
+                    invariant_id="INV-05-SIFILIS-ALGORITMO",
+                    detail=(
+                        f"{campo}='No Aplica' no es válido para Sífilis: el ensayo sí "
+                        f"aplica. Si el informe aún no llegó, corresponde "
+                        f"'{AssayResult.PENDIENTE}'."
+                    ),
+                )
+        else:
+            if valor is not None:
+                raise DomainInvariantViolation(
+                    invariant_id="INV-05-SIFILIS-ALGORITMO",
+                    detail=(
+                        f"{campo}='{valor}' provisto para marcador '{marker}', pero "
+                        f"VDRL/CLIA son ensayos del algoritmo de sífilis."
+                    ),
+                )
+            ensayos_sifilis[campo] = AssayResult.NO_APLICA
+
+    vdrl_final = ensayos_sifilis["vdrl"]
+    clia_final = ensayos_sifilis["clia"]
 
     return WorkingMemoryFacts(
         calidad_muestra=calidad,

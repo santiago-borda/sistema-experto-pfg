@@ -22,6 +22,7 @@ from pydantic import ValidationError
 
 from seitt_core.domain import MarkerResult, SEITTDomainError
 from seitt_core.expert_system import evaluar_caso
+from seitt_core.fuzzy_engine import construir_hechos
 
 
 def _triggered(verdict) -> set[str]:
@@ -170,7 +171,7 @@ class TestCasosBordeYReglasAdicionales:
 
 
 class TestNATPendiente:
-    """Fase 3, Paso 2 -- NATResult.PENDIENTE y R21.
+    """Fase 3, Paso 2 -- AssayResult.PENDIENTE y R21.
 
     Consulta a la bioquímica de referencia: si el panel serológico es no
     reactivo pero el NAT todavía no está informado, la unidad NO se
@@ -280,6 +281,35 @@ class TestInvariantesDeDominio:
                 "sco_label": "No Reactivo", "nat_result": None,
             })
         assert "INV-STRUCT-AUSENCIA" in str(exc.value)
+
+    def test_clia_omitida_en_sifilis_es_pendiente(self):
+        """INV-05, mismo criterio que INV-08 sobre nat: en Sífilis la
+        ausencia de informe de CLIA es 'Pendiente', no 'No Aplica'. Antes
+        del Paso 2.5 era None, que significaba a la vez 'este marcador no
+        tiene CLIA' y 'la CLIA no se informó'."""
+        hechos = construir_hechos(
+            calidad_muestra="Normal", marcador="Sifilis", riesgo=False, vdrl="Reactivo",
+        )
+        assert hechos.vdrl.value == "Reactivo"
+        assert hechos.clia.value == "Pendiente"
+
+    def test_vdrl_clia_derivan_a_no_aplica_fuera_de_sifilis(self):
+        hechos = construir_hechos(
+            calidad_muestra="Normal", marcador="HIV", riesgo=False, nat="No Reactivo",
+        )
+        assert hechos.vdrl.value == "No Aplica"
+        assert hechos.clia.value == "No Aplica"
+
+    def test_vdrl_en_marcador_no_sifilis_es_rechazado(self):
+        """Antes del Paso 2.5 este dato se DESCARTABA EN SILENCIO: el
+        `... if marker == SIFILIS and vdrl is not None else None` lo hacía
+        desaparecer sin que nadie se enterara."""
+        with pytest.raises(SEITTDomainError) as exc:
+            construir_hechos(
+                calidad_muestra="Normal", marcador="HIV", riesgo=False,
+                nat="No Reactivo", vdrl="Reactivo",
+            )
+        assert exc.value.invariant_id == "INV-05-SIFILIS-ALGORITMO"
 
     def test_nat_no_aplica_en_marcador_nat_es_rechazado(self):
         """INV-08 dirección 2 (endurecida en Fase 3, Paso 2): para

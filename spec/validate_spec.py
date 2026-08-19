@@ -38,7 +38,7 @@ from spec.contracts import (
     Marker,
     PhysicalIntegrity,
     SCOLabel,
-    NATResult,
+    AssayResult,
     InputSource,
     certainty_to_percent,
     percent_to_certainty,
@@ -387,9 +387,20 @@ enum_isomorphism(
     SCOLabel, sample_schema["$defs"]["MarkerResult"]["properties"]["sco_label"]["enum"],
 )
 enum_isomorphism(
-    "NATResult <-> MarkerResult.nat_result",
-    NATResult, sample_schema["$defs"]["MarkerResult"]["properties"]["nat_result"]["enum"],
+    "AssayResult <-> MarkerResult.nat_result",
+    AssayResult, sample_schema["$defs"]["MarkerResult"]["properties"]["nat_result"]["enum"],
 )
+# vdrl/clia comparten vocabulario con nat (AssayResult) pero NO son ensayos
+# NAT. Que [6a] solo cubriera nat_result es el hueco que dejó pasar, durante
+# los Pasos 1, 1.5 y 2, que estuvieran tipados NATResult|None en Pydantic
+# mientras su enum de schema era ["Reactivo","No Reactivo",null] — una
+# divergencia que ningún chequeo miraba (Paso 2.5).
+_wmf_schema_props = load_json(SCHEMAS_DIR / "working_memory_facts.schema.json")["properties"]
+for _campo in ("nat", "vdrl", "clia"):
+    enum_isomorphism(
+        f"AssayResult <-> working_memory_facts.{_campo}",
+        AssayResult, _wmf_schema_props[_campo]["enum"],
+    )
 enum_isomorphism(
     "InputSource <-> source",
     InputSource, sample_schema["properties"]["source"]["enum"],
@@ -534,9 +545,13 @@ def inv08_round_trip(label: str, marker: str, nat_value: str, debe_ser_valido: b
         ],
         "source": "analyzer_direct",
     }
+    # vdrl/clia van explícitos: son obligatorios en el contrato interno
+    # (el Fuzzy Engine siempre los deriva, ver INV-05) y ninguno de los
+    # marcadores de estos casos es Sífilis, así que corresponde 'No Aplica'.
     interno = {
         "calidad_muestra": "Normal", "marcador": marker, "sco": "No Reactivo",
         "sco_inicial": "No Reactivo", "nat": nat_value, "riesgo": False,
+        "vdrl": "No Aplica", "clia": "No Aplica",
     }
 
     for capa, payload, js_validator, modelo in (

@@ -14,7 +14,7 @@ Fuente única de verdad: `spec/contracts.py` (`seitt_core/domain.py` la reexport
 | `Marker` | `HIV`, `HBV`, `HCV`, `Sifilis`, `Chagas`, `HTLV_I_II`, `Brucelosis` | PIF — Knowledge Base + `knowledge_base.py` (R12, R14) |
 | `UnitDisposition` | `Apta`, `Descarte`, `Cuarentena` | Eje 1 del veredicto bidimensional (INV-07) |
 | `DonorDisposition` | `Habilitado`, `Diferido_Temporal`, `Diferido_Permanente` | Eje 2 del veredicto bidimensional (INV-07) |
-| `NATResult` | `Reactivo`, `No Reactivo`, `No Aplica`, `Pendiente` | README + consulta a bioquímica de referencia (INV-08) |
+| `AssayResult` | `Reactivo`, `No Reactivo`, `No Aplica`, `Pendiente` | README + consulta a bioquímica de referencia (INV-08) |
 | `InputSource` | `analyzer_direct`, `medgemma_extraction` | Frontera no-wrapper (Consigna 5), ver §5 |
 
 **Correcciones respecto de la versión previa de esta tabla** (todas verificadas contra el código real, no contra los papers):
@@ -22,7 +22,7 @@ Fuente única de verdad: `spec/contracts.py` (`seitt_core/domain.py` la reexport
 - **`PhysicalIntegrity`**: se elimina `Hemolizada_Lipemica`. Hemólisis y lipemia son clínicamente equivalentes a efectos de R20 (ambas pertenecen a `INTERFERENCE_VALUES` y disparan el mismo corto-circuito por INV-02); un valor compuesto reintroduce el acoplamiento por *magic string* que §4bis hallazgo 4 documenta como corregido.
 - **`Marker`**: son **7**, no 5. `HTLV_I_II` y `Brucelosis` existen en la KB desde el legado (R12, R14) pero no figuraban en el Poster ni en el TP2 (§4bis hallazgo 2).
 - **`Verdict` no existe como enum único.** La tabla anterior lo describía con valores (`Diferimiento Temporal`, `Rechazo Tecnico`) que el código nunca implementó. El veredicto es **bidimensional**: `UnitDisposition` × `DonorDisposition`, ejes independientes (§4bis hallazgo 1, INV-07). Lo que el flujograma del TP2 llamaba "Rechazo Tecnico" es hoy `UnitDisposition.CUARENTENA` con donante sin resolver; "Diferimiento Temporal" es `DonorDisposition.DIFERIDO_TEMPORAL`, un valor del **otro** eje.
-- **`NATResult`**: se agrega `Pendiente` (Fase 3, Paso 2) — ensayo solicitado con informe no llegado. Ver INV-08 y R21.
+- **`AssayResult`** (antes `NATResult`): se agrega `Pendiente` (Fase 3, Paso 2) — ensayo solicitado con informe no llegado, ver INV-08 y R21 — y se renombra (Fase 3, Paso 2.5). El nombre viejo conflacionaba dos conceptos: `vdrl` y `clia` estaban tipados `NATResult` pese a que **VDRL es una prueba serológica no treponémica y CLIA un inmunoensayo treponémico — ninguno es un ensayo de ácidos nucleicos**. Es el vocabulario ÚNICO de resultado de cualquier ensayo; qué valores son legales para cada campo lo decide el invariante correspondiente (INV-08 para `nat`, INV-05 para `vdrl`/`clia`), no un tipo separado por ensayo.
 
 Este vocabulario es **cerrado**: `sample_input.schema.json` usa `enum` estricto (no `string` libre), de modo que ninguna extracción de MedGemma pueda inyectar una etiqueta fuera de dominio (defensa de primera línea contra alucinación léxica del LLM). La igualdad de conjuntos entre cada enum Pydantic y su `enum` JSON Schema equivalente se verifica en `validate_spec.py`, bloque [6a] — no se confía en la sincronización manual.
 
@@ -85,6 +85,18 @@ vdrl\_reactive \land clia\_reactive \implies verdict = \text{Diferimiento Tempor
 $$
 Nota de diseño: a diferencia de otros marcadores, sífilis **no** desemboca en `Descarte` directo sino en diferimiento del donante — distinción clínica que debe preservarse en la KB (no colapsar verdicts).
 
+**Aplicabilidad de VDRL/CLIA (Fase 3, Paso 2.5).** Simétrica a INV-08, y por la misma razón:
+
+$$
+m \ne \text{Sifilis} \implies vdrl(m) = clia(m) = \text{No Aplica}
+$$
+
+$$
+m = \text{Sifilis} \implies vdrl(m),\ clia(m) \in \{\text{Reactivo}, \text{No Reactivo}, \text{Pendiente}\}
+$$
+
+Antes de este paso `vdrl`/`clia` eran `AssayResult | None`, y ese `None` significaba **dos cosas a la vez**: *"este marcador no tiene ese ensayo"* y *"el ensayo corresponde pero no se informó todavía"* — exactamente la conflación que el Paso 2 corrigió para `nat`. Ahora se derivan del marcador igual que `nat`: `No Aplica` fuera de Sífilis, `Pendiente` en Sífilis sin informe. Como efecto colateral se corrigió un **descarte silencioso**: `construir_hechos()` hacía `AssayResult(vdrl) if (marker == SIFILIS and vdrl is not None) else None`, de modo que un `vdrl` provisto para un marcador no-Sífilis desaparecía sin error; hoy se rechaza con `DomainInvariantViolation`.
+
 ### INV-06 — Riesgo epidemiológico declarado
 $$
 epidemiological\_risk\_flag \land (\forall m : sco\_label(m) = \text{No Reactivo}) \implies verdict = \text{Descarte}
@@ -105,7 +117,7 @@ $$
 
 Para un marcador no-NAT, tanto `Reactivo`/`No Reactivo` como `Pendiente` son violaciones: el ensayo no corresponde, y el único valor honesto es `No Aplica`. Para un marcador NAT-aplicable, `No Aplica` es **igual de inválido** que un resultado inventado: el ensayo sí corresponde, y su estado debe ser uno de los tres reales.
 
-**Segunda dirección — endurecimiento (Fase 3, Paso 2).** La formulación original solo verificaba la primera dirección. `Pendiente` (valor nuevo de `NATResult`) es lo que hace necesaria y verificable a la segunda: sin él, un marcador NAT-aplicable cuyo informe todavía no llegó no tenía ninguna representación honesta — `No Reactivo` afirma un resultado que nadie leyó, y `No Aplica` contradice la primera dirección. El defecto concreto que esto corrige: `fuzzy_engine.construir_hechos()` tenía `No Aplica` como default silencioso, lo que volvía indistinguible *"el ensayo no corresponde"* de *"el ensayo corresponde pero no fue informado"* — y permitía liberar una unidad (R1 → Apta) sin que nadie hubiera leído el NAT. Consulta a la bioquímica de referencia: con NAT no informado la unidad **no se libera**; el flujo real espera el informe (ver R21).
+**Segunda dirección — endurecimiento (Fase 3, Paso 2).** La formulación original solo verificaba la primera dirección. `Pendiente` (valor nuevo de `AssayResult`, entonces todavía llamado `NATResult`) es lo que hace necesaria y verificable a la segunda: sin él, un marcador NAT-aplicable cuyo informe todavía no llegó no tenía ninguna representación honesta — `No Reactivo` afirma un resultado que nadie leyó, y `No Aplica` contradice la primera dirección. El defecto concreto que esto corrige: `fuzzy_engine.construir_hechos()` tenía `No Aplica` como default silencioso, lo que volvía indistinguible *"el ensayo no corresponde"* de *"el ensayo corresponde pero no fue informado"* — y permitía liberar una unidad (R1 → Apta) sin que nadie hubiera leído el NAT. Consulta a la bioquímica de referencia: con NAT no informado la unidad **no se libera**; el flujo real espera el informe (ver R21).
 
 Verificado en ambas direcciones y en las dos capas: `MarkerResult` (contrato externo) y `WorkingMemoryFacts` (contrato interno), más los `allOf` condicionales equivalentes en `sample_input.schema.json` y `working_memory_facts.schema.json`.
 

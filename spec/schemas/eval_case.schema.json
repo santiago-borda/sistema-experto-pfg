@@ -4,10 +4,17 @@
   "title": "EvalCase",
   "description": "Caso de evaluación del Eval Harness (Consigna 3). 'expected' es el criterio clínico experto (ground truth) contra el que se mide Tasa de Acierto y concordancia. category clasifica el caso para reportar métricas desagregadas, con foco reforzado en Zona Gris.",
   "type": "object",
-  "required": ["case_id", "category", "inputs", "expected"],
+  "required": [
+    "case_id",
+    "category",
+    "inputs",
+    "expected"
+  ],
   "additionalProperties": false,
   "properties": {
-    "case_id": { "type": "string" },
+    "case_id": {
+      "type": "string"
+    },
     "category": {
       "type": "string",
       "enum": [
@@ -21,36 +28,137 @@
         "interferencia_fisica"
       ]
     },
-    "notes": { "type": "string" },
+    "notes": {
+      "type": "string"
+    },
     "inputs": {
       "type": "object",
-      "required": ["sample_id", "calidad_muestra", "marcador", "riesgo"],
+      "required": [
+        "sample_id",
+        "calidad_muestra",
+        "marcador",
+        "riesgo"
+      ],
       "properties": {
-        "sample_id": { "type": "string" },
-        "calidad_muestra": { "type": "string", "enum": ["Normal", "Hemolizada", "Lipemica"] },
-        "marcador": { "type": "string", "enum": ["HIV", "HBV", "HCV", "Sifilis", "Chagas", "HTLV_I_II", "Brucelosis"] },
-        "riesgo": { "type": "boolean" },
-        "sco_inicial_valor": { "type": ["number", "null"] },
-        "sco_repeticion_valor": { "type": ["number", "null"] },
+        "sample_id": {
+          "type": "string"
+        },
+        "calidad_muestra": {
+          "type": "string",
+          "enum": [
+            "Normal",
+            "Hemolizada",
+            "Lipemica"
+          ]
+        },
+        "marcador": {
+          "type": "string",
+          "enum": [
+            "HIV",
+            "HBV",
+            "HCV",
+            "Sifilis",
+            "Chagas",
+            "HTLV_I_II",
+            "Brucelosis"
+          ]
+        },
+        "riesgo": {
+          "type": "boolean"
+        },
+        "sco_inicial_valor": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "sco_repeticion_valor": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
         "nat": {
-          "type": ["string", "null"],
-          "enum": ["Reactivo", "No Reactivo", "Pendiente", null],
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "Reactivo",
+            "No Reactivo",
+            "Pendiente",
+            null
+          ],
           "description": "Argumento nat de evaluar_caso(). null/ausente para un marcador NAT-aplicable NO significa 'No Aplica': el Fuzzy Engine lo deriva a 'Pendiente' (INV-08). 'No Aplica' no es un valor pasable acá — es estado derivado del marcador, no dato de entrada."
         },
-        "vdrl": { "type": ["string", "null"], "enum": ["Reactivo", "No Reactivo", null] },
-        "clia": { "type": ["string", "null"], "enum": ["Reactivo", "No Reactivo", null] }
+        "vdrl": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "Reactivo",
+            "No Reactivo",
+            "Pendiente",
+            null
+          ],
+          "description": "Argumento vdrl de evaluar_caso(). null/ausente en Sifilis NO significa 'No Aplica': el Fuzzy Engine lo deriva a 'Pendiente' (INV-05). 'No Aplica' no es un valor pasable aca -- es estado derivado del marcador."
+        },
+        "clia": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "Reactivo",
+            "No Reactivo",
+            "Pendiente",
+            null
+          ],
+          "description": "Argumento clia de evaluar_caso(). null/ausente en Sifilis NO significa 'No Aplica': el Fuzzy Engine lo deriva a 'Pendiente' (INV-05). 'No Aplica' no es un valor pasable aca -- es estado derivado del marcador."
+        }
       }
     },
     "expected": {
       "type": "object",
-      "required": ["final_unit_disposition", "expected_rule_ids"],
+      "required": [
+        "final_unit_disposition",
+        "expected_rule_ids"
+      ],
       "properties": {
-        "final_unit_disposition": { "type": ["string", "null"], "enum": ["Apta", "Descarte", "Cuarentena", null] },
-        "final_donor_disposition": { "type": ["string", "null"], "enum": ["Habilitado", "Diferido_Temporal", "Diferido_Permanente", null] },
-        "has_pending_action": { "type": "boolean", "default": false },
+        "final_unit_disposition": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "Apta",
+            "Descarte",
+            "Cuarentena",
+            null
+          ]
+        },
+        "final_donor_disposition": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "Habilitado",
+            "Diferido_Temporal",
+            "Diferido_Permanente",
+            null
+          ]
+        },
+        "has_pending_action": {
+          "type": "boolean",
+          "default": false
+        },
         "expected_rule_ids": {
           "type": "array",
-          "items": { "type": "string" },
+          "items": {
+            "type": "string"
+          },
           "minItems": 1,
           "description": "Al menos una de estas reglas debe estar en triggered_rules (verificación de trazabilidad, no solo de disposición final)."
         }

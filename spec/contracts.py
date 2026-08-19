@@ -137,16 +137,33 @@ def decision_weight(unit: UnitDisposition, donor: DonorDisposition | None) -> in
     return 0  # Apta / Habilitado
 
 
-class NATResult(StrEnum):
+class AssayResult(StrEnum):
+    """Vocabulario ÚNICO de resultado de cualquier ensayo: NAT, VDRL, CLIA.
+
+    Reemplaza al antiguo `NATResult` (Fase 3, Paso 2.5). Ese nombre
+    conflacionaba dos conceptos: VDRL es una prueba serológica no
+    treponémica y CLIA un inmunoensayo treponémico — **ninguno de los dos
+    es un ensayo de ácidos nucleicos**, y sin embargo ambos estaban
+    tipados `NATResult`. La conflación se volvió visible al agregar
+    PENDIENTE, que amplió en Pydantic un enum que los schemas de vdrl/clia
+    no declaraban.
+
+    Qué valores son legales para cada campo NO lo decide este enum: lo
+    decide el invariante correspondiente según el marcador (INV-08 para
+    `nat`, la derivación Sífilis para `vdrl`/`clia`). La restricción vive
+    en el invariante, no en un tipo separado por ensayo.
+    """
+
     REACTIVO = "Reactivo"
     NO_REACTIVO = "No Reactivo"
     NO_APLICA = "No Aplica"
     # Estado real del flujo de laboratorio (consulta a bioquímica de
-    # referencia): el ensayo NAT corresponde y fue solicitado, pero el
-    # informe todavía no llegó. Sin este valor ninguna representación es
-    # honesta para un marcador NAT-aplicable sin informe: "No Reactivo"
-    # afirma un resultado que nadie leyó, y "No Aplica" contradice INV-08.
-    # La unidad NO se libera con un NAT pendiente (ver R21).
+    # referencia): el ensayo corresponde y fue solicitado, pero el informe
+    # todavía no llegó. Sin este valor ninguna representación es honesta
+    # para un ensayo aplicable sin informe: "No Reactivo" afirma un
+    # resultado que nadie leyó, y "No Aplica" niega que el ensayo
+    # corresponda. La unidad NO se libera con un ensayo pendiente (R21
+    # para NAT, R8 para el algoritmo de sífilis).
     PENDIENTE = "Pendiente"
 
 
@@ -268,7 +285,7 @@ class MarkerResult(BaseModel):
     # marcador (INV-08): Pendiente para HIV/HBV/HCV, No Aplica para el
     # resto. Este valor estático solo se alcanzaría con 'marker' ausente,
     # caso en que la validación falla igual por campo requerido.
-    nat_result: NATResult = NATResult.NO_APLICA
+    nat_result: AssayResult = AssayResult.NO_APLICA
     sifilis_algorithm: SifilisAlgorithm | None = None
 
     @model_validator(mode="before")
@@ -306,8 +323,8 @@ class MarkerResult(BaseModel):
             data = {
                 **data,
                 "nat_result": (
-                    NATResult.PENDIENTE if marker in NAT_APPLICABLE_MARKERS
-                    else NATResult.NO_APLICA
+                    AssayResult.PENDIENTE if marker in NAT_APPLICABLE_MARKERS
+                    else AssayResult.NO_APLICA
                 ),
             }
         return data
@@ -332,23 +349,23 @@ class MarkerResult(BaseModel):
         """INV-08 (bidireccional), aplicado en el contrato de entrada
         (defensa temprana, antes de que el hecho llegue siquiera al Fuzzy
         Engine). Ver domain_model.md §3."""
-        if self.marker not in NAT_APPLICABLE_MARKERS and self.nat_result != NATResult.NO_APLICA:
+        if self.marker not in NAT_APPLICABLE_MARKERS and self.nat_result != AssayResult.NO_APLICA:
             raise DomainInvariantViolation(
                 invariant_id="INV-08-NAT-APLICABILIDAD",
                 detail=(
                     f"nat_result='{self.nat_result}' no es válido para marker '{self.marker}'; "
                     f"NAT solo aplica a {sorted(m.value for m in NAT_APPLICABLE_MARKERS)}, "
-                    f"y para el resto el único valor legal es '{NATResult.NO_APLICA}'."
+                    f"y para el resto el único valor legal es '{AssayResult.NO_APLICA}'."
                 ),
             )
-        if self.marker in NAT_APPLICABLE_MARKERS and self.nat_result == NATResult.NO_APLICA:
+        if self.marker in NAT_APPLICABLE_MARKERS and self.nat_result == AssayResult.NO_APLICA:
             raise DomainInvariantViolation(
                 invariant_id="INV-08-NAT-APLICABILIDAD",
                 detail=(
-                    f"nat_result='{NATResult.NO_APLICA}' no es válido para marker "
+                    f"nat_result='{AssayResult.NO_APLICA}' no es válido para marker "
                     f"'{self.marker}': el ensayo NAT SÍ aplica, y su estado debe ser "
-                    f"'{NATResult.REACTIVO}', '{NATResult.NO_REACTIVO}' o "
-                    f"'{NATResult.PENDIENTE}' (si el informe aún no llegó)."
+                    f"'{AssayResult.REACTIVO}', '{AssayResult.NO_REACTIVO}' o "
+                    f"'{AssayResult.PENDIENTE}' (si el informe aún no llegó)."
                 ),
             )
         return self
@@ -405,33 +422,92 @@ class WorkingMemoryFacts(BaseModel):
         description="Se calcula para las 3 etiquetas (No Reactivo/Zona Gris/Reactivo), "
                      "no exclusiva de Zona Gris. Ver domain_model.md §2.",
     )
-    nat: NATResult
+    nat: AssayResult
     riesgo: bool
-    vdrl: NATResult | None = None
-    clia: NATResult | None = None
+    # vdrl/clia son ensayos del algoritmo de sífilis (INV-05), no ensayos
+    # NAT. El default lo deriva derive_assay_defaults() del marcador, igual
+    # que nat: 'No Aplica' si el marcador no es Sífilis, 'Pendiente' si lo
+    # es y el informe no llegó. Antes eran `| None = None`, lo que hacía
+    # que None significara DOS cosas ("este marcador no tiene CLIA" y "la
+    # CLIA no se informó todavía") — exactamente la conflación que el Paso
+    # 2 corrigió para nat.
+    vdrl: AssayResult
+    clia: AssayResult
+
+    @model_validator(mode="before")
+    @classmethod
+    def derive_assay_defaults(cls, data: object) -> object:
+        """Deriva vdrl/clia del marcador cuando la clave está ausente.
+
+        Rellena EXCLUSIVAMENTE la ausencia, misma política que
+        nat_result en MarkerResult: un valor provisto se respeta y, si es
+        inconsistente con el marcador, lo rechaza
+        check_assay_applicability()."""
+        if isinstance(data, dict) and "marcador" in data:
+            try:
+                marcador = Marker(data["marcador"])
+            except ValueError:
+                return data  # marcador inválido: lo reporta el validador de tipo
+            derivado = (
+                AssayResult.PENDIENTE if marcador == Marker.SIFILIS
+                else AssayResult.NO_APLICA
+            )
+            faltantes = {k: derivado for k in ("vdrl", "clia") if k not in data}
+            if faltantes:
+                data = {**data, **faltantes}
+        return data
+
+    @model_validator(mode="after")
+    def check_assay_applicability(self) -> "WorkingMemoryFacts":
+        """VDRL y CLIA pertenecen al algoritmo de sífilis (INV-05): para
+        cualquier otro marcador el único valor legal es 'No Aplica', y
+        para Sífilis 'No Aplica' es una violación (el ensayo corresponde;
+        si no se informó, es 'Pendiente'). Misma forma bidireccional que
+        INV-08 sobre nat."""
+        for campo, valor in (("vdrl", self.vdrl), ("clia", self.clia)):
+            if self.marcador != Marker.SIFILIS and valor != AssayResult.NO_APLICA:
+                raise DomainInvariantViolation(
+                    invariant_id="INV-05-SIFILIS-ALGORITMO",
+                    detail=(
+                        f"{campo}='{valor}' no es válido para marcador "
+                        f"'{self.marcador}': VDRL/CLIA son ensayos del algoritmo de "
+                        f"sífilis; para el resto el único valor legal es "
+                        f"'{AssayResult.NO_APLICA}'."
+                    ),
+                )
+            if self.marcador == Marker.SIFILIS and valor == AssayResult.NO_APLICA:
+                raise DomainInvariantViolation(
+                    invariant_id="INV-05-SIFILIS-ALGORITMO",
+                    detail=(
+                        f"{campo}='{AssayResult.NO_APLICA}' no es válido para Sífilis: "
+                        f"el ensayo SÍ aplica. Si el informe aún no llegó, corresponde "
+                        f"'{AssayResult.PENDIENTE}'."
+                    ),
+                )
+        return self
 
     @model_validator(mode="after")
     def check_nat_applicability(self) -> "WorkingMemoryFacts":
         """INV-08 (bidireccional): el NAT es clínicamente aplicable solo a
         HIV, HBV y HCV — y para esos tres, 'No Aplica' es igual de
         inválido que un resultado inventado. Ver domain_model.md §3."""
-        if self.marcador not in NAT_APPLICABLE_MARKERS and self.nat != NATResult.NO_APLICA:
+        if self.marcador not in NAT_APPLICABLE_MARKERS and self.nat != AssayResult.NO_APLICA:
             raise DomainInvariantViolation(
                 invariant_id="INV-08-NAT-APLICABILIDAD",
                 detail=(
                     f"nat='{self.nat}' no es válido para marcador '{self.marcador}'; "
                     f"NAT solo aplica a {sorted(m.value for m in NAT_APPLICABLE_MARKERS)}, "
-                    f"y para el resto el único valor legal es '{NATResult.NO_APLICA}'."
+                    f"y para el resto el único valor legal es '{AssayResult.NO_APLICA}'."
                 ),
             )
-        if self.marcador in NAT_APPLICABLE_MARKERS and self.nat == NATResult.NO_APLICA:
+        if self.marcador in NAT_APPLICABLE_MARKERS and self.nat == AssayResult.NO_APLICA:
             raise DomainInvariantViolation(
                 invariant_id="INV-08-NAT-APLICABILIDAD",
                 detail=(
-                    f"nat='{NATResult.NO_APLICA}' no es válido para marcador "
+                    f"nat='{AssayResult.NO_APLICA}' no es válido para marcador "
                     f"'{self.marcador}': el ensayo NAT SÍ aplica, y su estado debe ser "
-                    f"'{NATResult.REACTIVO}', '{NATResult.NO_REACTIVO}' o "
-                    f"'{NATResult.PENDIENTE}' (si el informe aún no llegó)."
+                    f"'{AssayResult.REACTIVO}', '{AssayResult.NO_REACTIVO}' o "
+                    f"'{AssayResult.PENDIENTE}' (si el informe aún no llegó)."
                 ),
             )
         return self

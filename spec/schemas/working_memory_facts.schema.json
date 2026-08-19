@@ -2,62 +2,235 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://seitt.ucp.edu.ar/schemas/working_memory_facts.schema.json",
   "title": "WorkingMemoryFacts",
-  "description": "Hechos internos, planos, de UN marcador evaluado en un ciclo de forward chaining. Es el vocabulario real que consumen los antecedentes de kb_rules.json (fiel a inference_engine.py / knowledge_base.py). Se deriva determinísticamente de UNA entrada de SampleInputFacts.marker_results[] más los campos a nivel de muestra (physical_integrity, epidemiological_risk_flag), mediante una función de transformación en el Fuzzy Engine (equivalente a fuzzy_engine.construir_hechos()). Esta capa de traducción es la que desacopla el contrato externo (lo que produce MedGemma o el analizador) del vocabulario interno del motor. Excepción deliberada a la política de ausencia (Paso 1.5.3): a diferencia del contrato externo (sample_input.schema.json, verdict.schema.json), acá null explícito SÍ es la representación válida de los campos opcionales (sco_repeticion, sco_repeticion_valor, certeza_sco, vdrl, clia) — son estado COMPUTADO por el Fuzzy Engine ('no hubo repetición', 'no aplica'), no datos de entrada que el llamador puede simplemente omitir.",
+  "description": "Hechos internos, planos, de UN marcador evaluado en un ciclo de forward chaining. Es el vocabulario real que consumen los antecedentes de kb_rules.json (fiel a inference_engine.py / knowledge_base.py). Se deriva determinísticamente de UNA entrada de SampleInputFacts.marker_results[] más los campos a nivel de muestra (physical_integrity, epidemiological_risk_flag), mediante una función de transformación en el Fuzzy Engine (equivalente a fuzzy_engine.construir_hechos()). Esta capa de traducción es la que desacopla el contrato externo (lo que produce MedGemma o el analizador) del vocabulario interno del motor. Excepción deliberada a la política de ausencia (Paso 1.5.3): a diferencia del contrato externo (sample_input.schema.json, verdict.schema.json), acá null explícito SÍ es la representación válida de los campos opcionales (sco_repeticion, sco_repeticion_valor, certeza_sco) — son estado COMPUTADO por el Fuzzy Engine ('no hubo repetición'), no datos de entrada que el llamador puede simplemente omitir. vdrl y clia dejaron de estar en esa lista en el Paso 2.5: eran nullables donde null significaba a la vez 'este marcador no tiene ese ensayo' y 'el ensayo no se informó todavía' — la misma conflación que el Paso 2 corrigió para nat. Ahora son obligatorios y su valor se deriva del marcador ('No Aplica' / 'Pendiente'), igual que nat.",
   "type": "object",
-  "required": ["calidad_muestra", "marcador", "sco", "sco_inicial", "riesgo", "nat"],
+  "required": [
+    "calidad_muestra",
+    "clia",
+    "marcador",
+    "nat",
+    "riesgo",
+    "sco",
+    "sco_inicial",
+    "vdrl"
+  ],
   "additionalProperties": false,
   "properties": {
     "calidad_muestra": {
       "type": "string",
-      "enum": ["Normal", "Hemolizada", "Lipemica"],
+      "enum": [
+        "Normal",
+        "Hemolizada",
+        "Lipemica"
+      ],
       "description": "CORRECCIÓN respecto al código legado: knowledge_base.py compara R20 contra el string literal 'Hemolizada o Lipémica'. Se reemplaza por enum cerrado + operador IN en la regla (ver R20 en kb_rules.json, legacy_notes)."
     },
     "marcador": {
       "type": "string",
-      "enum": ["HIV", "HBV", "HCV", "Sifilis", "Chagas", "HTLV_I_II", "Brucelosis"]
+      "enum": [
+        "HIV",
+        "HBV",
+        "HCV",
+        "Sifilis",
+        "Chagas",
+        "HTLV_I_II",
+        "Brucelosis"
+      ]
     },
     "sco": {
       "type": "string",
-      "enum": ["No Reactivo", "Zona Gris", "Reactivo"],
+      "enum": [
+        "No Reactivo",
+        "Zona Gris",
+        "Reactivo"
+      ],
       "description": "Clasificación S/CO vigente para el marcador en el ciclo actual de evaluación."
     },
     "sco_inicial": {
       "type": "string",
-      "enum": ["No Reactivo", "Zona Gris", "Reactivo"]
+      "enum": [
+        "No Reactivo",
+        "Zona Gris",
+        "Reactivo"
+      ]
     },
-    "sco_inicial_valor": { "type": ["number", "null"], "minimum": 0 },
+    "sco_inicial_valor": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "minimum": 0
+    },
     "sco_repeticion": {
-      "type": ["string", "null"],
-      "enum": ["No Reactivo", "Zona Gris", "Reactivo", null],
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "No Reactivo",
+        "Zona Gris",
+        "Reactivo",
+        null
+      ],
       "description": "CORRECCIÓN: código legado usa la clave 'repeticion' en R3 y 'sco_repeticion' en R18/R19 para el mismo concepto. Se unifica a 'sco_repeticion' en toda la KB."
     },
-    "sco_repeticion_valor": { "type": ["number", "null"], "minimum": 0 },
+    "sco_repeticion_valor": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "minimum": 0
+    },
     "certeza_sco": {
-      "type": ["number", "null"],
+      "type": [
+        "number",
+        "null"
+      ],
       "minimum": 0,
       "maximum": 100,
       "description": "Certeza difusa en representación porcentual ∈ [0,100]: µ(x) × 100, donde µ(x) es la rampa lineal de membresía dominante para la etiqueta sco_inicial vigente (NO trapecio simétrico — ver domain_model.md §2). Se calcula para las 3 etiquetas (No Reactivo/Zona Gris/Reactivo), no exclusiva de Zona Gris. Equivalente en el contrato externo: fuzzy_certainty (sample_input.schema.json, µ ∈ [0,1]). La única conversión permitida entre ambas representaciones es certainty_to_percent()/percent_to_certainty() (spec/contracts.py) — nunca aritmética ad hoc."
     },
     "nat": {
       "type": "string",
-      "enum": ["Reactivo", "No Reactivo", "No Aplica", "Pendiente"],
+      "enum": [
+        "Reactivo",
+        "No Reactivo",
+        "No Aplica",
+        "Pendiente"
+      ],
       "description": "INV-08 (bidireccional): debe ser exactamente 'No Aplica' salvo para HIV, HBV, HCV (README - Regla estricta #5); y para esos tres 'No Aplica' es una violación — el ensayo aplica, y su estado es Reactivo, No Reactivo o Pendiente. 'Pendiente' = ensayo solicitado, informe no llegado: impide la liberación de la unidad (R21) pero no bloquea las reglas terminales de descarte."
     },
     "riesgo": {
       "type": "boolean",
       "description": "CORRECCIÓN: código legado usa strings 'Sí'/'No'. Se migra a boolean (tipado estricto, Consigna 2)."
     },
-    "vdrl": { "type": ["string", "null"], "enum": ["Reactivo", "No Reactivo", null] },
-    "clia": { "type": ["string", "null"], "enum": ["Reactivo", "No Reactivo", null] }
+    "vdrl": {
+      "type": "string",
+      "enum": [
+        "Reactivo",
+        "No Reactivo",
+        "Pendiente",
+        "No Aplica"
+      ],
+      "description": "Resultado del ensayo VDRL del algoritmo de sifilis (INV-05). Mismo vocabulario que nat (AssayResult): VDRL y CLIA NO son ensayos NAT, pero el vocabulario de resultado es unico. Se DERIVA del marcador cuando se omite: 'No Aplica' si el marcador no es Sifilis, 'Pendiente' si lo es y el informe no llego. 'No Aplica' es invalido para Sifilis y es el unico valor valido para el resto."
+    },
+    "clia": {
+      "type": "string",
+      "enum": [
+        "Reactivo",
+        "No Reactivo",
+        "Pendiente",
+        "No Aplica"
+      ],
+      "description": "Resultado del ensayo CLIA del algoritmo de sifilis (INV-05). Mismo vocabulario que nat (AssayResult): VDRL y CLIA NO son ensayos NAT, pero el vocabulario de resultado es unico. Se DERIVA del marcador cuando se omite: 'No Aplica' si el marcador no es Sifilis, 'Pendiente' si lo es y el informe no llego. 'No Aplica' es invalido para Sifilis y es el unico valor valido para el resto."
+    }
   },
   "allOf": [
     {
-      "if": { "not": { "properties": { "marcador": { "enum": ["HIV", "HBV", "HCV"] } }, "required": ["marcador"] } },
-      "then": { "properties": { "nat": { "const": "No Aplica" } } }
+      "if": {
+        "not": {
+          "properties": {
+            "marcador": {
+              "enum": [
+                "HIV",
+                "HBV",
+                "HCV"
+              ]
+            }
+          },
+          "required": [
+            "marcador"
+          ]
+        }
+      },
+      "then": {
+        "properties": {
+          "nat": {
+            "const": "No Aplica"
+          }
+        }
+      }
     },
     {
-      "if": { "properties": { "marcador": { "enum": ["HIV", "HBV", "HCV"] } }, "required": ["marcador"] },
-      "then": { "properties": { "nat": { "enum": ["Reactivo", "No Reactivo", "Pendiente"] } } }
+      "if": {
+        "properties": {
+          "marcador": {
+            "enum": [
+              "HIV",
+              "HBV",
+              "HCV"
+            ]
+          }
+        },
+        "required": [
+          "marcador"
+        ]
+      },
+      "then": {
+        "properties": {
+          "nat": {
+            "enum": [
+              "Reactivo",
+              "No Reactivo",
+              "Pendiente"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "marcador": {
+            "const": "Sifilis"
+          }
+        },
+        "required": [
+          "marcador"
+        ]
+      },
+      "then": {
+        "properties": {
+          "vdrl": {
+            "enum": [
+              "Reactivo",
+              "No Reactivo",
+              "Pendiente"
+            ]
+          },
+          "clia": {
+            "enum": [
+              "Reactivo",
+              "No Reactivo",
+              "Pendiente"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "not": {
+          "properties": {
+            "marcador": {
+              "const": "Sifilis"
+            }
+          },
+          "required": [
+            "marcador"
+          ]
+        }
+      },
+      "then": {
+        "properties": {
+          "vdrl": {
+            "const": "No Aplica"
+          },
+          "clia": {
+            "const": "No Aplica"
+          }
+        }
+      }
     }
   ]
 }
