@@ -1,0 +1,266 @@
+/* SE-ITT — hoja de estilos del frontend de demostración.
+   Sin framework ni paso de build: CSS plano servido como estático. */
+
+:root {
+  --fondo: #0f1720;
+  --panel: #182430;
+  --panel-borde: #26384a;
+  --texto: #e8eef4;
+  --texto-tenue: #97a9bb;
+
+  /* Los cuatro estados del veredicto. Cada uno tiene un color propio:
+     el sistema NO colapsa "no apta" en un solo rojo, porque Descarte,
+     Cuarentena y Acción pendiente son clínicamente distintos. */
+  --apta: #2f9e6b;
+  --pendiente: #d99320;
+  --cuarentena: #4a83c4;
+  --descarte: #c94a4a;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--fondo);
+  color: var(--texto);
+  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+  line-height: 1.5;
+}
+
+/* ── Cabecera ─────────────────────────────────────────────────────── */
+.cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem 2rem;
+  border-bottom: 1px solid var(--panel-borde);
+  background: var(--panel);
+}
+.cabecera h1 { margin: 0; font-size: 1.5rem; letter-spacing: .06em; }
+.subtitulo { margin: .15rem 0 0; color: var(--texto-tenue); font-size: .9rem; }
+.aviso-cdss {
+  margin: 0;
+  max-width: 30rem;
+  font-size: .82rem;
+  color: var(--texto-tenue);
+  border-left: 3px solid var(--cuarentena);
+  padding-left: .75rem;
+}
+
+/* ── Estructura ───────────────────────────────────────────────────── */
+.disposicion {
+  display: grid;
+  grid-template-columns: minmax(320px, 26rem) 1fr;
+  gap: 1.5rem;
+  padding: 1.5rem 2rem 3rem;
+  align-items: start;
+}
+@media (max-width: 900px) {
+  .disposicion { grid-template-columns: 1fr; }
+}
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--panel-borde);
+  border-radius: 10px;
+  padding: 1.25rem 1.4rem 1.6rem;
+}
+.panel h2 {
+  margin: 0 0 1rem;
+  font-size: .82rem;
+  text-transform: uppercase;
+  letter-spacing: .12em;
+  color: var(--texto-tenue);
+  border-bottom: 1px solid var(--panel-borde);
+  padding-bottom: .6rem;
+}
+
+/* ── Formulario ───────────────────────────────────────────────────── */
+.campo { margin-bottom: 1rem; }
+.campo label { display: block; font-size: .85rem; margin-bottom: .3rem; }
+.opcional { color: var(--texto-tenue); font-weight: normal; }
+
+input[type="text"], input[type="number"], select {
+  width: 100%;
+  padding: .5rem .6rem;
+  background: #0f1a24;
+  border: 1px solid var(--panel-borde);
+  border-radius: 6px;
+  color: var(--texto);
+  font-size: .92rem;
+  font-family: inherit;
+}
+input:focus, select:focus {
+  outline: 2px solid var(--cuarentena);
+  outline-offset: 1px;
+}
+
+.campo-check { display: flex; align-items: center; gap: .55rem; }
+.campo-check input { width: auto; }
+.campo-check label { margin: 0; }
+
+.ayuda { margin: .3rem 0 0; font-size: .76rem; color: var(--texto-tenue); }
+
+/* Campo deshabilitado por invariante: se ve, pero no se puede usar.
+   Mostrarlo atenuado en vez de ocultarlo enseña la regla en vez de
+   esconderla. */
+.campo.no-aplica { opacity: .4; }
+.campo.no-aplica select { cursor: not-allowed; }
+
+.boton-evaluar {
+  width: 100%;
+  margin-top: .4rem;
+  padding: .7rem;
+  background: var(--cuarentena);
+  color: #fff;
+  border: 0;
+  border-radius: 6px;
+  font-size: .95rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.boton-evaluar:hover { filter: brightness(1.12); }
+
+.ejemplos { margin-top: 1.4rem; border-top: 1px solid var(--panel-borde); padding-top: 1rem; }
+.ejemplos-titulo {
+  margin: 0 0 .5rem; font-size: .74rem; text-transform: uppercase;
+  letter-spacing: .1em; color: var(--texto-tenue);
+}
+.ejemplos-botones { display: flex; flex-wrap: wrap; gap: .4rem; }
+.ejemplos-botones button {
+  padding: .35rem .65rem;
+  background: transparent;
+  border: 1px solid var(--panel-borde);
+  border-radius: 999px;
+  color: var(--texto-tenue);
+  font-size: .78rem;
+  cursor: pointer;
+}
+.ejemplos-botones button:hover { color: var(--texto); border-color: var(--cuarentena); }
+
+/* ── Resultado ────────────────────────────────────────────────────── */
+.sin-resultado { color: var(--texto-tenue); font-size: .9rem; }
+
+.ejes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: .8rem;
+  margin-bottom: 1rem;
+}
+@media (max-width: 560px) { .ejes { grid-template-columns: 1fr; } }
+
+.eje {
+  border: 1px solid var(--panel-borde);
+  border-left-width: 4px;
+  border-radius: 8px;
+  padding: .7rem .9rem;
+  background: #0f1a24;
+}
+.eje-etiqueta {
+  margin: 0 0 .25rem;
+  font-size: .7rem;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--texto-tenue);
+}
+.eje-valor { margin: 0; font-size: 1.15rem; font-weight: 600; }
+
+/* Estado 1 — Apta */
+.eje.estado-apta { border-left-color: var(--apta); }
+.eje.estado-apta .eje-valor { color: var(--apta); }
+/* Estado 2 — Acción pendiente (forma dual, INV-15) */
+.eje.estado-pendiente { border-left-color: var(--pendiente); }
+.eje.estado-pendiente .eje-valor { color: var(--pendiente); }
+/* Estado 3 — Rechazo técnico (Cuarentena, R20) */
+.eje.estado-cuarentena { border-left-color: var(--cuarentena); }
+.eje.estado-cuarentena .eje-valor { color: var(--cuarentena); }
+/* Estado 4 — Descarte */
+.eje.estado-descarte { border-left-color: var(--descarte); }
+.eje.estado-descarte .eje-valor { color: var(--descarte); }
+
+/* "No evaluado" se dice, no se deja en blanco. */
+.eje-valor.no-evaluado {
+  color: var(--texto-tenue);
+  font-size: .95rem;
+  font-weight: 400;
+  font-style: italic;
+}
+
+.accion-pendiente {
+  border: 1px solid var(--pendiente);
+  border-radius: 8px;
+  background: rgba(217, 147, 32, .1);
+  padding: .8rem 1rem;
+  margin-bottom: 1rem;
+}
+.accion-titulo {
+  margin: 0 0 .3rem;
+  font-size: .72rem;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--pendiente);
+}
+.accion-texto { margin: 0; font-size: 1rem; font-weight: 600; }
+
+.certeza { margin-bottom: 1.2rem; }
+.certeza-etiqueta {
+  margin: 0 0 .35rem; font-size: .72rem; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--texto-tenue);
+}
+.barra {
+  height: 7px; background: #0f1a24; border-radius: 999px;
+  overflow: hidden; border: 1px solid var(--panel-borde);
+}
+.barra-relleno { height: 100%; background: var(--cuarentena); width: 0; }
+.certeza-valor { margin: .3rem 0 0; font-size: .85rem; color: var(--texto-tenue); }
+
+/* ── Trazabilidad: nunca colapsada, es el argumento del CDSS ──────── */
+.trazabilidad h3 {
+  margin: 1.2rem 0 .5rem;
+  font-size: .72rem;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--texto-tenue);
+}
+.reglas { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: .4rem; }
+.reglas li {
+  padding: .25rem .6rem;
+  background: #0f1a24;
+  border: 1px solid var(--panel-borde);
+  border-radius: 999px;
+  font-family: "Cascadia Code", Consolas, monospace;
+  font-size: .8rem;
+}
+.explicacion { margin: 0; padding-left: 1.2rem; font-size: .88rem; }
+.explicacion li { margin-bottom: .4rem; }
+
+.narrativa {
+  margin: 0;
+  padding: .8rem 1rem;
+  background: #0f1a24;
+  border: 1px solid var(--panel-borde);
+  border-radius: 8px;
+  font-family: "Cascadia Code", Consolas, monospace;
+  font-size: .8rem;
+  white-space: pre-wrap;
+  overflow-x: auto;
+}
+.pie-motor { margin: .8rem 0 0; font-size: .74rem; color: var(--texto-tenue); }
+
+/* ── Error de invariante ──────────────────────────────────────────── */
+.error-invariante {
+  border: 1px solid var(--descarte);
+  border-left-width: 4px;
+  border-radius: 8px;
+  background: rgba(201, 74, 74, .1);
+  padding: .9rem 1.1rem;
+}
+.error-titulo { margin: 0 0 .4rem; font-weight: 600; color: var(--descarte); }
+.error-id {
+  margin: 0 0 .4rem;
+  font-family: "Cascadia Code", Consolas, monospace;
+  font-size: .82rem;
+}
+.error-detalle { margin: 0; font-size: .9rem; color: var(--texto-tenue); }

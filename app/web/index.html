@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SE-ITT — Evaluación de aptitud transfusional</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="cabecera">
+    <div>
+      <h1>SE-ITT</h1>
+      <p class="subtitulo">
+        Sistema experto híbrido para Infecciones Transmisibles por Transfusión
+      </p>
+    </div>
+    <p class="aviso-cdss">
+      Sistema de apoyo a la decisión clínica. <strong>Apoya, no reemplaza</strong>,
+      al bioquímico responsable.
+    </p>
+  </header>
+
+  <main class="disposicion">
+    <!-- ── Formulario ─────────────────────────────────────────────── -->
+    <section class="panel" aria-labelledby="titulo-formulario">
+      <h2 id="titulo-formulario">Datos de la muestra</h2>
+
+      <form id="formulario" novalidate>
+        <div class="campo">
+          <label for="sample_id">Identificador de unidad</label>
+          <input id="sample_id" name="sample_id" type="text" value="MUESTRA-001" required>
+        </div>
+
+        <div class="campo">
+          <label for="marcador">Marcador serológico</label>
+          <select id="marcador" name="marcador"></select>
+        </div>
+
+        <div class="campo">
+          <label for="calidad_muestra">Integridad física de la muestra</label>
+          <select id="calidad_muestra" name="calidad_muestra">
+            <option value="Normal">Normal</option>
+            <option value="Hemolizada">Hemolizada</option>
+            <option value="Lipemica">Lipémica</option>
+          </select>
+        </div>
+
+        <div class="campo">
+          <label for="sco_inicial_valor">S/CO inicial</label>
+          <input id="sco_inicial_valor" name="sco_inicial_valor" type="number"
+                 step="0.01" min="0" placeholder="ej. 0.20">
+          <p class="ayuda">Zona Gris: 0.90 – 1.10 (Regla de Oro, INV-01)</p>
+        </div>
+
+        <div class="campo">
+          <label for="sco_repeticion_valor">S/CO de repetición <span class="opcional">(opcional)</span></label>
+          <input id="sco_repeticion_valor" name="sco_repeticion_valor" type="number"
+                 step="0.01" min="0" placeholder="solo si se repitió por duplicado">
+        </div>
+
+        <div class="campo" id="campo-nat">
+          <label for="nat">NAT (ácidos nucleicos)</label>
+          <select id="nat" name="nat">
+            <option value="">— sin informar (Pendiente) —</option>
+            <option value="No Reactivo">No Reactivo</option>
+            <option value="Reactivo">Reactivo</option>
+            <option value="Pendiente">Pendiente (explícito)</option>
+          </select>
+          <p class="ayuda" id="ayuda-nat"></p>
+        </div>
+
+        <div class="campo" id="campo-vdrl">
+          <label for="vdrl">VDRL (no treponémica)</label>
+          <select id="vdrl" name="vdrl">
+            <option value="">— sin informar (Pendiente) —</option>
+            <option value="No Reactivo">No Reactivo</option>
+            <option value="Reactivo">Reactivo</option>
+          </select>
+        </div>
+
+        <div class="campo" id="campo-clia">
+          <label for="clia">CLIA (treponémica confirmatoria)</label>
+          <select id="clia" name="clia">
+            <option value="">— sin informar (Pendiente) —</option>
+            <option value="No Reactivo">No Reactivo</option>
+            <option value="Reactivo">Reactivo</option>
+          </select>
+        </div>
+
+        <div class="campo campo-check">
+          <input id="riesgo" name="riesgo" type="checkbox">
+          <label for="riesgo">Riesgo epidemiológico declarado en anamnesis</label>
+        </div>
+
+        <button type="submit" class="boton-evaluar">Evaluar unidad</button>
+      </form>
+
+      <div class="ejemplos">
+        <p class="ejemplos-titulo">Casos de demostración</p>
+        <div class="ejemplos-botones">
+          <button type="button" data-demo="apta">Apta</button>
+          <button type="button" data-demo="zonagris">Zona Gris</button>
+          <button type="button" data-demo="natpend">NAT pendiente</button>
+          <button type="button" data-demo="hemolizada">Hemolizada</button>
+          <button type="button" data-demo="invariante">Invariante violado</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Resultado ──────────────────────────────────────────────── -->
+    <section class="panel" aria-labelledby="titulo-resultado" aria-live="polite">
+      <h2 id="titulo-resultado">Veredicto</h2>
+
+      <p id="sin-resultado" class="sin-resultado">
+        Complete los datos y presione <em>Evaluar unidad</em>.
+      </p>
+
+      <div id="error-invariante" class="error-invariante" hidden>
+        <p class="error-titulo">Entrada rechazada por un invariante de dominio</p>
+        <p class="error-id" id="error-id"></p>
+        <p class="error-detalle" id="error-detalle"></p>
+      </div>
+
+      <div id="resultado" hidden>
+        <!-- Veredicto bidimensional: dos ejes independientes, nunca concatenados -->
+        <div class="ejes">
+          <div class="eje" id="eje-unidad">
+            <p class="eje-etiqueta">Disposición de la UNIDAD</p>
+            <p class="eje-valor" id="valor-unidad"></p>
+          </div>
+          <div class="eje" id="eje-donante">
+            <p class="eje-etiqueta">Disposición del DONANTE</p>
+            <p class="eje-valor" id="valor-donante"></p>
+          </div>
+        </div>
+
+        <div class="accion-pendiente" id="bloque-pendiente" hidden>
+          <p class="accion-titulo">Acción requerida antes de poder concluir</p>
+          <p class="accion-texto" id="texto-pendiente"></p>
+        </div>
+
+        <div class="certeza" id="bloque-certeza">
+          <p class="certeza-etiqueta">Certeza difusa de la clasificación S/CO</p>
+          <div class="barra"><div class="barra-relleno" id="barra-certeza"></div></div>
+          <p class="certeza-valor" id="valor-certeza"></p>
+        </div>
+
+        <div class="trazabilidad">
+          <h3>Reglas aplicadas</h3>
+          <ul class="reglas" id="lista-reglas"></ul>
+
+          <h3>Fundamento (traza de auditoría)</h3>
+          <ol class="explicacion" id="lista-explicacion"></ol>
+
+          <h3>Informe narrativo</h3>
+          <pre class="narrativa" id="narrativa"></pre>
+
+          <p class="pie-motor" id="pie-motor"></p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
