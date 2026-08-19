@@ -397,13 +397,14 @@
   {
     "case_id": "EV20",
     "category": "sifilis_algoritmo",
-    "notes": "VDRL reactivo, CLIA aún no realizado -> acción intermedia, sin veredicto.",
+    "notes": "VDRL reactivo, CLIA solicitada y no informada -> accion intermedia, sin veredicto. El pendiente se codifica con valor explicito 'Pendiente', no por ausencia de la clave (Paso 2.5: mismo concepto clinico, misma representacion que el NAT pendiente).",
     "inputs": {
       "sample_id": "EV20",
       "calidad_muestra": "Normal",
       "marcador": "Sifilis",
       "riesgo": false,
-      "vdrl": "Reactivo"
+      "vdrl": "Reactivo",
+      "clia": "Pendiente"
     },
     "expected": {
       "final_unit_disposition": null,
