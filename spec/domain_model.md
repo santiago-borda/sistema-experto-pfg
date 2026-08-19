@@ -5,15 +5,26 @@
 
 ## 1. Vocabulario controlado (Enumeraciones de dominio)
 
+Fuente única de verdad: `spec/contracts.py` (`seitt_core/domain.py` la reexporta, no la redefine — verificado por identidad de objeto en `validate_spec.py`, bloque [7]).
+
 | Enum | Valores | Fuente normativa/documental |
 |---|---|---|
 | `SCOLabel` | `No Reactivo`, `Zona Gris`, `Reactivo` | README — Regla de Negocio Estricta #1 |
-| `PhysicalIntegrity` | `Normal`, `Hemolizada`, `Lipemica`, `Hemolizada_Lipemica` | PosterPaperSEITT §4.1 |
-| `Marker` | `HIV`, `HBV`, `HCV`, `Sifilis`, `Chagas` | PIF — Knowledge Base |
-| `Verdict` | `Apta`, `Descarte`, `Cuarentena`, `Diferimiento Temporal`, `Rechazo Tecnico` | TP2 — flujograma |
-| `NATResult` | `Reactivo`, `No Reactivo`, `No Aplica` | README |
+| `PhysicalIntegrity` | `Normal`, `Hemolizada`, `Lipemica` | PosterPaperSEITT §4.1 |
+| `Marker` | `HIV`, `HBV`, `HCV`, `Sifilis`, `Chagas`, `HTLV_I_II`, `Brucelosis` | PIF — Knowledge Base + `knowledge_base.py` (R12, R14) |
+| `UnitDisposition` | `Apta`, `Descarte`, `Cuarentena` | Eje 1 del veredicto bidimensional (INV-07) |
+| `DonorDisposition` | `Habilitado`, `Diferido_Temporal`, `Diferido_Permanente` | Eje 2 del veredicto bidimensional (INV-07) |
+| `NATResult` | `Reactivo`, `No Reactivo`, `No Aplica`, `Pendiente` | README + consulta a bioquímica de referencia (INV-08) |
+| `InputSource` | `analyzer_direct`, `medgemma_extraction` | Frontera no-wrapper (Consigna 5), ver §5 |
 
-Este vocabulario es **cerrado**: `sample_input.schema.json` usa `enum` estricto (no `string` libre), de modo que ninguna extracción de MedGemma pueda inyectar una etiqueta fuera de dominio (defensa de primera línea contra alucinación léxica del LLM).
+**Correcciones respecto de la versión previa de esta tabla** (todas verificadas contra el código real, no contra los papers):
+
+- **`PhysicalIntegrity`**: se elimina `Hemolizada_Lipemica`. Hemólisis y lipemia son clínicamente equivalentes a efectos de R20 (ambas pertenecen a `INTERFERENCE_VALUES` y disparan el mismo corto-circuito por INV-02); un valor compuesto reintroduce el acoplamiento por *magic string* que §4bis hallazgo 4 documenta como corregido.
+- **`Marker`**: son **7**, no 5. `HTLV_I_II` y `Brucelosis` existen en la KB desde el legado (R12, R14) pero no figuraban en el Poster ni en el TP2 (§4bis hallazgo 2).
+- **`Verdict` no existe como enum único.** La tabla anterior lo describía con valores (`Diferimiento Temporal`, `Rechazo Tecnico`) que el código nunca implementó. El veredicto es **bidimensional**: `UnitDisposition` × `DonorDisposition`, ejes independientes (§4bis hallazgo 1, INV-07). Lo que el flujograma del TP2 llamaba "Rechazo Tecnico" es hoy `UnitDisposition.CUARENTENA` con donante sin resolver; "Diferimiento Temporal" es `DonorDisposition.DIFERIDO_TEMPORAL`, un valor del **otro** eje.
+- **`NATResult`**: se agrega `Pendiente` (Fase 3, Paso 2) — ensayo solicitado con informe no llegado. Ver INV-08 y R21.
+
+Este vocabulario es **cerrado**: `sample_input.schema.json` usa `enum` estricto (no `string` libre), de modo que ninguna extracción de MedGemma pueda inyectar una etiqueta fuera de dominio (defensa de primera línea contra alucinación léxica del LLM). La igualdad de conjuntos entre cada enum Pydantic y su `enum` JSON Schema equivalente se verifica en `validate_spec.py`, bloque [6a] — no se confía en la sincronización manual.
 
 ---
 
