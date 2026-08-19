@@ -280,6 +280,11 @@ class RuleEngine:
             marcador=facts.marcador.value,
             sco_value=facts.sco_inicial_valor,
             sco_label=facts.sco.value,
+            # R20 hablaba de la calidad de muestra usando {sco_label} porque
+            # este placeholder no existía: la traza de todo rechazo técnico
+            # imprimía la etiqueta S/CO (para una muestra hemolizada, el
+            # centinela 0.0 -> "No Reactivo") donde debía decir "Hemolizada".
+            calidad_muestra=facts.calidad_muestra.value,
             rule_id=rule["rule_id"],
             certeza_sco=(round(facts.certeza_sco, 2) if facts.certeza_sco is not None else None),
         )

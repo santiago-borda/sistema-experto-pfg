@@ -709,7 +709,7 @@
   {
     "rule_id": "R20",
     "description": "Guard clause de integridad física. Único corto-circuito real del sistema: deniega toda inferencia serológica, sin importar S/CO, NAT o riesgo. Máxima prioridad.",
-    "legacy_notes": "Código legado compara contra el string literal 'Hemolizada o Lipémica' (acoplamiento frágil a un valor mágico compuesto). Se corrige a operador IN sobre el enum cerrado de calidad_muestra.",
+    "legacy_notes": "Código legado compara contra el string literal 'Hemolizada o Lipémica' (acoplamiento frágil a un valor mágico compuesto). Se corrige a operador IN sobre el enum cerrado de calidad_muestra. CORRECCION (Fase 3, Paso 3A): el template decia \"calidad '{sco_label}'\", que imprimia la etiqueta S/CO en vez de la calidad de muestra -- para una muestra hemolizada, el centinela 0.0 -> 'No Reactivo'. Toda traza de rechazo tecnico documentaba el dato equivocado. Se agrego el placeholder calidad_muestra a RuleEngine._render_explanation().",
     "priority": 20,
     "legal_reference": [
       "Res. 1507/2015 - Anexo Control de Calidad Preanalítico [verificar articulado oficial]"
@@ -727,7 +727,7 @@
       "unit_disposition": "Cuarentena",
       "donor_disposition": null,
       "epidemiological_status": null,
-      "explanation_template": "Muestra con calidad '{sco_label}' impide lectura óptica confiable. Regla {rule_id}: rechazo técnico, corte inmediato de toda evaluación serológica.",
+      "explanation_template": "Muestra con calidad '{calidad_muestra}' impide lectura óptica confiable. Regla {rule_id}: rechazo técnico, corte inmediato de toda evaluación serológica.",
       "action": null
     },
     "invariant_tags": [
