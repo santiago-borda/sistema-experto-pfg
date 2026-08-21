@@ -208,8 +208,25 @@ function mostrarVeredicto(v) {
   }
 
   // ── Certeza difusa ───────────────────────────────────────────────
-  // El backend marca cuándo el número no corresponde a una lectura real
-  // (muestra con interferencia física: el S/CO nunca se leyó).
+  // El backend marca cuándo el número no corresponde a una lectura real,
+  // vía certeza_es_significativa. Acá solo se obedece esa marca: la
+  // decisión de qué es clínicamente significativo vive del lado del
+  // servidor, no en una condición de presentación.
+  //
+  // HALLAZGO REGISTRADO (Fase 3, Paso 3A) — por qué existe esta marca:
+  // ante interferencia física, expert_system.evaluar_caso() sintetiza un
+  // S/CO centinela (0.0) para que R20 pueda cortar el ciclo, y
+  // fuzzificar_sco(0.0) devuelve 100% de certeza. Es decir que un
+  // veredicto de rechazo técnico llega con certainty_index = 1.0: el
+  // número más confiado del sistema, justo en el único caso donde NADIE
+  // fuzzificó un S/CO real. Es un artefacto del centinela, no un dato
+  // clínico, y mostrarlo sería afirmar una medición que no ocurrió.
+  //
+  // La corrección de fondo (dejar certainty_index = None en ese camino)
+  // queda pendiente: toca el núcleo simbólico y obliga a revalidar el
+  // Eval Harness, ambos fuera de alcance de 3A. Ver CLAUDE.md, sección
+  // "Hallazgos conocidos". Mientras tanto esto es contención en el borde,
+  // no la solución.
   const bloqueCerteza = $("bloque-certeza");
   if (v.certeza_porcentaje === null || !v.certeza_es_significativa) {
     bloqueCerteza.hidden = true;

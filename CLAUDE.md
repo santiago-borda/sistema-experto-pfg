@@ -155,6 +155,26 @@ otra cosa — son la red de seguridad contra regresiones.
 - Toda regla nueva de negocio va primero a `kb_rules.json` +
   `domain_model.md` (spec), después al código — nunca al revés.
 
+## Hallazgos conocidos (deuda técnica registrada, no olvidada)
+
+Defectos reales detectados y **deliberadamente no corregidos todavía**,
+con el motivo del diferimiento. Se listan acá para que no se pierdan
+entre sesiones ni se redescubran desde cero.
+
+- **`certainty_index = 1.0` en rechazo técnico (R20).** `expert_system`
+  sintetiza un S/CO centinela (`0.0`) cuando hay interferencia física,
+  para que R20 pueda cortar el ciclo; `fuzzificar_sco(0.0)` devuelve 100%
+  de certeza. Resultado: un veredicto de Cuarentena llega con la certeza
+  más alta del sistema, en el único caso donde nadie fuzzificó un S/CO
+  real. Es un artefacto del centinela, no un dato clínico.
+  *Corrección de fondo pendiente:* dejar `certainty_index = None` en ese
+  camino. Fuera de alcance de la Fase 3 Paso 3A por tocar el núcleo
+  simbólico y requerir revalidar el Eval Harness.
+  *Contención actual (solo en el borde, no es la solución):* la API marca
+  `certeza_es_significativa = false` cuando la disposición es Cuarentena,
+  y el frontend oculta el bloque de certeza. Ver el comentario en
+  `app/web/app.js`, función `mostrarVeredicto()`.
+
 ## Pendiente / próximos frentes (en orden sugerido)
 
 1. Reorganización del repo (`legacy/`, `spec/`, `seitt_core/` como hermanos
