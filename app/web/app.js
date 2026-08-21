@@ -37,9 +37,12 @@ const DEMOS = {
     sample_id: "DEMO-HEM", marcador: "HIV", calidad_muestra: "Hemolizada",
     sco_inicial_valor: "", nat: "", riesgo: false,
   },
+  // Único caso que necesita el override: sin forzar el NAT, la UI no
+  // dejaría componer esta entrada — que es justamente el punto.
   invariante: {
     sample_id: "DEMO-INV", marcador: "Chagas", calidad_muestra: "Normal",
     sco_inicial_valor: "0.2", nat: "Reactivo", riesgo: false,
+    forzar_nat: true,
   },
 };
 
@@ -61,21 +64,48 @@ async function cargarMarcadores() {
   aplicarInvariantesAlFormulario();
 }
 
+const nombreLegible = (marcador) => marcador.replace(/_/g, " ");
+
 /** Habilita o bloquea NAT y VDRL/CLIA según el marcador elegido.
+ *
  *  Es la traducción a UI de INV-08 y de INV-05 extendido: la interfaz no
- *  debe permitir armar un caso que el motor va a rechazar. */
-function aplicarInvariantesAlFormulario() {
+ *  debe permitir armar un caso que el motor va a rechazar. El usuario se
+ *  entera de la regla ANTES de enviar, no por un 400.
+ *
+ *  `forzarNat` es un override deliberado y de un solo uso, para el caso
+ *  de demostración "invariante violado": es la única forma de mostrar en
+ *  vivo el rechazo del backend. Que sea un parámetro explícito, y no una
+ *  manipulación del DOM después del hecho, deja claro que es una
+ *  excepción intencional y no el comportamiento por defecto.
+ */
+function aplicarInvariantesAlFormulario({ forzarNat = false } = {}) {
   const marcador = $("marcador").value;
   const info = APLICABILIDAD[marcador];
   if (!info) return;
 
-  alternarCampo("campo-nat", "nat", info.nat_aplicable);
+  alternarCampo("campo-nat", "nat", info.nat_aplicable || forzarNat);
   alternarCampo("campo-vdrl", "vdrl", info.sifilis_aplicable);
   alternarCampo("campo-clia", "clia", info.sifilis_aplicable);
 
+  // Los placeholders de VDRL/CLIA deben decir el estado REAL del ensayo
+  // según el marcador. Para un marcador que no es Sífilis, esos campos no
+  // son "Pendiente" sino "No Aplica" (INV-05 extendido): ofrecer
+  // "sin informar (Pendiente)" ahí afirmaba algo falso sobre el dominio.
+  const esSifilis = info.sifilis_aplicable;
+  for (const id of ["vdrl", "clia"]) {
+    const opcionVacia = $(id).querySelector('option[value=""]');
+    opcionVacia.textContent = esSifilis
+      ? "— sin informar (Pendiente) —"
+      : `No aplica a ${nombreLegible(marcador)} (INV-05)`;
+  }
+
   $("ayuda-nat").textContent = info.nat_aplicable
     ? "Sin informar equivale a «Pendiente»: la unidad no se libera (R21)."
-    : `El ensayo NAT no aplica a ${marcador.replace(/_/g, " ")} (INV-08).`;
+    : `El ensayo NAT no aplica a ${nombreLegible(marcador)} (INV-08).`;
+
+  $("ayuda-sifilis").textContent = esSifilis
+    ? "Sin informar equivale a «Pendiente»: se aguarda el confirmatorio (R8)."
+    : `VDRL y CLIA solo aplican al algoritmo de sífilis (INV-05).`;
 }
 
 function alternarCampo(idContenedor, idControl, habilitado) {
@@ -260,30 +290,66 @@ function mostrarVeredicto(v) {
   $("resultado").hidden = false;
 }
 
-/* ── Arranque ──────────────────────────────────────────────────────── */
+/* ── Casos de demostración ─────────────────────────────────────────── */
 
 function cargarDemo(clave) {
   const demo = DEMOS[clave];
   if (!demo) return;
+
   $("sample_id").value = demo.sample_id;
   $("marcador").value = demo.marcador;
   $("calidad_muestra").value = demo.calidad_muestra;
   $("riesgo").checked = demo.riesgo;
-  $("sco_repeticion_valor").value = "";
-  aplicarInvariantesAlFormulario();
-  // Después de aplicar los invariantes, porque el caso "invariante
-  // violado" necesita forzar un NAT que la UI deshabilita a propósito.
   $("sco_inicial_valor").value = demo.sco_inicial_valor;
-  if (clave === "invariante") {
-    $("nat").disabled = false;
-    $("campo-nat").classList.remove("no-aplica");
-  }
+  $("sco_repeticion_valor").value = "";
+
+  // El caso "invariante violado" necesita un NAT que la UI deshabilita a
+  // propósito para el resto de los marcadores: es el override explícito.
+  aplicarInvariantesAlFormulario({ forzarNat: demo.forzar_nat === true });
   $("nat").value = demo.nat;
 }
 
+/* ── Tema claro/oscuro ─────────────────────────────────────────────
+ * En un aula iluminada el tema claro suele proyectar mejor. Se persiste
+ * por navegador; el acceso a localStorage va envuelto porque falla duro
+ * en contextos con almacenamiento bloqueado, y perder la preferencia no
+ * puede romper la demo. */
+
+const CLAVE_TEMA = "seitt-tema";
+
+function aplicarTema(tema) {
+  document.documentElement.dataset.tema = tema;
+  $("alternar-tema").textContent = tema === "claro" ? "☀" : "◐";
+}
+
+function temaGuardado() {
+  try {
+    return localStorage.getItem(CLAVE_TEMA);
+  } catch {
+    return null;
+  }
+}
+
+function alternarTema() {
+  const nuevo = document.documentElement.dataset.tema === "claro" ? "oscuro" : "claro";
+  aplicarTema(nuevo);
+  try {
+    localStorage.setItem(CLAVE_TEMA, nuevo);
+  } catch {
+    /* preferencia no persistida: la demo sigue funcionando igual */
+  }
+}
+
+/* ── Arranque ──────────────────────────────────────────────────────── */
+
 document.addEventListener("DOMContentLoaded", () => {
+  aplicarTema(temaGuardado() || "oscuro");
+  $("alternar-tema").addEventListener("click", alternarTema);
+
   $("formulario").addEventListener("submit", evaluar);
-  $("marcador").addEventListener("change", aplicarInvariantesAlFormulario);
+  // El listener recibe el Event del change; se envuelve para no pasarlo
+  // como opciones a aplicarInvariantesAlFormulario().
+  $("marcador").addEventListener("change", () => aplicarInvariantesAlFormulario());
   for (const boton of document.querySelectorAll("[data-demo]")) {
     boton.addEventListener("click", () => cargarDemo(boton.dataset.demo));
   }

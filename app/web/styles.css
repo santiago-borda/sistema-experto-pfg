@@ -1,266 +1,385 @@
 /* SE-ITT — hoja de estilos del frontend de demostración.
-   Sin framework ni paso de build: CSS plano servido como estático. */
+   Sin framework ni paso de build: CSS plano servido como estático.
+
+   Objetivo de layout: 1366x768 (proyector de aula), no el monitor de
+   desarrollo. El formulario completo debe ser operable SIN scroll a esa
+   resolución; el panel de veredicto tiene scroll interno propio, porque
+   explanation_log crece con la cantidad de reglas disparadas.
+
+   Contraste: los cuatro colores de estado se verificaron contra el fondo
+   de tarjeta apuntando a WCAG AA (4.5:1) como piso, en ambos temas. Los
+   valores originales de Cuarentena (4.4:1) y Descarte (3.9:1) no
+   llegaban y se aclararon. En proyección con luz ambiente el margen
+   importa más que en monitor. */
 
 :root {
+  color-scheme: dark;
+
   --fondo: #0f1720;
   --panel: #182430;
+  --hundido: #0f1a24;
   --panel-borde: #26384a;
   --texto: #e8eef4;
-  --texto-tenue: #97a9bb;
+  --texto-tenue: #9fb2c4;
 
-  /* Los cuatro estados del veredicto. Cada uno tiene un color propio:
-     el sistema NO colapsa "no apta" en un solo rojo, porque Descarte,
-     Cuarentena y Acción pendiente son clínicamente distintos. */
-  --apta: #2f9e6b;
-  --pendiente: #d99320;
-  --cuarentena: #4a83c4;
-  --descarte: #c94a4a;
+  /* Los cuatro estados del veredicto. Cada uno tiene color propio: el
+     sistema NO colapsa "no apta" en un solo rojo, porque Descarte,
+     Cuarentena y Acción pendiente son clínicamente distintos.
+     Contraste sobre --hundido: 8.5 / 8.7 / 7.0 / 5.7 : 1. */
+  --apta: #4ec98d;
+  --pendiente: #f0a92e;
+  --cuarentena: #6ea8e0;
+  --descarte: #e86b6b;
+
+  --acento: #6ea8e0;
+}
+
+/* Tema claro — en un aula iluminada suele proyectar mejor que el oscuro.
+   Contraste sobre --hundido: 5.1 / 5.9 / 7.4 / 6.9 : 1. */
+[data-tema="claro"] {
+  color-scheme: light;
+
+  --fondo: #eef2f6;
+  --panel: #ffffff;
+  --hundido: #f4f7fa;
+  --panel-borde: #cbd6e2;
+  --texto: #16212c;
+  --texto-tenue: #55677a;
+
+  --apta: #16794b;
+  --pendiente: #8a5200;
+  --cuarentena: #14538c;
+  --descarte: #a52121;
+
+  --acento: #14538c;
 }
 
 * { box-sizing: border-box; }
 
+html, body { height: 100%; }
+
 body {
   margin: 0;
+  display: flex;
+  flex-direction: column;
   background: var(--fondo);
   color: var(--texto);
   font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
-  line-height: 1.5;
+  font-size: 15px;
+  line-height: 1.4;
 }
 
-/* ── Cabecera ─────────────────────────────────────────────────────── */
+/* ── Cabecera: una sola fila ──────────────────────────────────────── */
 .cabecera {
   display: flex;
   flex-wrap: wrap;
-  gap: 1rem;
   align-items: center;
-  justify-content: space-between;
-  padding: 1.25rem 2rem;
+  gap: .75rem 1.25rem;
+  padding: .5rem 1.25rem;
   border-bottom: 1px solid var(--panel-borde);
   background: var(--panel);
+  flex-shrink: 0;
 }
-.cabecera h1 { margin: 0; font-size: 1.5rem; letter-spacing: .06em; }
-.subtitulo { margin: .15rem 0 0; color: var(--texto-tenue); font-size: .9rem; }
+
+.marca { display: flex; align-items: baseline; gap: .6rem; min-width: 0; }
+.marca-nombre { font-size: 1.15rem; font-weight: 700; letter-spacing: .06em; }
+.marca-bajada {
+  font-size: .76rem;
+  color: var(--texto-tenue);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .aviso-cdss {
   margin: 0;
-  max-width: 30rem;
-  font-size: .82rem;
+  font-size: .76rem;
   color: var(--texto-tenue);
-  border-left: 3px solid var(--cuarentena);
-  padding-left: .75rem;
+  border-left: 3px solid var(--acento);
+  padding-left: .6rem;
+  white-space: nowrap;
 }
+
+.demos { display: flex; align-items: center; gap: .35rem; margin-left: auto; }
+.demos-etiqueta {
+  font-size: .68rem; text-transform: uppercase; letter-spacing: .1em;
+  color: var(--texto-tenue); margin-right: .15rem;
+}
+.demos button {
+  padding: .28rem .6rem;
+  background: transparent;
+  border: 1px solid var(--panel-borde);
+  border-radius: 999px;
+  color: var(--texto-tenue);
+  font-size: .74rem;
+  font-family: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.demos button:hover { color: var(--texto); border-color: var(--acento); }
+
+.tema {
+  background: transparent;
+  border: 1px solid var(--panel-borde);
+  border-radius: 6px;
+  color: var(--texto-tenue);
+  font-size: .95rem;
+  line-height: 1;
+  padding: .3rem .5rem;
+  cursor: pointer;
+}
+.tema:hover { color: var(--texto); border-color: var(--acento); }
 
 /* ── Estructura ───────────────────────────────────────────────────── */
 .disposicion {
+  flex: 1;
+  min-height: 0;              /* deja que el scroll interno funcione */
   display: grid;
-  grid-template-columns: minmax(320px, 26rem) 1fr;
-  gap: 1.5rem;
-  padding: 1.5rem 2rem 3rem;
-  align-items: start;
+  grid-template-columns: minmax(420px, 34rem) 1fr;
+  gap: .9rem;
+  padding: .9rem 1.25rem;
+  align-items: stretch;
 }
-@media (max-width: 900px) {
+@media (max-width: 980px) {
   .disposicion { grid-template-columns: 1fr; }
+  .aviso-cdss, .marca-bajada { white-space: normal; }
 }
 
 .panel {
   background: var(--panel);
   border: 1px solid var(--panel-borde);
-  border-radius: 10px;
-  padding: 1.25rem 1.4rem 1.6rem;
+  border-radius: 9px;
+  padding: .8rem 1rem 1rem;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 .panel h2 {
-  margin: 0 0 1rem;
-  font-size: .82rem;
+  margin: 0 0 .7rem;
+  font-size: .74rem;
   text-transform: uppercase;
   letter-spacing: .12em;
   color: var(--texto-tenue);
   border-bottom: 1px solid var(--panel-borde);
-  padding-bottom: .6rem;
+  padding-bottom: .45rem;
+  flex-shrink: 0;
 }
 
-/* ── Formulario ───────────────────────────────────────────────────── */
-.campo { margin-bottom: 1rem; }
-.campo label { display: block; font-size: .85rem; margin-bottom: .3rem; }
-.opcional { color: var(--texto-tenue); font-weight: normal; }
+/* ── Formulario en dos columnas ───────────────────────────────────── */
+.grupo {
+  border: 1px solid var(--panel-borde);
+  border-radius: 7px;
+  padding: .5rem .75rem .65rem;
+  margin: 0 0 .6rem;
+}
+.grupo legend {
+  padding: 0 .35rem;
+  font-size: .68rem;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: var(--texto-tenue);
+}
+
+.rejilla {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: .45rem .7rem;
+}
+
+.campo { min-width: 0; }
+.campo label {
+  display: block;
+  font-size: .76rem;
+  margin-bottom: .15rem;
+  color: var(--texto-tenue);
+}
+.opcional { font-weight: normal; }
 
 input[type="text"], input[type="number"], select {
   width: 100%;
-  padding: .5rem .6rem;
-  background: #0f1a24;
+  padding: .32rem .45rem;
+  background: var(--hundido);
   border: 1px solid var(--panel-borde);
-  border-radius: 6px;
+  border-radius: 5px;
   color: var(--texto);
-  font-size: .92rem;
+  font-size: .86rem;
   font-family: inherit;
 }
 input:focus, select:focus {
-  outline: 2px solid var(--cuarentena);
+  outline: 2px solid var(--acento);
   outline-offset: 1px;
 }
 
-.campo-check { display: flex; align-items: center; gap: .55rem; }
+.campo-check { display: flex; align-items: center; gap: .45rem; align-self: end; }
 .campo-check input { width: auto; }
 .campo-check label { margin: 0; }
 
-.ayuda { margin: .3rem 0 0; font-size: .76rem; color: var(--texto-tenue); }
+.ayuda { margin: .35rem 0 0; font-size: .72rem; color: var(--texto-tenue); }
 
-/* Campo deshabilitado por invariante: se ve, pero no se puede usar.
-   Mostrarlo atenuado en vez de ocultarlo enseña la regla en vez de
-   esconderla. */
-.campo.no-aplica { opacity: .4; }
+/* Campo bloqueado por invariante: se ve, pero no se puede usar. Mostrarlo
+   atenuado en vez de ocultarlo enseña la regla en vez de esconderla. */
+.campo.no-aplica { opacity: .45; }
 .campo.no-aplica select { cursor: not-allowed; }
 
 .boton-evaluar {
   width: 100%;
-  margin-top: .4rem;
-  padding: .7rem;
-  background: var(--cuarentena);
+  margin-top: .2rem;
+  padding: .55rem;
+  background: var(--acento);
   color: #fff;
   border: 0;
   border-radius: 6px;
-  font-size: .95rem;
+  font-size: .9rem;
   font-weight: 600;
+  font-family: inherit;
   cursor: pointer;
 }
+[data-tema="claro"] .boton-evaluar { color: #fff; }
 .boton-evaluar:hover { filter: brightness(1.12); }
 
-.ejemplos { margin-top: 1.4rem; border-top: 1px solid var(--panel-borde); padding-top: 1rem; }
-.ejemplos-titulo {
-  margin: 0 0 .5rem; font-size: .74rem; text-transform: uppercase;
-  letter-spacing: .1em; color: var(--texto-tenue);
+/* ── Resultado, con scroll interno propio ─────────────────────────── */
+.resultado-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: .35rem;
 }
-.ejemplos-botones { display: flex; flex-wrap: wrap; gap: .4rem; }
-.ejemplos-botones button {
-  padding: .35rem .65rem;
-  background: transparent;
-  border: 1px solid var(--panel-borde);
-  border-radius: 999px;
-  color: var(--texto-tenue);
-  font-size: .78rem;
-  cursor: pointer;
-}
-.ejemplos-botones button:hover { color: var(--texto); border-color: var(--cuarentena); }
-
-/* ── Resultado ────────────────────────────────────────────────────── */
-.sin-resultado { color: var(--texto-tenue); font-size: .9rem; }
+.sin-resultado { color: var(--texto-tenue); font-size: .85rem; }
 
 .ejes {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: .8rem;
-  margin-bottom: 1rem;
+  gap: .6rem;
+  margin-bottom: .7rem;
 }
 @media (max-width: 560px) { .ejes { grid-template-columns: 1fr; } }
 
 .eje {
   border: 1px solid var(--panel-borde);
   border-left-width: 4px;
-  border-radius: 8px;
-  padding: .7rem .9rem;
-  background: #0f1a24;
+  border-radius: 7px;
+  padding: .5rem .7rem;
+  background: var(--hundido);
 }
 .eje-etiqueta {
-  margin: 0 0 .25rem;
-  font-size: .7rem;
-  letter-spacing: .1em;
+  margin: 0 0 .15rem;
+  font-size: .66rem;
+  letter-spacing: .09em;
   text-transform: uppercase;
   color: var(--texto-tenue);
 }
-.eje-valor { margin: 0; font-size: 1.15rem; font-weight: 600; }
+.eje-valor { margin: 0; font-size: 1.25rem; font-weight: 700; }
 
-/* Estado 1 — Apta */
 .eje.estado-apta { border-left-color: var(--apta); }
 .eje.estado-apta .eje-valor { color: var(--apta); }
-/* Estado 2 — Acción pendiente (forma dual, INV-15) */
 .eje.estado-pendiente { border-left-color: var(--pendiente); }
 .eje.estado-pendiente .eje-valor { color: var(--pendiente); }
-/* Estado 3 — Rechazo técnico (Cuarentena, R20) */
 .eje.estado-cuarentena { border-left-color: var(--cuarentena); }
 .eje.estado-cuarentena .eje-valor { color: var(--cuarentena); }
-/* Estado 4 — Descarte */
 .eje.estado-descarte { border-left-color: var(--descarte); }
 .eje.estado-descarte .eje-valor { color: var(--descarte); }
 
 /* "No evaluado" se dice, no se deja en blanco. */
 .eje-valor.no-evaluado {
   color: var(--texto-tenue);
-  font-size: .95rem;
+  font-size: .82rem;
   font-weight: 400;
   font-style: italic;
 }
 
 .accion-pendiente {
   border: 1px solid var(--pendiente);
-  border-radius: 8px;
-  background: rgba(217, 147, 32, .1);
-  padding: .8rem 1rem;
-  margin-bottom: 1rem;
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--pendiente) 12%, transparent);
+  padding: .55rem .75rem;
+  margin-bottom: .7rem;
 }
 .accion-titulo {
-  margin: 0 0 .3rem;
-  font-size: .72rem;
-  letter-spacing: .1em;
+  margin: 0 0 .15rem;
+  font-size: .66rem;
+  letter-spacing: .09em;
   text-transform: uppercase;
   color: var(--pendiente);
 }
-.accion-texto { margin: 0; font-size: 1rem; font-weight: 600; }
+.accion-texto { margin: 0; font-size: .95rem; font-weight: 600; }
 
-.certeza { margin-bottom: 1.2rem; }
+.certeza { margin-bottom: .8rem; }
 .certeza-etiqueta {
-  margin: 0 0 .35rem; font-size: .72rem; letter-spacing: .1em;
-  text-transform: uppercase; color: var(--texto-tenue);
-}
-.barra {
-  height: 7px; background: #0f1a24; border-radius: 999px;
-  overflow: hidden; border: 1px solid var(--panel-borde);
-}
-.barra-relleno { height: 100%; background: var(--cuarentena); width: 0; }
-.certeza-valor { margin: .3rem 0 0; font-size: .85rem; color: var(--texto-tenue); }
-
-/* ── Trazabilidad: nunca colapsada, es el argumento del CDSS ──────── */
-.trazabilidad h3 {
-  margin: 1.2rem 0 .5rem;
-  font-size: .72rem;
-  letter-spacing: .1em;
+  margin: 0 0 .3rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: .5rem;
+  font-size: .66rem;
+  letter-spacing: .09em;
   text-transform: uppercase;
   color: var(--texto-tenue);
 }
-.reglas { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: .4rem; }
+.certeza-valor {
+  font-size: .82rem;
+  letter-spacing: normal;
+  font-variant-numeric: tabular-nums;
+  color: var(--texto);
+}
+.barra {
+  height: 6px; background: var(--hundido); border-radius: 999px;
+  overflow: hidden; border: 1px solid var(--panel-borde);
+}
+.barra-relleno { height: 100%; background: var(--acento); width: 0; }
+
+/* ── Trazabilidad: nunca colapsada, es el argumento del CDSS ──────── */
+.trazabilidad h3 {
+  margin: .9rem 0 .35rem;
+  font-size: .66rem;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  color: var(--texto-tenue);
+}
+.reglas { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: .3rem; }
 .reglas li {
-  padding: .25rem .6rem;
-  background: #0f1a24;
+  padding: .18rem .5rem;
+  background: var(--hundido);
   border: 1px solid var(--panel-borde);
   border-radius: 999px;
   font-family: "Cascadia Code", Consolas, monospace;
-  font-size: .8rem;
+  font-size: .74rem;
 }
-.explicacion { margin: 0; padding-left: 1.2rem; font-size: .88rem; }
-.explicacion li { margin-bottom: .4rem; }
+.explicacion { margin: 0; padding-left: 1.1rem; font-size: .82rem; }
+.explicacion li { margin-bottom: .3rem; }
 
 .narrativa {
   margin: 0;
-  padding: .8rem 1rem;
-  background: #0f1a24;
+  padding: .6rem .75rem;
+  background: var(--hundido);
   border: 1px solid var(--panel-borde);
-  border-radius: 8px;
+  border-radius: 7px;
   font-family: "Cascadia Code", Consolas, monospace;
-  font-size: .8rem;
+  font-size: .74rem;
+  line-height: 1.45;
   white-space: pre-wrap;
   overflow-x: auto;
 }
-.pie-motor { margin: .8rem 0 0; font-size: .74rem; color: var(--texto-tenue); }
+.pie-motor { margin: .6rem 0 0; font-size: .7rem; color: var(--texto-tenue); }
 
 /* ── Error de invariante ──────────────────────────────────────────── */
 .error-invariante {
   border: 1px solid var(--descarte);
   border-left-width: 4px;
-  border-radius: 8px;
-  background: rgba(201, 74, 74, .1);
-  padding: .9rem 1.1rem;
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--descarte) 12%, transparent);
+  padding: .7rem .9rem;
 }
-.error-titulo { margin: 0 0 .4rem; font-weight: 600; color: var(--descarte); }
+.error-titulo { margin: 0 0 .3rem; font-weight: 600; color: var(--descarte); }
 .error-id {
-  margin: 0 0 .4rem;
+  margin: 0 0 .3rem;
   font-family: "Cascadia Code", Consolas, monospace;
-  font-size: .82rem;
+  font-size: .8rem;
 }
-.error-detalle { margin: 0; font-size: .9rem; color: var(--texto-tenue); }
+.error-detalle { margin: 0; font-size: .85rem; color: var(--texto-tenue); }
+
+/* ── Scrollbar discreta en el panel de veredicto ──────────────────── */
+.resultado-scroll::-webkit-scrollbar { width: 8px; }
+.resultado-scroll::-webkit-scrollbar-track { background: transparent; }
+.resultado-scroll::-webkit-scrollbar-thumb {
+  background: var(--panel-borde); border-radius: 999px;
+}
