@@ -196,6 +196,192 @@ Ambos presentes, o ambos ausentes, es una violación de invariante.
 
 **Retrofit de código a spec:** esta es la forma que ya imponía `check_pending_action_consistency()` en `seitt_core/domain.py.InferenceVerdict` desde antes de esta spec — no es un invariante nuevo, es la formalización de un validador que el código real ya ejecutaba, ahora promovido junto con el resto del modelo a `spec/contracts.py` como fuente única (`seitt_core/domain.py` reexporta, no redefine).
 
+# Invariantes de la frontera neuro-simbólica (INV-09 … INV-14)
+
+> Bloque a integrar en `spec/domain_model.md`. Verificar que los IDs estén
+> libres antes de insertar: al cierre del Paso 2.5 estaban ocupados INV-01…08
+> e INV-15 (forma dual del veredicto), más los `INV-STRUCT-*`. Si alguno de
+> INV-09…14 ya está tomado, corrervlos y avisar.
+>
+> INV-10 y INV-14 pertenecen a la mitad post-analítica del contrato
+> (narrativa). Se incluyen aquí **solo para reservar el ID y fijar el
+> enunciado**; su enforcement se implementa en la segunda tanda.
+
+---
+
+## INV-09 — Aislamiento de la confianza neuronal
+
+**Enunciado.** La confianza de extracción emitida por el módulo neuronal
+(`ExtractedField.confidence`, y su agregado `SampleInputFacts.extraction_confidence`)
+es metadato de auditoría. **No puede ser antecedente de ninguna regla, ni
+combinarse aritméticamente con `certeza_sco` o con ningún grado de pertenencia
+difuso.**
+
+**Fundamento.** Son magnitudes de dominios distintos: `confidence` mide fidelidad
+de transcripción de un documento; `certeza_sco` mide pertenencia a una banda
+analítica. Sumarlas, promediarlas o umbralizarlas conjuntamente produciría un
+número sin referente clínico, y convertiría de hecho al LLM en participante de
+la inferencia.
+
+**Enforcement.** Cerrar `fact_path` en `rule.schema.json` a un enum sobre los
+campos de `WorkingMemoryFacts`:
+
+```json
+"fact_path": {
+  "type": "string",
+  "enum": ["calidad_muestra", "marcador", "sco", "sco_inicial",
+           "sco_repeticion", "certeza_sco", "nat", "riesgo", "vdrl", "clia"]
+}
+```
+
+Con el enum cerrado, una regla que lea confianza del modelo **no valida contra
+el DSL** y `RuleEngine.load()` la rechaza al arranque. Deja de ser una promesa
+para volverse algo sintácticamente inexpresable — mismo movimiento que la
+corrección del magic string de R20 (§4bis.4).
+
+**Verificación.** `validate_spec.py`: una regla sintética con
+`fact_path: "extraction_confidence"` debe ser rechazada por `rule.schema.json`.
+
+---
+
+## INV-10 — Estabilidad de la observación frente a perturbación de extracción
+
+**Enunciado.** Sea $\Lambda:\mathbb{R}^+ \to \{\mathrm{NR}, \mathrm{ZG}, \mathrm{R}\}$
+la función de etiquetado del Fuzzy Engine y $\Pi(x)$ el conjunto de perturbaciones
+plausibles de OCR/NLP sobre el valor $x$. Una observación numérica es **inestable**
+si
+
+$$\exists\, x' \in \Pi(x) \;:\; \Lambda(x') \neq \Lambda(x)$$
+
+Toda observación inestable **exige confirmación humana explícita del campo**,
+con independencia de la `confidence` reportada por el modelo.
+
+**Conjunto de perturbaciones $\Pi(x)$.** Cerrado y declarativo:
+
+| Clase | Descripción | Ejemplo |
+|---|---|---|
+| `decimal_shift` | coma decimal desplazada un lugar en cualquier sentido | `0.95` → `9.5` |
+| `last_digit_delta` | último dígito significativo $\pm 1$ | `1.09` → `1.10` |
+| `digit_confusion` | confusiones frecuentes de OCR: $0\!\leftrightarrow\!8$, $1\!\leftrightarrow\!7$, $5\!\leftrightarrow\!6$, $3\!\leftrightarrow\!9$ | `0.85` → `0.95` |
+| `digit_transposition` | intercambio de dos dígitos adyacentes | `1.05` → `1.50` |
+
+**Fundamento.** El riesgo dominante de la extracción automática en este dominio
+no es la alucinación semántica sino el **error de un dígito**. Un `9.5` leído
+como `0.95` convierte un Reactivo en Zona Gris; un `1.05` leído como `0.05`
+convierte una unidad a descartar en una unidad Apta. Ninguna autoevaluación del
+modelo protege contra esto: un OCR puede estar muy seguro de un carácter mal
+leído. La defensa es simbólica — se verifica la **estabilidad de la decisión**,
+no la confianza de quien la informó.
+
+**Enforcement.** `guardrails/extraction_gate.py`, materializado en
+`BoundaryAnalysis` de `extraction_gate_report.schema.json`. Costo computacional
+despreciable: $|\Pi(x)|$ es del orden de la decena y $\Lambda$ es una comparación
+de umbrales.
+
+---
+
+## INV-11 — Precondición de validación humana y admisibilidad de lote
+
+**Enunciado.** Ninguna instancia de `SampleInputFacts` con
+`source = medgemma_extraction` alcanza el Inference Engine sin una
+`ValidationAttestation` que la referencie. La atestación puede ser individual o
+por lote; el lote es admisible únicamente cuando, para toda muestra $s$ del
+conjunto $S$:
+
+$$
+\mathrm{lote\_admisible}(S) \iff \bigwedge_{s \in S} \Big[
+\underbrace{\textstyle\bigwedge_{a \in A_s} \rho(a) = \mathrm{NoReactivo}}_{\text{sin hallazgo por ninguna vía}}
+\;\wedge\;
+\underbrace{\nexists\, a \in A_s : \rho(a) = \mathrm{Pendiente}}_{\text{sin ensayo en curso}}
+$$
+$$
+\wedge\; \mathrm{integridad}(s) = \mathrm{Normal}
+\;\wedge\; \neg\,\mathrm{riesgo}(s)
+\;\wedge\; \mathrm{unresolved}(s) = \emptyset
+\;\wedge\; \neg\,\mathrm{inestable}(s) \Big]
+$$
+
+donde $A_s$ es el conjunto de ensayos de la muestra (S/CO de cada marcador, NAT,
+VDRL, CLIA) y $\rho$ su resultado en el vocabulario unificado `AssayResult`.
+
+**Fundamento.** Criterio fijado por la bioquímica de referencia: se admite
+aprobación por lote cuando los resultados son no reactivos. Formalmente, el lote
+coincide con el conjunto de unidades cuyo veredicto sería **Apta por R1**;
+cualquier desvío —Zona Gris, reactividad, ensayo pendiente, hemólisis o lipemia,
+riesgo declarado en anamnesis, campo no resuelto— sale a revisión individual.
+
+La cláusula $\neg\,\mathrm{inestable}(s)$ (INV-10) es constitutiva, no accesoria:
+sin ella, un falso No Reactivo por error de un dígito entraría al lote y se
+aprobaría en bloque sin que nadie mire ese campo, convirtiendo la aprobación por
+lote en una ruta de bypass silencioso de R1.
+
+Nótese que la primera conjunción es hoy una comprobación **uniforme** sobre los
+tres campos de ensayo, y no tres casos especiales, gracias a la unificación de
+vocabulario en `AssayResult` (Paso 2.5).
+
+**Enforcement.** `adapters/extraction_adapter.py` rechaza con
+`UnattestedExtractionError`. La elegibilidad se computa en
+`guardrails/extraction_gate.py` y se persiste en `batch_predicate`.
+
+---
+
+## INV-12 — Prohibición de default clínico por omisión
+
+**Enunciado.** Ningún campo clínicamente significativo puede adquirir valor por
+omisión, ni en el adaptador de extracción, ni en el Fuzzy Engine, ni en los
+contratos. Un campo ausente o no resuelto produce un **error explícito**
+(`IncompleteExtractionError` / `DomainInvariantViolation`), nunca un valor
+asumido.
+
+**Fundamento.** Un default silencioso desactiva reglas sin dejar rastro. Si
+`physical_integrity` ausente se asumiera `Normal`, R20 —único corto-circuito del
+motor— no dispararía jamás sobre extracciones incompletas. El caso ya se
+verificó empíricamente en el Paso 2: el default de `nat` a `"No Aplica"` habría
+liberado unidades con NAT no informado, contra el flujo real del laboratorio.
+
+**Corolario de representación.** La política "ausencia sí, `null` no" (§1.5) es
+condición necesaria pero no suficiente: el código debe distinguir ambos casos
+con `"campo" not in data`, nunca con `data.get("campo") is None`, que los
+colapsa. Verificado como defecto real en el Paso 2.5.
+
+**Enforcement.** `unresolved_fields` es `required` en el envelope aunque esté
+vacío; `missing_required_fields` no vacío aborta la ingesta.
+
+---
+
+## INV-13 — Independencia de disponibilidad respecto del módulo neuronal
+
+**Enunciado.** La capacidad del sistema de emitir un veredicto clínico es
+**independiente** de la disponibilidad, latencia o corrección de MedGemma. Toda
+funcionalidad del módulo neuronal es una mejora opcional sobre un camino
+simbólico que ya es completo y correcto.
+
+**Fundamento.** Es la lectura arquitectónica de la Consigna 5. Si el veredicto
+dependiera de que el LLM responda, el sistema sería un wrapper con pasos extra,
+sin importar cuán acotado esté el rol del modelo.
+
+**Enforcement.** Inversión de dependencias: `seitt_core/ports/` define
+`ExtractionPort` y `NarrationPort` como `typing.Protocol`; los adaptadores viven
+en el borde. `seitt_core/` **no importa nada de MedGemma en ninguna dirección**.
+
+**Verificación.** Test de arquitectura ejecutable: análisis AST de los imports de
+`seitt_core/` que falla el build ante cualquier acoplamiento al módulo neuronal.
+Es evidencia empírica de no-wrapper, no una afirmación del capítulo de diseño.
+
+---
+
+## INV-14 — Confinamiento del dato nominal *(reservado — post-analítico)*
+
+**Enunciado.** `approver_id` y `approver_credential` no pueden cruzar hacia el
+módulo neuronal en ninguna dirección, ni como entrada de extracción ni como
+contexto de narrativa. Ningún identificador de donante acompaña a un `sample_id`
+fuera del núcleo simbólico.
+
+**Fundamento.** La atestación introduce el primer y único dato nominal de persona
+real del sistema; el donante permanece anonimizado por diseño. El schema de
+`narrative_request` ya es una proyección mínima con `additionalProperties: false`,
+de modo que la garantía es estructural — pero conviene enunciarla, porque es
+exactamente el tipo de campo que alguien agrega «para personalizar el reporte».
 ---
 
 ## 5. Frontera de responsabilidad MedGemma ↔ Núcleo Simbólico
