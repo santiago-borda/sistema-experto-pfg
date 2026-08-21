@@ -175,6 +175,22 @@ entre sesiones ni se redescubran desde cero.
   y el frontend oculta el bloque de certeza. Ver el comentario en
   `app/web/app.js`, función `mostrarVeredicto()`.
 
+- **El Eval Harness no cubre la traza explicativa.** El bug de la
+  plantilla de R20 (documentaba `{sco_label}` —el centinela `No Reactivo`—
+  donde debía nombrar la calidad de muestra) convivió con **33/33 y
+  kappa 1.0**: el harness compara `final_unit_disposition`,
+  `final_donor_disposition`, presencia de acción pendiente y trazabilidad
+  de `rule_id`, pero **nunca el contenido de `explanation_log`**. O sea
+  que el argumento central del CDSS —la explicación auditable— es hoy la
+  única salida del sistema sin ninguna verificación automatizada, y un
+  error ahí no pone nada en rojo. Lo detectó una lectura humana al
+  construir el adaptador de narración, no el arnés.
+  *Extensión candidata (después de la demo):* assertions sobre el
+  `explanation_log` esperado en `eval_dataset.json`, al menos para los
+  casos cuya traza cita el valor de un campo (R20 con `calidad_muestra`,
+  R2_* con `certeza_sco`, las reglas por marcador con `marcador`) — que
+  son justamente donde un placeholder equivocado pasa desapercibido.
+
 ## Pendiente / próximos frentes (en orden sugerido)
 
 1. Reorganización del repo (`legacy/`, `spec/`, `seitt_core/` como hermanos

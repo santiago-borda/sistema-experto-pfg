@@ -75,26 +75,62 @@ Para la implementación, Copilot y el equipo deben respetar estas definiciones:
 
 ## 🚀 Instalación y Ejecución
 
+> **Nota:** las secciones de *Arquitectura*, *Flujograma* y *Casos de
+> Prueba* de este README describen el TP2 grupal original. El proyecto
+> continuó como PFG con una reorganización completa (`spec/`,
+> `seitt_core/`, `app/`, `legacy/`) — ver `CLAUDE.md` para el estado
+> actual. Esta sección sí está actualizada.
+
 1. **Clonar el repositorio:**
-```bash
-git clone https://github.com/felix-toledo/sistema-experto-infecciones
-cd se-infecciones-itt
 
+```bash
+git clone https://github.com/santiago-borda/sistema-experto-pfg
+cd sistema-experto-pfg
 ```
 
+2. **Instalar el proyecto en modo editable — es obligatorio, no opcional:**
 
-2. **Instalar dependencias (opcional si se usa skfuzzy):**
 ```bash
-pip install -r requirements.txt
+python -m venv .venv
+# Windows:  .venv\Scripts\activate
+# Linux/Mac: source .venv/bin/activate
 
+pip install -e ".[dev,api]"
 ```
 
+`spec/` y `seitt_core/` son **paquetes** que se importan de forma
+calificada (`from spec.contracts import ...`, `from seitt_core.domain
+import ...`). Sin `pip install -e .` nada resuelve: no hay ningún
+`sys.path.insert` de respaldo — se eliminaron a propósito para que exista
+un único mecanismo de resolución de imports, y no dos que se tapen entre
+sí. Los tres comandos de verificación de abajo deben funcionar **desde
+cualquier directorio**, no solo desde la raíz del repo; si fallan al
+correrlos desde otro lado, el paquete no quedó instalado.
 
-3. **Ejecutar el sistema:**
+Los extras son opcionales por separado: `[api]` trae FastAPI y Uvicorn
+(solo la demo web), `[dev]` trae pytest y httpx. El núcleo simbólico se
+instala y corre sin ninguno de los dos.
+
+3. **Verificar la instalación** (los tres deben pasar en verde):
+
 ```bash
-python main.py
-
+python spec/validate_spec.py              # validación estructural de la spec
+python -m pytest tests/ seitt_core/tests/ # regresión + arquitectura + API
+python seitt_core/eval/eval_harness.py    # Eval Harness (Consigna 3)
 ```
+
+4. **Levantar la demo web:**
+
+```bash
+uvicorn app.api.main:app --reload --port 8000
+```
+
+En `http://127.0.0.1:8000/`. La interfaz trae botones de caso precargado
+(Apta, Zona Gris, NAT pendiente, Hemolizada, Invariante violado).
+
+> `legacy/main.py` es la GUI original en Tkinter del TP2. Se preserva
+> como referencia histórica y **no se ejecuta** contra el motor
+> refactorizado: fue reemplazada por la interfaz web, no adaptada.
 
 ---
 
