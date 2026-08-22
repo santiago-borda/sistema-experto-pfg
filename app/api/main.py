@@ -151,6 +151,33 @@ def evaluar(payload: EvaluacionRequest) -> EvaluacionResponse:
     )
 
 
+class _EstaticosSinCache(StaticFiles):
+    """StaticFiles que fuerza revalidación en cada carga.
+
+    Starlette envía `ETag` y `Last-Modified` pero NO `Cache-Control`. Sin
+    esa cabecera el navegador aplica *caché heurística*: decide por su
+    cuenta cuánto tiempo considerar fresco el archivo (habitualmente una
+    fracción del tiempo desde su última modificación) y lo sirve desde
+    disco **sin preguntarle al servidor**. El síntoma es desconcertante:
+    el HTML se actualiza pero el JS no, así que la página se ve nueva y
+    se comporta como la vieja — un botón nuevo queda sin su listener.
+
+    `no-cache` no significa "no cachear": significa "cachealo, pero
+    revalidá siempre antes de usarlo". El navegador sigue mandando
+    `If-None-Match` y el servidor sigue respondiendo 304, así que no se
+    retransmite nada — solo se elimina la ventana en la que el navegador
+    decide por su cuenta.
+
+    Importa para la defensa del PFG: durante una demo en vivo, un cambio
+    que no aparece por caché del navegador es indistinguible de un bug.
+    """
+
+    def file_response(self, *args, **kwargs):  # type: ignore[override]
+        respuesta = super().file_response(*args, **kwargs)
+        respuesta.headers["Cache-Control"] = "no-cache"
+        return respuesta
+
+
 # El frontend estático se monta al final para que no tape las rutas /api/*.
 if _WEB_DIR.is_dir():
-    app.mount("/", StaticFiles(directory=str(_WEB_DIR), html=True), name="web")
+    app.mount("/", _EstaticosSinCache(directory=str(_WEB_DIR), html=True), name="web")
