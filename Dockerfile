@@ -64,7 +64,7 @@ WORKDIR /src
 
 # Los fuentes se copian por separado -- pyproject primero -- para que un
 # cambio en el frontend no invalide la capa de dependencias.
-COPY pyproject.toml ./
+COPY pyproject.toml constraints.txt ./
 COPY spec/ ./spec/
 COPY seitt_core/ ./seitt_core/
 COPY app/ ./app/
@@ -73,7 +73,13 @@ COPY app/ ./app/
 # produciria `pip install seitt`. Hasta la Consigna 4 esto no funcionaba --
 # la wheel viajaba sin la KB ni los JSON Schema (ver fix(packaging)).
 # El extra [api] trae FastAPI y uvicorn; las dev-deps no entran aca.
-RUN pip install ".[api]"
+#
+# -c constraints.txt fija la version exacta de todo el arbol, transitivas
+# incluidas. pyproject declara rangos abiertos porque describe con que es
+# COMPATIBLE el SE-ITT; el contenedor necesita ademas saber con que se
+# CONSTRUYO. Sin esto, dos builds del mismo commit resuelven contra el
+# PyPI de cada dia y dejan de ser el mismo sistema.
+RUN pip install -c constraints.txt ".[api]"
 
 
 # ── runtime: lo que se entrega ──────────────────────────────────────────
@@ -126,13 +132,16 @@ ENV PATH="/opt/venv/bin:$PATH"
 
 WORKDIR /src
 
-COPY pyproject.toml ./
+COPY pyproject.toml constraints.txt ./
 COPY spec/ ./spec/
 COPY seitt_core/ ./seitt_core/
 COPY app/ ./app/
 COPY tests/ ./tests/
 
-RUN pip install ".[dev,api]"
+# Mismo cierre de versiones que runtime, extendido a las dev-deps: una
+# version distinta de pytest tambien cambia el resultado que se reporta,
+# y el numero que se defiende tiene que ser reproducible.
+RUN pip install -c constraints.txt ".[dev,api]"
 
 # Gate de build: si una validacion se pone en rojo, `docker build
 # --target test` falla y no llega a producirse imagen. Las tres corren

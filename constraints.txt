@@ -1,0 +1,84 @@
+# constraints.txt — Cierre de versiones del SE-ITT (Consigna 4).
+#
+# QUE ES. Un archivo de restricciones de pip: fija la version EXACTA de
+# cada paquete que llega al entorno, incluidas las dependencias
+# transitivas que nadie nombro nunca en pyproject.toml. No declara que se
+# instala -- eso lo sigue diciendo pyproject -- sino con que version se
+# resuelve cada cosa cuando pip arma el arbol.
+#
+# POR QUE HACE FALTA. pyproject declara rangos abiertos (pydantic>=2.0,
+# fastapi>=0.115, ...) sin cota superior, que es lo correcto para una
+# biblioteca: no hay que imponerle al que la instala versiones que no
+# necesita. Pero una IMAGEN no es una biblioteca. Con rangos abiertos,
+# `docker build` del mismo commit da entornos distintos segun el dia,
+# porque resuelve contra el estado de PyPI en ese momento. Para un PFG
+# eso rompe lo unico que la Consigna 4 promete: que el sistema evaluado
+# en la defensa sea el mismo que corrio el Eval Harness.
+#
+# Los dos archivos dicen cosas distintas y ambas son ciertas: pyproject
+# dice "con que versiones es COMPATIBLE el SE-ITT", constraints dice "con
+# cuales se CONSTRUYO esta imagen". No se toca el rango declarado.
+#
+# COMO SE REGENERA. Se congela el arbol ya resuelto dentro de la imagen,
+# que es el entorno que de verdad se valido -- no el del host, que corre
+# Windows y podria resolver distinto:
+#
+#   docker build --no-cache --target test -t seitt:test .
+#   docker run --rm --entrypoint pip seitt:test freeze | grep -v "^seitt @" | sort
+#
+# Al actualizar, regenerar y volver a correr las tres validaciones. La
+# linea "seitt @ file:///src" se excluye a proposito: es el proyecto
+# mismo, y pip rechaza una URL en un archivo de constraints.
+#
+# COBERTURA. Estan los dos extras, [api] y [dev]: pytest y httpx no van a
+# la imagen de runtime, pero si al entorno donde corren las validaciones,
+# y una version distinta de pytest tambien cambia el resultado que se
+# reporta.
+#
+# ALCANCE, dicho sin adornos. Esto pinea versiones, no hashes. Protege
+# contra la deriva natural de PyPI, que es el riesgo real y cotidiano;
+# no protege contra que alguien reemplace el contenido de una version ya
+# publicada. El paso siguiente -- hashes con --require-hashes -- queda
+# registrado como deuda; requiere generar los digests por plataforma y no
+# aporta nada mientras la base ya este pineada por digest.
+#
+# Verificado: dos `docker build --no-cache` consecutivos producen el mismo
+# `pip freeze`, diff vacio.
+
+# ── Nucleo simbolico (dependencias declaradas en [project]) ─────────────
+pydantic==2.13.4
+jsonschema==4.26.0
+
+# ── Capa de presentacion (extra [api]) ──────────────────────────────────
+fastapi==0.141.1
+uvicorn==0.52.4
+
+# ── Validacion (extra [dev]) ────────────────────────────────────────────
+pytest==9.1.1
+httpx==0.28.1
+
+# ── Transitivas ─────────────────────────────────────────────────────────
+# Nadie las nombra en pyproject, pero estan en el entorno y por lo tanto
+# en el resultado. Dejarlas sin fijar convertiria el pineo de arriba en
+# un gesto: basta un cambio en pydantic_core o en starlette para que dos
+# builds del mismo commit dejen de ser el mismo sistema.
+Pygments==2.21.0
+annotated-doc==0.0.5
+annotated-types==0.8.0
+anyio==4.14.2
+attrs==26.1.0
+certifi==2026.7.22
+click==8.4.2
+h11==0.16.0
+httpcore==1.0.9
+idna==3.19
+iniconfig==2.3.0
+jsonschema-specifications==2025.9.1
+packaging==26.3
+pluggy==1.6.0
+pydantic_core==2.46.4
+referencing==0.37.0
+rpds-py==2026.6.3
+starlette==1.6.0
+typing-inspection==0.4.4
+typing_extensions==4.16.0
