@@ -23,10 +23,11 @@ LLM participe jamás de la inferencia clínica (arquitectura no-wrapper).
 3. **Eval Harness**: evaluación automatizada — Tasa de Acierto, tiempo
    promedio de inferencia, concordancia (Cohen's Kappa) vs. criterio
    clínico experto, con foco reforzado en Zona Gris (0.9–1.1 S/CO).
-4. **IDE fijo / entorno controlado**: Docker Compose y reproducibilidad
-   de builds **cerrados** (imagen multi-stage, base pineada por digest,
-   `constraints.txt`, perfiles `app`/`ci`). Linter, formateador y type
-   checker **siguen pendientes**: no hay ninguno configurado como gate.
+4. **IDE fijo / entorno controlado**: Docker Compose, reproducibilidad de
+   builds, linter y formateador **cerrados**. Imagen multi-stage con base
+   pineada por digest, `constraints.txt`, perfiles `app`/`ci`, y `ruff`
+   (check + format) como gate ejecutable en la etapa `test`. **Falta solo
+   el type checker** (`mypy`) — ver frente 3 más abajo.
 5. **No-Wrapper LLM**: MedGemma nunca decide el veredicto. Solo extrae
    (pre-analítico) y traduce el log explicativo a lenguaje natural
    (post-analítico). La frontera está forzada por schema, no por convención.
@@ -127,10 +128,16 @@ defensa.
 ## Estado actual (verificar corriendo esto al empezar cualquier sesión)
 
 ```bash
+ruff format --check . && ruff check .     # esperado: sin diferencias, "All checks passed!"
 python spec/validate_spec.py              # esperado: 87/87 OK
 python -m pytest                          # esperado: 75 passed
 python seitt_core/eval/eval_harness.py    # esperado: 33/33, Tasa de Acierto 100%, kappa 1.0
 ```
+
+`ruff format --check` **verifica, no reescribe**. Para aplicar el formato:
+`ruff format .` y `ruff check --fix .`. Config en `pyproject.toml`
+(`[tool.ruff]`): `legacy/` está excluido y no se toca; `E501` está
+deliberadamente fuera del ruleset — ver la nota en el propio archivo.
 
 **En Windows**: `validate_spec.py` y el Eval Harness imprimen símbolos de
 estado no-ASCII. Si la consola abre en cp1252 (habitual bajo un shell no
@@ -278,14 +285,17 @@ entre sesiones ni se redescubran desde cero.
    cerrado, y perfiles `app`/`ci`/`dev` en Compose. Verificado desde un
    clon limpio: 87/87, 75 passed, 33/33 con kappa 1.0 dentro de la imagen,
    y veredicto + traza explicativa idénticos a los del host.
-3. **Linter / formateador / type checker (resto de la Consigna 4).** Hoy
-   no hay NINGUNO configurado como gate ejecutable: ni ruff, ni black, ni
-   mypy. Es la única parte de la consigna que sigue abierta. Advertencia
-   registrada: `mypy --strict` sobre el motor de reglas probablemente
-   destape problemas reales de tipado en la frontera difusa (`dict` sin
-   tipar en `kb_rules`, `Any` en `_resolve_fact_value`), así que merece
-   una sesión propia y una decisión previa sobre si se adopta estricto
-   desde el día 1 o con baseline de excepciones documentadas.
+3. **Type checker (`mypy`) — lo único que falta de la Consigna 4.**
+   Linter y formateador ya están cerrados (`ruff`, gate en la etapa
+   `test`); `mypy` se difirió a propósito a una sesión propia, no por
+   olvido. El motivo: `--strict` sobre el motor de reglas va a destapar
+   problemas reales de tipado en la frontera difusa — las reglas de
+   `kb_rules` circulan como `dict` sin tipar y `_resolve_fact_value`
+   devuelve `Any`. Tiparlo de verdad implica modelar las reglas con
+   Pydantic, es decir tocar el núcleo simbólico y revalidar el Eval
+   Harness. Decidir antes de empezar: ¿estricto desde el día 1, o baseline
+   con excepciones documentadas que se van cerrando? Lo que **no** hay que
+   hacer es colarlo como anexo de otra sesión.
 4. Contrato JSON MedGemma ↔ Motor Difuso (extiende `sample_input.schema.json`).
    El hueco del servicio ya está documentado en `docker-compose.yml`, en
    comentario y sin implementar, para no reestructurar el compose después.

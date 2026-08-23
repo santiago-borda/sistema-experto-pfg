@@ -114,10 +114,15 @@ instala y corre sin ninguno de los dos.
 3. **Verificar la instalación** (los tres deben pasar en verde):
 
 ```bash
+ruff format --check . && ruff check .    # estilo: sin diferencias, "All checks passed!"
 python spec/validate_spec.py     # 87/87 — validación estructural de la spec
 python -m pytest                 # 75 passed — regresión + arquitectura + API + empaquetado
 python seitt_core/eval/eval_harness.py   # 33/33, kappa 1.0 — Eval Harness (Consigna 3)
 ```
+
+Los cuatro corren también dentro de la imagen (`--profile ci`), donde son
+un gate: si alguno falla, el build no produce imagen. `ruff format
+--check` verifica sin reescribir; para aplicar, `ruff format .`.
 
 > **En Windows:** `validate_spec.py` y el Eval Harness imprimen símbolos
 > de estado no-ASCII. Si la consola abre en cp1252, el propio arnés muere
