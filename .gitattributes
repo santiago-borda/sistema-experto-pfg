@@ -1,0 +1,39 @@
+# .gitattributes — Normalizacion de finales de linea (Consigna 4).
+#
+# El entorno de desarrollo es Windows con core.autocrlf=true. Eso convierte
+# los archivos a CRLF al hacer checkout, y `docker build` copia del working
+# tree, no del indice. Un shebang seguido de CR se rompe en Linux con el
+# error clasico y desorientador: "bad interpreter: /bin/sh^M".
+#
+# La defensa principal contra esa clase de bug es de diseno, no de
+# configuracion: el Dockerfile no tiene ningun script de shell y usa
+# exec-form en CMD y HEALTHCHECK, asi que hoy no hay un solo .sh que se
+# pueda romper. Este archivo es la defensa secundaria — cubre el caso de
+# que alguien agregue un entrypoint mas adelante y el bug aparezca recien
+# dentro del contenedor, lejos del commit que lo causo.
+
+# Por defecto: Git normaliza a LF en el indice y decide el working tree
+# segun la plataforma.
+* text=auto
+
+# LF forzado en el working tree, tambien en Windows: son archivos que un
+# kernel Linux interpreta literalmente.
+*.sh            text eol=lf
+Dockerfile      text eol=lf
+Dockerfile.*    text eol=lf
+*.yml           text eol=lf
+*.yaml          text eol=lf
+.dockerignore   text eol=lf
+
+# Datos y contratos que se leen en runtime. Se fijan a LF para que el
+# contenido sea identico byte a byte en cualquier plataforma: la KB y los
+# JSON Schema son artefactos normativos del PFG y su hash tiene que ser
+# reproducible.
+*.json          text eol=lf
+*.py            text eol=lf
+
+# Binarios: sin conversion de ningun tipo.
+*.pdf           binary
+*.png           binary
+*.jpg           binary
+*.ico           binary

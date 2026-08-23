@@ -1,0 +1,68 @@
+# .dockerignore — Contexto de build del SE-ITT (Consigna 4).
+#
+# Lista de exclusion EXPLICITA, no heredada de .gitignore (Docker no lo
+# lee). Lo que no esta aca entra al contexto y puede terminar en una capa.
+
+# ── Historia, no producto ───────────────────────────────────────────────
+# legacy/ es el TP2 con GUI tkinter. Se preserva en el repo como
+# referencia historica y NO entra a la imagen bajo ninguna circunstancia:
+# arrastraria un toolkit grafico a un contenedor headless, y ademas
+# ninguna linea fuera de legacy/ lo importa. Criterio de aceptacion 5.
+legacy/
+
+# Papers academicos del PFG (PDF). No son insumo de runtime.
+docs/
+
+# ── Entorno del host (romperia la reproducibilidad) ─────────────────────
+# .venv/ contiene binarios compilados para Windows: copiarlos a una imagen
+# Linux produce un entorno silenciosamente roto. La imagen instala sus
+# dependencias desde cero.
+.venv/
+venv/
+env/
+
+# .git/ pesa y cambia en cada commit: incluirlo invalida el cache de capas
+# sin que cambie una sola linea de codigo.
+.git/
+.gitignore
+.gitattributes
+
+# ── Artefactos de build y de ejecucion ──────────────────────────────────
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Salida del Eval Harness, no entrada. Si viajara al contexto, el reporte
+# de una corrida del host se colaria en la imagen y dos builds del mismo
+# commit podrian diferir segun quien corrio que antes.
+seitt_core/eval/eval_report.json
+
+# Artefactos de Playwright (navegadores descargados y trazas). Hoy el repo
+# no los genera, pero pesan cientos de MB si alguien agrega pruebas de UI.
+playwright-report/
+test-results/
+.playwright/
+node_modules/
+
+# ── Ruido del IDE y del sistema operativo ───────────────────────────────
+.vscode/
+.idea/
+*.swp
+Thumbs.db
+desktop.ini
+.DS_Store
+
+# ── Archivos propios de Docker ──────────────────────────────────────────
+# No aportan nada dentro de la imagen y su cambio no deberia invalidar
+# capas de dependencias.
+Dockerfile
+.dockerignore
+docker-compose.yml

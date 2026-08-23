@@ -3,3 +3,8 @@ __pycache__/
 .pytest_cache/
 seitt_core/eval/eval_report.json
 *.egg-info/
+
+# Artefactos que deja `pip install .` / `python -m build` al construir la
+# wheel dentro del arbol fuente (Consigna 4). No son producto ni fuente.
+build/
+dist/
