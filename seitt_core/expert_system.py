@@ -14,7 +14,7 @@ Refactor de expert_system.py legado. API pública equivalente
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from .domain import InferenceVerdict, percent_to_certainty
 from .explicador import construir_explanation_log, resolver_pending_action
@@ -95,7 +95,9 @@ def evaluar_caso(
         epidemiological_status=resultado.epidemiological_status,
         triggered_rules=[fr.rule_id for fr in resultado.fired_rules],
         explanation_log=explanation_log,
-        certainty_index=(percent_to_certainty(hechos.certeza_sco) if hechos.certeza_sco is not None else None),
-        timestamp=datetime.now(timezone.utc),
+        certainty_index=(
+            percent_to_certainty(hechos.certeza_sco) if hechos.certeza_sco is not None else None
+        ),
+        timestamp=datetime.now(UTC),
         engine_version=ENGINE_VERSION,
     )

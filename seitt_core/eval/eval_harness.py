@@ -30,7 +30,7 @@ import argparse
 import json
 import sys
 import time
-from collections import Counter, defaultdict
+from collections import defaultdict
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -90,16 +90,24 @@ def _run_case(case: dict) -> CaseResult:
     except SEITTDomainError as exc:
         elapsed_ms = (time.perf_counter() - start) * 1000
         return CaseResult(
-            case_id=case_id, category=category, correct=False,
-            unit_match=False, donor_match=False, pending_match=False, trace_match=False,
+            case_id=case_id,
+            category=category,
+            correct=False,
+            unit_match=False,
+            donor_match=False,
+            pending_match=False,
+            trace_match=False,
             inference_time_ms=elapsed_ms,
-            expected_unit=expected.get("final_unit_disposition"), actual_unit=None,
+            expected_unit=expected.get("final_unit_disposition"),
+            actual_unit=None,
             error=f"SEITTDomainError inesperado: {exc}",
         )
     elapsed_ms = (time.perf_counter() - start) * 1000
 
     actual_unit = verdict.final_unit_disposition.value if verdict.final_unit_disposition else None
-    actual_donor = verdict.final_donor_disposition.value if verdict.final_donor_disposition else None
+    actual_donor = (
+        verdict.final_donor_disposition.value if verdict.final_donor_disposition else None
+    )
     actual_pending = verdict.pending_action is not None
 
     unit_match = actual_unit == expected.get("final_unit_disposition")
@@ -110,11 +118,16 @@ def _run_case(case: dict) -> CaseResult:
     correct = unit_match and donor_match and pending_match and trace_match
 
     return CaseResult(
-        case_id=case_id, category=category, correct=correct,
-        unit_match=unit_match, donor_match=donor_match,
-        pending_match=pending_match, trace_match=trace_match,
+        case_id=case_id,
+        category=category,
+        correct=correct,
+        unit_match=unit_match,
+        donor_match=donor_match,
+        pending_match=pending_match,
+        trace_match=trace_match,
         inference_time_ms=elapsed_ms,
-        expected_unit=expected.get("final_unit_disposition"), actual_unit=actual_unit,
+        expected_unit=expected.get("final_unit_disposition"),
+        actual_unit=actual_unit,
         details={
             "expected_rule_ids": expected["expected_rule_ids"],
             "triggered_rules": list(verdict.triggered_rules),
@@ -164,7 +177,17 @@ def run(threshold: float = 1.0) -> int:
     tiempo_promedio = sum(times) / len(times) if times else 0.0
     tiempo_p95 = times_sorted[int(0.95 * (len(times_sorted) - 1))] if times_sorted else 0.0
 
-    unit_label = lambda u: u if u is not None else "Pendiente"
+    def unit_label(u: str | None) -> str:
+        """'Pendiente' es una categoria mas del kappa, no un dato faltante.
+
+        Un veredicto sin unit_disposition es un resultado legitimo del
+        sistema (INV-15), asi que se etiqueta en vez de descartarse: si se
+        excluyera del calculo, la concordancia se mediria solo sobre los
+        casos que el motor resolvio, que es justamente donde es mas facil
+        acertar.
+        """
+        return u if u is not None else "Pendiente"
+
     kappa_pairs = [(unit_label(r.expected_unit), unit_label(r.actual_unit)) for r in results]
     kappa = _cohen_kappa(kappa_pairs)
 
@@ -179,7 +202,7 @@ def run(threshold: float = 1.0) -> int:
     print(f"  Tasa de Acierto      : {tasa_acierto:.2%} ({correct}/{total})")
     print(f"  Concordancia (kappa) : {kappa:.4f}  (vs. criterio clínico experto)")
     print(f"  Tiempo prom. inf.    : {tiempo_promedio:.3f} ms   (p95: {tiempo_p95:.3f} ms)")
-    print(f"\n  Desagregado por categoría:")
+    print("\n  Desagregado por categoría:")
     for category, rs in sorted(by_category.items()):
         cat_correct = sum(1 for r in rs if r.correct)
         marker = "🎯" if category == "zona_gris_borde" else "  "
@@ -194,8 +217,10 @@ def run(threshold: float = 1.0) -> int:
                 print(f"        error: {r.error}")
             else:
                 print(f"        esperado unidad={r.expected_unit!r} vs actual={r.actual_unit!r}")
-                print(f"        unit_match={r.unit_match} donor_match={r.donor_match} "
-                      f"pending_match={r.pending_match} trace_match={r.trace_match}")
+                print(
+                    f"        unit_match={r.unit_match} donor_match={r.donor_match} "
+                    f"pending_match={r.pending_match} trace_match={r.trace_match}"
+                )
     print(sep + "\n")
 
     # ── Reporte JSON ─────────────────────────────────────────────────
@@ -211,12 +236,18 @@ def run(threshold: float = 1.0) -> int:
         },
         "casos": [
             {
-                "case_id": r.case_id, "category": r.category, "correct": r.correct,
+                "case_id": r.case_id,
+                "category": r.category,
+                "correct": r.correct,
                 "inference_time_ms": r.inference_time_ms,
-                "expected_unit": r.expected_unit, "actual_unit": r.actual_unit,
-                "unit_match": r.unit_match, "donor_match": r.donor_match,
-                "pending_match": r.pending_match, "trace_match": r.trace_match,
-                "error": r.error, "details": r.details,
+                "expected_unit": r.expected_unit,
+                "actual_unit": r.actual_unit,
+                "unit_match": r.unit_match,
+                "donor_match": r.donor_match,
+                "pending_match": r.pending_match,
+                "trace_match": r.trace_match,
+                "error": r.error,
+                "details": r.details,
             }
             for r in results
         ],
@@ -230,7 +261,11 @@ def run(threshold: float = 1.0) -> int:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Eval Harness del SE-ITT")
-    parser.add_argument("--threshold", type=float, default=1.0,
-                         help="Tasa de Acierto mínima para exit code 0 (default: 1.0)")
+    parser.add_argument(
+        "--threshold",
+        type=float,
+        default=1.0,
+        help="Tasa de Acierto mínima para exit code 0 (default: 1.0)",
+    )
     args = parser.parse_args()
     sys.exit(run(threshold=args.threshold))

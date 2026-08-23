@@ -30,6 +30,7 @@ def _evaluar(cliente: TestClient, **campos):
 
 # ── Caso 1 — Apta ────────────────────────────────────────────────────
 
+
 def test_caso1_hiv_no_reactivo_es_apta(cliente):
     resp = _evaluar(cliente, marcador="HIV", sco_inicial_valor=0.2, nat="No Reactivo")
     assert resp.status_code == 200
@@ -44,6 +45,7 @@ def test_caso1_hiv_no_reactivo_es_apta(cliente):
 
 
 # ── Caso 2 — Zona Gris: forma dual (INV-15) ──────────────────────────
+
 
 def test_caso2_zona_gris_no_resuelve_y_pide_accion(cliente):
     resp = _evaluar(cliente, marcador="HBV", sco_inicial_valor=1.0, nat="No Reactivo")
@@ -60,14 +62,18 @@ def test_caso2_zona_gris_termina_en_descarte_tras_repeticion(cliente):
     """Regla de Oro (INV-01): un inicial en Zona Gris SIEMPRE termina en
     Descarte, sin importar el resultado de la repetición."""
     resp = _evaluar(
-        cliente, marcador="HBV", sco_inicial_valor=1.0,
-        sco_repeticion_valor=0.5, nat="No Reactivo",
+        cliente,
+        marcador="HBV",
+        sco_inicial_valor=1.0,
+        sco_repeticion_valor=0.5,
+        nat="No Reactivo",
     )
     assert resp.status_code == 200
     assert resp.json()["final_unit_disposition"] == "Descarte"
 
 
 # ── Caso 3 — NAT pendiente (R21) ─────────────────────────────────────
+
 
 def test_caso3_nat_pendiente_no_libera_la_unidad(cliente):
     resp = _evaluar(cliente, marcador="HIV", sco_inicial_valor=0.2, nat="Pendiente")
@@ -88,6 +94,7 @@ def test_caso3_nat_omitido_equivale_a_pendiente(cliente):
 
 
 # ── Caso 4 — Rechazo técnico (R20) ───────────────────────────────────
+
 
 def test_caso4_hemolizada_es_cuarentena_sin_disposicion_de_donante(cliente):
     resp = _evaluar(cliente, marcador="HIV", calidad_muestra="Hemolizada")
@@ -121,6 +128,7 @@ def test_caso4_traza_nombra_la_calidad_no_la_etiqueta_sco(cliente):
 
 # ── Caso 5 — Invariante violado ──────────────────────────────────────
 
+
 def test_caso5_nat_en_chagas_devuelve_400_con_invariant_id(cliente):
     """INV-08: el ensayo NAT no aplica a Chagas. Debe salir como 400
     estructurado y accionable, nunca como 500 ni con traceback."""
@@ -142,6 +150,7 @@ def test_marcador_fuera_del_vocabulario_es_422(cliente):
 
 # ── Aplicabilidad publicada al frontend ──────────────────────────────
 
+
 def test_marcadores_publica_los_siete_con_su_aplicabilidad(cliente):
     resp = cliente.get("/api/marcadores")
     assert resp.status_code == 200
@@ -159,6 +168,7 @@ def test_marcadores_publica_los_siete_con_su_aplicabilidad(cliente):
 
 
 # ── Frontend servido ─────────────────────────────────────────────────
+
 
 def test_raiz_sirve_el_frontend(cliente):
     resp = cliente.get("/")

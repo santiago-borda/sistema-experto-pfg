@@ -23,16 +23,15 @@ simétrico incorrecto -> rampa lineal real).
 from __future__ import annotations
 
 from .domain import (
-    DomainInvariantViolation,
-    Marker,
-    AssayResult,
     NAT_APPLICABLE_MARKERS,
-    PhysicalIntegrity,
-    INTERFERENCE_VALUES,
-    SCOLabel,
-    WorkingMemoryFacts,
     ZONA_GRIS_LOWER,
     ZONA_GRIS_UPPER,
+    AssayResult,
+    DomainInvariantViolation,
+    Marker,
+    PhysicalIntegrity,
+    SCOLabel,
+    WorkingMemoryFacts,
     certainty_to_percent,
 )
 
@@ -213,8 +212,8 @@ def construir_hechos(
         calidad_muestra=calidad,
         marcador=marker,
         sco=sco_inicial_label,  # el "sco vigente" arranca como el inicial; el
-                                  # Inference Engine no lo recalcula, solo lee
-                                  # sco_repeticion por separado (R18/R19).
+        # Inference Engine no lo recalcula, solo lee
+        # sco_repeticion por separado (R18/R19).
         sco_inicial=sco_inicial_label,
         sco_inicial_valor=sco_inicial_valor,
         sco_repeticion=sco_repeticion_label_final,

@@ -28,21 +28,21 @@ from pydantic import ValidationError
 # garantiza que ambos resuelvan al MISMO objeto de clase en sys.modules
 # (identidad, no solo igualdad estructural) — ver bloque [7] más abajo.
 from spec.contracts import (
-    SampleInputFacts,
-    MarkerResult,
-    WorkingMemoryFacts,
-    InferenceVerdict,
-    DomainInvariantViolation,
-    UnitDisposition,
-    DonorDisposition,
-    Marker,
-    PhysicalIntegrity,
-    SCOLabel,
     AssayResult,
+    DomainInvariantViolation,
+    DonorDisposition,
+    InferenceVerdict,
     InputSource,
+    Marker,
+    MarkerResult,
+    PhysicalIntegrity,
+    SampleInputFacts,
+    SCOLabel,
+    UnitDisposition,
+    WorkingMemoryFacts,
     certainty_to_percent,
-    percent_to_certainty,
     decision_weight,
+    percent_to_certainty,
 )
 
 SPEC_DIR = Path(__file__).parent
@@ -106,8 +106,11 @@ for rule in kb_rules:
 
 # Chequeo de unicidad de rule_id (invariante estructural de la KB)
 ids = [r["rule_id"] for r in kb_rules]
-record("rule_id únicos en KB", len(ids) == len(set(ids)),
-       "" if len(ids) == len(set(ids)) else f"duplicados: {[i for i in ids if ids.count(i) > 1]}")
+record(
+    "rule_id únicos en KB",
+    len(ids) == len(set(ids)),
+    "" if len(ids) == len(set(ids)) else f"duplicados: {[i for i in ids if ids.count(i) > 1]}",
+)
 
 # ── 3. Casos límite de contrato Pydantic (foco Zona Gris 0.9 / 1.1) ────
 print("\n[3] Casos límite de invariantes (contracts.py)")
@@ -204,8 +207,11 @@ try:
     record("nat_result provisto inválido -> rechazado, no reescrito", False, "no lanzó excepción")
 except ValidationError as e:
     got = _invariant_id_of(e)
-    record("nat_result provisto inválido -> rechazado, no reescrito",
-           got == "INV-08-NAT-APLICABILIDAD", f"invariant_id={got}")
+    record(
+        "nat_result provisto inválido -> rechazado, no reescrito",
+        got == "INV-08-NAT-APLICABILIDAD",
+        f"invariant_id={got}",
+    )
 
 # 3j. HIV + 'No Aplica' debe fallar POR INV-08 (dirección 2 endurecida),
 #     no pasar por una reescritura previa del validador de default.
@@ -214,15 +220,23 @@ try:
     record("INV-08 dir.2: HIV + 'No Aplica' -> rechazado por INV-08", False, "no lanzó excepción")
 except ValidationError as e:
     got = _invariant_id_of(e)
-    record("INV-08 dir.2: HIV + 'No Aplica' -> rechazado por INV-08",
-           got == "INV-08-NAT-APLICABILIDAD", f"invariant_id={got}")
+    record(
+        "INV-08 dir.2: HIV + 'No Aplica' -> rechazado por INV-08",
+        got == "INV-08-NAT-APLICABILIDAD",
+        f"invariant_id={got}",
+    )
 
 # 3k-3l. Ausencia de la clave sí se rellena, derivando del marcador.
 for marker_name, esperado in [("HIV", "Pendiente"), ("Chagas", "No Aplica")]:
     try:
-        derivado = MarkerResult(marker=marker_name, sco_value=0.2, sco_label="No Reactivo").nat_result
-        record(f"nat_result ausente en {marker_name} -> derivado a '{esperado}'",
-               derivado.value == esperado, f"derivó a '{derivado.value}'")
+        derivado = MarkerResult(
+            marker=marker_name, sco_value=0.2, sco_label="No Reactivo"
+        ).nat_result
+        record(
+            f"nat_result ausente en {marker_name} -> derivado a '{esperado}'",
+            derivado.value == esperado,
+            f"derivó a '{derivado.value}'",
+        )
     except ValidationError as e:
         record(f"nat_result ausente en {marker_name} -> derivado a '{esperado}'", False, str(e))
 
@@ -235,16 +249,23 @@ try:
     record("nat_result=null explícito -> rechazado (no se rellena)", False, "no lanzó excepción")
 except ValidationError as e:
     got = _invariant_id_of(e)
-    record("nat_result=null explícito -> rechazado (no se rellena)",
-           got == "INV-STRUCT-AUSENCIA", f"invariant_id={got}")
+    record(
+        "nat_result=null explícito -> rechazado (no se rellena)",
+        got == "INV-STRUCT-AUSENCIA",
+        f"invariant_id={got}",
+    )
 
 
 # ── 4. Banda de certeza difusa en Zona Gris (R2_alta/baja/critica) ─────
 print("\n[4] Umbrales exactos de banda de certeza (WorkingMemoryFacts)")
 
 base_wmf_kwargs = dict(
-    calidad_muestra="Normal", marcador="HIV", sco="Zona Gris", sco_inicial="Zona Gris",
-    nat="No Reactivo", riesgo=False,
+    calidad_muestra="Normal",
+    marcador="HIV",
+    sco="Zona Gris",
+    sco_inicial="Zona Gris",
+    nat="No Reactivo",
+    riesgo=False,
 )
 
 # 4a-4d: la propia banda (R2_*) no es un invariante estructural de tipado
@@ -271,11 +292,20 @@ print("\n[5] Arbitraje por peso de decisión (INV-07) y veredicto bidimensional"
 # 5a. Jerarquía de pesos coincide con la documentada en domain_model.md.
 weights = {
     "Cuarentena": decision_weight(UnitDisposition.CUARENTENA, None),
-    "Descarte+Permanente": decision_weight(UnitDisposition.DESCARTE, DonorDisposition.DIFERIDO_PERMANENTE),
-    "Descarte+Temporal": decision_weight(UnitDisposition.DESCARTE, DonorDisposition.DIFERIDO_TEMPORAL),
+    "Descarte+Permanente": decision_weight(
+        UnitDisposition.DESCARTE, DonorDisposition.DIFERIDO_PERMANENTE
+    ),
+    "Descarte+Temporal": decision_weight(
+        UnitDisposition.DESCARTE, DonorDisposition.DIFERIDO_TEMPORAL
+    ),
     "Apta": decision_weight(UnitDisposition.APTA, DonorDisposition.HABILITADO),
 }
-ordered_ok = weights["Cuarentena"] > weights["Descarte+Permanente"] > weights["Descarte+Temporal"] > weights["Apta"]
+ordered_ok = (
+    weights["Cuarentena"]
+    > weights["Descarte+Permanente"]
+    > weights["Descarte+Temporal"]
+    > weights["Apta"]
+)
 record("jerarquía de pesos estrictamente descendente", ordered_ok, str(weights))
 
 # 5b. InferenceVerdict con Cuarentena y donor=None es válido (R20).
@@ -324,7 +354,11 @@ try:
     )
     record("INV-15: veredicto pendiente (unit ausente, pending_action presente) (válido)", True)
 except ValidationError as e:
-    record("INV-15: veredicto pendiente (unit ausente, pending_action presente) (válido)", False, str(e))
+    record(
+        "INV-15: veredicto pendiente (unit ausente, pending_action presente) (válido)",
+        False,
+        str(e),
+    )
 
 # 5e. INV-15: final_unit_disposition Y pending_action presentes -> rechazado.
 try:
@@ -338,7 +372,11 @@ try:
         timestamp="2026-08-14T10:00:00",
         engine_version="0.1.0",
     )
-    record("INV-15: unit_disposition Y pending_action presentes -> rechazado", False, "no lanzó excepción")
+    record(
+        "INV-15: unit_disposition Y pending_action presentes -> rechazado",
+        False,
+        "no lanzó excepción",
+    )
 except ValidationError:
     record("INV-15: unit_disposition Y pending_action presentes -> rechazado", True)
 
@@ -351,7 +389,11 @@ try:
         timestamp="2026-08-14T10:00:00",
         engine_version="0.1.0",
     )
-    record("INV-15: unit_disposition Y pending_action ausentes -> rechazado", False, "no lanzó excepción")
+    record(
+        "INV-15: unit_disposition Y pending_action ausentes -> rechazado",
+        False,
+        "no lanzó excepción",
+    )
 except ValidationError:
     record("INV-15: unit_disposition Y pending_action ausentes -> rechazado", True)
 
@@ -378,25 +420,30 @@ def enum_isomorphism(label: str, py_enum, json_enum_values: list) -> None:
     json_set = {v for v in json_enum_values if v is not None}
     diff = py_set.symmetric_difference(json_set)
     ok = len(diff) == 0
-    record(f"isomorfismo de enum: {label}", ok,
-           "" if ok else f"diferencia simétrica: {sorted(diff)}")
+    record(
+        f"isomorfismo de enum: {label}", ok, "" if ok else f"diferencia simétrica: {sorted(diff)}"
+    )
 
 
 enum_isomorphism(
     "Marker <-> MarkerResult.marker",
-    Marker, sample_schema["$defs"]["MarkerResult"]["properties"]["marker"]["enum"],
+    Marker,
+    sample_schema["$defs"]["MarkerResult"]["properties"]["marker"]["enum"],
 )
 enum_isomorphism(
     "PhysicalIntegrity <-> $defs.PhysicalIntegrity",
-    PhysicalIntegrity, sample_schema["$defs"]["PhysicalIntegrity"]["enum"],
+    PhysicalIntegrity,
+    sample_schema["$defs"]["PhysicalIntegrity"]["enum"],
 )
 enum_isomorphism(
     "SCOLabel <-> MarkerResult.sco_label",
-    SCOLabel, sample_schema["$defs"]["MarkerResult"]["properties"]["sco_label"]["enum"],
+    SCOLabel,
+    sample_schema["$defs"]["MarkerResult"]["properties"]["sco_label"]["enum"],
 )
 enum_isomorphism(
     "AssayResult <-> MarkerResult.nat_result",
-    AssayResult, sample_schema["$defs"]["MarkerResult"]["properties"]["nat_result"]["enum"],
+    AssayResult,
+    sample_schema["$defs"]["MarkerResult"]["properties"]["nat_result"]["enum"],
 )
 # vdrl/clia comparten vocabulario con nat (AssayResult) pero NO son ensayos
 # NAT. Que [6a] solo cubriera nat_result es el hueco que dejó pasar, durante
@@ -407,19 +454,23 @@ _wmf_schema_props = load_json(SCHEMAS_DIR / "working_memory_facts.schema.json")[
 for _campo in ("nat", "vdrl", "clia"):
     enum_isomorphism(
         f"AssayResult <-> working_memory_facts.{_campo}",
-        AssayResult, _wmf_schema_props[_campo]["enum"],
+        AssayResult,
+        _wmf_schema_props[_campo]["enum"],
     )
 enum_isomorphism(
     "InputSource <-> source",
-    InputSource, sample_schema["properties"]["source"]["enum"],
+    InputSource,
+    sample_schema["properties"]["source"]["enum"],
 )
 enum_isomorphism(
     "UnitDisposition <-> verdict.final_unit_disposition",
-    UnitDisposition, verdict_schema["properties"]["final_unit_disposition"]["enum"],
+    UnitDisposition,
+    verdict_schema["properties"]["final_unit_disposition"]["enum"],
 )
 enum_isomorphism(
     "DonorDisposition <-> verdict.final_donor_disposition",
-    DonorDisposition, verdict_schema["properties"]["final_donor_disposition"]["enum"],
+    DonorDisposition,
+    verdict_schema["properties"]["final_donor_disposition"]["enum"],
 )
 
 # 6b. Round-trip positivo: instancia válida de Pydantic -> model_dump
@@ -473,7 +524,9 @@ pending_verdict_instance = InferenceVerdict(
     engine_version="0.1.0",
 )
 pending_verdict_dump = pending_verdict_instance.model_dump(mode="json", exclude_none=True)
-pending_verdict_errors = sorted(validator_verdict.iter_errors(pending_verdict_dump), key=lambda e: e.path)
+pending_verdict_errors = sorted(
+    validator_verdict.iter_errors(pending_verdict_dump), key=lambda e: e.path
+)
 record(
     "round-trip: InferenceVerdict pendiente (INV-15) -> conforma verdict.schema.json",
     len(pending_verdict_errors) == 0,
@@ -500,7 +553,8 @@ jsonschema_rejected = not validator_sample.is_valid(invalid_marker_payload)
 record(
     "round-trip negativo: marcador fuera de enum rechazado por Pydantic Y jsonschema",
     pydantic_rejected and jsonschema_rejected,
-    "" if (pydantic_rejected and jsonschema_rejected)
+    ""
+    if (pydantic_rejected and jsonschema_rejected)
     else f"pydantic_rechazo={pydantic_rejected}, jsonschema_rechazo={jsonschema_rejected}",
 )
 
@@ -528,7 +582,8 @@ jsonschema_rejected_donor_id = not validator_sample.is_valid(null_donor_id_paylo
 record(
     "round-trip negativo: donor_id=null rechazado por Pydantic Y jsonschema (política de ausencia)",
     pydantic_rejected_donor_id and jsonschema_rejected_donor_id,
-    "" if (pydantic_rejected_donor_id and jsonschema_rejected_donor_id)
+    ""
+    if (pydantic_rejected_donor_id and jsonschema_rejected_donor_id)
     else f"pydantic_rechazo={pydantic_rejected_donor_id}, jsonschema_rechazo={jsonschema_rejected_donor_id}",
 )
 
@@ -548,8 +603,12 @@ def inv08_round_trip(label: str, marker: str, nat_value: str, debe_ser_valido: b
         "sample_id": "ABC123",
         "physical_integrity": "Normal",
         "marker_results": [
-            {"marker": marker, "sco_value": 0.2, "sco_label": "No Reactivo",
-             "nat_result": nat_value},
+            {
+                "marker": marker,
+                "sco_value": 0.2,
+                "sco_label": "No Reactivo",
+                "nat_result": nat_value,
+            },
         ],
         "source": "analyzer_direct",
     }
@@ -557,9 +616,14 @@ def inv08_round_trip(label: str, marker: str, nat_value: str, debe_ser_valido: b
     # (el Fuzzy Engine siempre los deriva, ver INV-05) y ninguno de los
     # marcadores de estos casos es Sífilis, así que corresponde 'No Aplica'.
     interno = {
-        "calidad_muestra": "Normal", "marcador": marker, "sco": "No Reactivo",
-        "sco_inicial": "No Reactivo", "nat": nat_value, "riesgo": False,
-        "vdrl": "No Aplica", "clia": "No Aplica",
+        "calidad_muestra": "Normal",
+        "marcador": marker,
+        "sco": "No Reactivo",
+        "sco_inicial": "No Reactivo",
+        "nat": nat_value,
+        "riesgo": False,
+        "vdrl": "No Aplica",
+        "clia": "No Aplica",
     }
 
     for capa, payload, js_validator, modelo in (
@@ -576,7 +640,8 @@ def inv08_round_trip(label: str, marker: str, nat_value: str, debe_ser_valido: b
         verbo = "aceptado por" if debe_ser_valido else "rechazado por"
         record(
             f"INV-08 [{capa}]: {label} -> {verbo} jsonschema Y Pydantic",
-            ok, "" if ok else f"jsonschema_valido={js_ok}, pydantic_valido={py_ok}",
+            ok,
+            "" if ok else f"jsonschema_valido={js_ok}, pydantic_valido={py_ok}",
         )
 
 
@@ -590,18 +655,35 @@ inv08_round_trip("HIV + 'Pendiente'", "HIV", "Pendiente", debe_ser_valido=True)
 #     no es potencia de 2, por lo que mu*100/100 no es exacto para
 #     cualquier float — se eligen valores que sí lo son, cubriendo los
 #     bordes de banda de certeza (0.3/0.45) y los extremos [0,1].
-idempotence_samples = [0.0, 1.0, 0.5, 0.25, 0.75, 0.9, 0.1, 0.45, 0.3, 0.7778, 0.68, 0.29999, 0.44999]
+idempotence_samples = [
+    0.0,
+    1.0,
+    0.5,
+    0.25,
+    0.75,
+    0.9,
+    0.1,
+    0.45,
+    0.3,
+    0.7778,
+    0.68,
+    0.29999,
+    0.44999,
+]
 idempotence_ok = True
 idempotence_detail = ""
 for mu in idempotence_samples:
     round_tripped = percent_to_certainty(certainty_to_percent(mu))
     if round_tripped != mu:
         idempotence_ok = False
-        idempotence_detail = f"mu={mu} -> percent_to_certainty(certainty_to_percent(mu))={round_tripped}"
+        idempotence_detail = (
+            f"mu={mu} -> percent_to_certainty(certainty_to_percent(mu))={round_tripped}"
+        )
         break
 record(
     "idempotencia percent_to_certainty(certainty_to_percent(mu)) == mu, sin redondeo",
-    idempotence_ok, idempotence_detail,
+    idempotence_ok,
+    idempotence_detail,
 )
 
 
@@ -632,12 +714,14 @@ for model_name in (
     record(
         f"identidad de objeto: seitt_core.domain.{model_name} IS spec.contracts.{model_name}",
         ok,
-        "" if ok else f"seitt_core.domain.{model_name} y spec.contracts.{model_name} son clases DISTINTAS — domain.py redefine en vez de reexportar.",
+        ""
+        if ok
+        else f"seitt_core.domain.{model_name} y spec.contracts.{model_name} son clases DISTINTAS — domain.py redefine en vez de reexportar.",
     )
 
 
 # ── Resumen ─────────────────────────────────────────────────────────────
 total = len(results)
 passed = sum(1 for _, ok, _ in results if ok)
-print(f"\n{'='*60}\nResultado: {passed}/{total} verificaciones OK\n{'='*60}")
+print(f"\n{'=' * 60}\nResultado: {passed}/{total} verificaciones OK\n{'=' * 60}")
 sys.exit(0 if passed == total else 1)

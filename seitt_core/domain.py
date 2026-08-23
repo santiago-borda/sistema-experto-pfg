@@ -20,34 +20,34 @@ sin que el arnés lo detecte.
 from __future__ import annotations
 
 from spec.contracts import (
-    # Excepciones
-    SEITTDomainError,
-    DomainInvariantViolation,
-    SCOLabelInconsistencyError,
-    # Enumeraciones de dominio
-    SCOLabel,
-    PhysicalIntegrity,
     INTERFERENCE_VALUES,
-    Marker,
     NAT_APPLICABLE_MARKERS,
-    UnitDisposition,
-    DonorDisposition,
-    AssayResult,
-    InputSource,
     # Constantes y funciones de dominio
     ZONA_GRIS_LOWER,
     ZONA_GRIS_UPPER,
-    expected_sco_label,
-    decision_weight,
-    certainty_to_percent,
-    percent_to_certainty,
+    AssayResult,
+    DomainInvariantViolation,
+    DonorDisposition,
     # Modelos Pydantic
     DuplicateResult,
-    SifilisAlgorithm,
-    MarkerResult,
-    SampleInputFacts,
-    WorkingMemoryFacts,
     InferenceVerdict,
+    InputSource,
+    Marker,
+    MarkerResult,
+    PhysicalIntegrity,
+    SampleInputFacts,
+    # Enumeraciones de dominio
+    SCOLabel,
+    SCOLabelInconsistencyError,
+    # Excepciones
+    SEITTDomainError,
+    SifilisAlgorithm,
+    UnitDisposition,
+    WorkingMemoryFacts,
+    certainty_to_percent,
+    decision_weight,
+    expected_sco_label,
+    percent_to_certainty,
 )
 
 __all__ = [

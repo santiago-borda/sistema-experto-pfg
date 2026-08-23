@@ -81,6 +81,7 @@ _PYPROJECT = _REPO_ROOT / "pyproject.toml"
 
 # ── Capa 1: resolución independiente del directorio de trabajo ───────────
 
+
 @pytest.fixture()
 def cwd_arbitrario(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     """Sitúa el proceso en un directorio vacío, sin relación con el repo."""
@@ -159,6 +160,7 @@ def test_api_arranca_desde_cwd_arbitrario(cwd_arbitrario: Path) -> None:
 
 
 # ── Capa 2: lo declarado en pyproject.toml cubre lo que se lee ───────────
+
 
 def _declaracion_setuptools() -> dict:
     if not _PYPROJECT.is_file():

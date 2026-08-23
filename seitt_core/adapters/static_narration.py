@@ -59,9 +59,7 @@ class StaticNarrationAdapter:
                 )
             )
             if verdict.final_donor_disposition is not None:
-                lineas.append(
-                    f"Disposición del donante: {verdict.final_donor_disposition.value}."
-                )
+                lineas.append(f"Disposición del donante: {verdict.final_donor_disposition.value}.")
             else:
                 # Solo Cuarentena admite donante sin resolver (INV-07): la
                 # muestra se rechaza técnicamente y al donante todavía no

@@ -36,7 +36,7 @@ from typing import Protocol, runtime_checkable
 class ExtractionPort(Protocol):
     """Contrato de la fase pre-analítica de extracción NLP."""
 
-    def extract(self, raw: bytes | str) -> "ExtractionEnvelope":  # noqa: F821
+    def extract(self, raw: bytes | str) -> ExtractionEnvelope:  # noqa: F821
         """Convierte un reporte no estructurado en hechos candidatos.
 
         Args:

@@ -18,7 +18,7 @@ es el de mayor peso de decisión (INV-07, domain_model.md §4ter).
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
@@ -152,7 +152,7 @@ class RuleEngine:
         cls,
         rules_path: Path = _DEFAULT_RULES_PATH,
         schema_path: Path = _DEFAULT_SCHEMA_PATH,
-    ) -> "RuleEngine":
+    ) -> RuleEngine:
         """Carga y valida la KB en tiempo de ejecución (no confía en que el
         archivo siga siendo válido solo porque lo fue al momento de
         diseñarlo — Consigna 2: sin asunciones implícitas)."""

@@ -19,10 +19,13 @@ api = [
     "uvicorn>=0.30",
 ]
 # httpx es dependencia de TEST, no de runtime: la necesita el TestClient de
-# Starlette en tests/test_api.py.
+# Starlette en tests/test_api.py. ruff cubre linter y formateador en una
+# sola herramienta, lo que evita el clasico conflicto entre un formateador
+# que reacomoda y un linter que se queja de como quedo.
 dev = [
     "pytest>=8.0",
     "httpx>=0.27",
+    "ruff>=0.16",
 ]
 
 [build-system]
@@ -81,3 +84,40 @@ seitt_core = ["rules/*.json"]
 # El glob recursivo cubre subdirectorios futuros (assets/, img/) sin
 # requerir otra revision de empaquetado.
 app = ["web/*", "web/**/*"]
+
+
+# ── Linter y formateador (Consigna 4) ───────────────────────────────────
+[tool.ruff]
+# legacy/ queda EXCLUIDO y no es negociable: es el TP2 grupal, se preserva
+# como referencia historica del aporte de equipo y no se le modifica ni
+# una linea. Formatearlo ensuciaria el `git blame` de codigo que ya no se
+# ejecuta y borraria la frontera entre aporte grupal y continuacion
+# individual, que importa para cualquier pregunta de autoria en la defensa.
+exclude = ["legacy", ".venv", "build", "dist"]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle
+    "F",    # pyflakes: nombres sin usar, imports muertos
+    "W",    # whitespace
+    "I",    # isort: orden de imports determinista
+    "UP",   # pyupgrade: sintaxis que 3.12 ya permite escribir mejor
+    "B",    # flake8-bugbear: patrones que suelen ser bugs, no estilo
+]
+# E501 queda fuera del linter A PROPOSITO, no por comodidad. El formateador
+# ya gobierna el ancho de todo lo que puede reacomodar; lo que sobrepasa
+# 100 despues de formatear son literales de cadena que no se pueden partir
+# sin cambiarlos, y varios de ellos son mensajes de la traza explicativa o
+# de las validaciones. Partirlos a mano para satisfacer al linter tocaria
+# salida clinica auditable por un motivo puramente cosmetico, y ademas
+# rompe el `grep` del mensaje, que es como se los encuentra cuando algo
+# falla. El ancho se controla donde se puede controlar sin efectos.
+ignore = ["E501"]
+
+[tool.ruff.lint.per-file-ignores]
+# El Eval Harness y validate_spec son ARNESES: se ejecutan como script y
+# su salida por consola es el producto. Los prints largos y el orden de
+# ejecucion importan mas que la pureza del modulo.
+"spec/validate_spec.py" = ["E402"]  # imports tardios, deliberados y ya anotados

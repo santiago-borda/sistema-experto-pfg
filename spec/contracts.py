@@ -15,15 +15,14 @@ from __future__ import annotations
 
 from datetime import datetime
 from enum import StrEnum
-from typing import Literal
 
-from pydantic import BaseModel, Field, model_validator, ConfigDict
-
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 # ─────────────────────────────────────────────────────────────────────────
 # Excepciones explícitas de dominio (Consigna 2: manejo explícito, no
 # excepciones genéricas ni silenciadas)
 # ─────────────────────────────────────────────────────────────────────────
+
 
 class SEITTDomainError(ValueError):
     """Raíz de la jerarquía de excepciones de dominio del SE-ITT.
@@ -62,6 +61,7 @@ class SCOLabelInconsistencyError(DomainInvariantViolation):
 # ─────────────────────────────────────────────────────────────────────────
 # Enumeraciones de dominio (vocabulario cerrado — ver domain_model.md §1)
 # ─────────────────────────────────────────────────────────────────────────
+
 
 class SCOLabel(StrEnum):
     NO_REACTIVO = "No Reactivo"
@@ -122,6 +122,7 @@ class DonorDisposition(StrEnum):
 # NO es "primera regla por prioridad gana", sino "máximo peso entre todas
 # las reglas terminales disparadas gana"; R20 es el único corto-circuito).
 # ─────────────────────────────────────────────────────────────────────────
+
 
 def decision_weight(unit: UnitDisposition, donor: DonorDisposition | None) -> int:
     """Jerarquía de arbitraje: Cuarentena > Descarte+Permanente >
@@ -198,6 +199,7 @@ def expected_sco_label(sco_value: float) -> SCOLabel:
 # punto de conversión permitido.
 # ─────────────────────────────────────────────────────────────────────────
 
+
 def certainty_to_percent(mu: float) -> float:
     """Única conversión permitida entre el grado de pertenencia del
     contrato externo (µ ∈ [0,1]) y certeza_sco (porcentaje ∈ [0,100]).
@@ -232,6 +234,7 @@ def percent_to_certainty(pct: float) -> float:
 # jsonschema lo rechaza — exactamente el drift que 6c ahora detecta.
 # ─────────────────────────────────────────────────────────────────────────
 
+
 def _reject_explicit_null(data: object, fields: tuple[str, ...]) -> object:
     """Rechaza null explícito para los `fields` dados; la ausencia de la
     clave sigue siendo válida (el campo usa su default)."""
@@ -252,6 +255,7 @@ def _reject_explicit_null(data: object, fields: tuple[str, ...]) -> object:
 # Modelos de hechos de entrada (SampleInputFacts)
 # ─────────────────────────────────────────────────────────────────────────
 
+
 class DuplicateResult(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -259,7 +263,7 @@ class DuplicateResult(BaseModel):
     sco_label: SCOLabel
 
     @model_validator(mode="after")
-    def check_label_consistency(self) -> "DuplicateResult":
+    def check_label_consistency(self) -> DuplicateResult:
         expected = expected_sco_label(self.sco_value)
         if self.sco_label != expected:
             raise SCOLabelInconsistencyError(self.sco_value, self.sco_label, expected)
@@ -323,29 +327,34 @@ class MarkerResult(BaseModel):
             data = {
                 **data,
                 "nat_result": (
-                    AssayResult.PENDIENTE if marker in NAT_APPLICABLE_MARKERS
+                    AssayResult.PENDIENTE
+                    if marker in NAT_APPLICABLE_MARKERS
                     else AssayResult.NO_APLICA
                 ),
             }
         return data
 
     @model_validator(mode="after")
-    def check_label_consistency(self) -> "MarkerResult":
+    def check_label_consistency(self) -> MarkerResult:
         expected = expected_sco_label(self.sco_value)
         if self.sco_label != expected:
             raise SCOLabelInconsistencyError(self.sco_value, self.sco_label, expected)
         return self
 
     @model_validator(mode="after")
-    def check_sifilis_algorithm_presence(self) -> "MarkerResult":
-        if self.marker == Marker.SIFILIS and self.sifilis_algorithm is None and self.sco_label != SCOLabel.NO_REACTIVO:
+    def check_sifilis_algorithm_presence(self) -> MarkerResult:
+        if (
+            self.marker == Marker.SIFILIS
+            and self.sifilis_algorithm is None
+            and self.sco_label != SCOLabel.NO_REACTIVO
+        ):
             # No es un error duro (puede no requerirse aún el algoritmo confirmatorio),
             # pero se deja el punto de extensión documentado para INV-05.
             pass
         return self
 
     @model_validator(mode="after")
-    def check_nat_applicability(self) -> "MarkerResult":
+    def check_nat_applicability(self) -> MarkerResult:
         """INV-08 (bidireccional), aplicado en el contrato de entrada
         (defensa temprana, antes de que el hecho llegue siquiera al Fuzzy
         Engine). Ver domain_model.md §3."""
@@ -391,7 +400,7 @@ class SampleInputFacts(BaseModel):
         return _reject_explicit_null(data, ("donor_id",))
 
     @model_validator(mode="after")
-    def check_extraction_confidence_required(self) -> "SampleInputFacts":
+    def check_extraction_confidence_required(self) -> SampleInputFacts:
         if self.source == InputSource.MEDGEMMA_EXTRACTION and self.extraction_confidence is None:
             raise DomainInvariantViolation(
                 invariant_id="INV-STRUCT-EXTRACTION",
@@ -407,6 +416,7 @@ class SampleInputFacts(BaseModel):
 # campos a nivel de muestra; es lo que consumen los antecedentes de la KB.
 # ─────────────────────────────────────────────────────────────────────────
 
+
 class WorkingMemoryFacts(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -418,9 +428,11 @@ class WorkingMemoryFacts(BaseModel):
     sco_repeticion: SCOLabel | None = None
     sco_repeticion_valor: float | None = Field(default=None, ge=0)
     certeza_sco: float | None = Field(
-        default=None, ge=0, le=100,
+        default=None,
+        ge=0,
+        le=100,
         description="Se calcula para las 3 etiquetas (No Reactivo/Zona Gris/Reactivo), "
-                     "no exclusiva de Zona Gris. Ver domain_model.md §2.",
+        "no exclusiva de Zona Gris. Ver domain_model.md §2.",
     )
     nat: AssayResult
     riesgo: bool
@@ -449,8 +461,7 @@ class WorkingMemoryFacts(BaseModel):
             except ValueError:
                 return data  # marcador inválido: lo reporta el validador de tipo
             derivado = (
-                AssayResult.PENDIENTE if marcador == Marker.SIFILIS
-                else AssayResult.NO_APLICA
+                AssayResult.PENDIENTE if marcador == Marker.SIFILIS else AssayResult.NO_APLICA
             )
             faltantes = {k: derivado for k in ("vdrl", "clia") if k not in data}
             if faltantes:
@@ -458,7 +469,7 @@ class WorkingMemoryFacts(BaseModel):
         return data
 
     @model_validator(mode="after")
-    def check_assay_applicability(self) -> "WorkingMemoryFacts":
+    def check_assay_applicability(self) -> WorkingMemoryFacts:
         """VDRL y CLIA pertenecen al algoritmo de sífilis (INV-05): para
         cualquier otro marcador el único valor legal es 'No Aplica', y
         para Sífilis 'No Aplica' es una violación (el ensayo corresponde;
@@ -487,7 +498,7 @@ class WorkingMemoryFacts(BaseModel):
         return self
 
     @model_validator(mode="after")
-    def check_nat_applicability(self) -> "WorkingMemoryFacts":
+    def check_nat_applicability(self) -> WorkingMemoryFacts:
         """INV-08 (bidireccional): el NAT es clínicamente aplicable solo a
         HIV, HBV y HCV — y para esos tres, 'No Aplica' es igual de
         inválido que un resultado inventado. Ver domain_model.md §3."""
@@ -518,6 +529,7 @@ class WorkingMemoryFacts(BaseModel):
 # forma dual terminal/pendiente, INV-15)
 # ─────────────────────────────────────────────────────────────────────────
 
+
 class InferenceVerdict(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -533,7 +545,7 @@ class InferenceVerdict(BaseModel):
     engine_version: str
 
     @model_validator(mode="after")
-    def check_donor_disposition_presence(self) -> "InferenceVerdict":
+    def check_donor_disposition_presence(self) -> InferenceVerdict:
         """Toda disposición != Cuarentena y != null debe traer estado de
         donante explícito (ninguna regla terminal de la KB deja al donante
         sin resolver salvo el rechazo técnico o un ciclo aún no terminal)."""
@@ -553,7 +565,7 @@ class InferenceVerdict(BaseModel):
         return self
 
     @model_validator(mode="after")
-    def check_pending_action_consistency(self) -> "InferenceVerdict":
+    def check_pending_action_consistency(self) -> InferenceVerdict:
         """INV-15 (domain_model.md §4quater): pending_action y
         final_unit_disposition son mutuamente excluyentes — exactamente
         uno de los dos debe estar presente. O el ciclo terminó

@@ -13,9 +13,9 @@ from seitt_core.fuzzy_engine import fuzzificar_sco
     "sco_valor,label_esperado,certeza_esperada",
     [
         (0.2, SCOLabel.NO_REACTIVO, 77.78),
-        (0.9, SCOLabel.ZONA_GRIS, 100.0),   # borde inferior: certeza máxima
-        (1.0, SCOLabel.ZONA_GRIS, 50.0),    # centro de la banda
-        (1.1, SCOLabel.ZONA_GRIS, 0.0),     # borde superior: certeza mínima
+        (0.9, SCOLabel.ZONA_GRIS, 100.0),  # borde inferior: certeza máxima
+        (1.0, SCOLabel.ZONA_GRIS, 50.0),  # centro de la banda
+        (1.1, SCOLabel.ZONA_GRIS, 0.0),  # borde superior: certeza mínima
         (4.5, SCOLabel.REACTIVO, 68.0),
     ],
 )

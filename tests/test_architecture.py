@@ -40,23 +40,27 @@ _NUCLEO = Path(__file__).resolve().parent.parent / "seitt_core"
 # Módulos del borde neuronal. Si alguno aparece importado en seitt_core/,
 # el sistema dejó de ser no-wrapper: el veredicto pasaría a depender de la
 # disponibilidad del modelo.
-_BORDE_NEURONAL = frozenset({
-    "medgemma",
-    "transformers",
-    "torch",
-    "ollama",
-    "llama_cpp",
-    "huggingface",
-    "huggingface_hub",
-})
+_BORDE_NEURONAL = frozenset(
+    {
+        "medgemma",
+        "transformers",
+        "torch",
+        "ollama",
+        "llama_cpp",
+        "huggingface",
+        "huggingface_hub",
+    }
+)
 
 # Módulos del borde web. El núcleo debe ser importable sin ellos.
-_BORDE_WEB = frozenset({
-    "fastapi",
-    "starlette",
-    "uvicorn",
-    "jinja2",
-})
+_BORDE_WEB = frozenset(
+    {
+        "fastapi",
+        "starlette",
+        "uvicorn",
+        "jinja2",
+    }
+)
 
 _PROHIBIDOS = _BORDE_NEURONAL | _BORDE_WEB
 

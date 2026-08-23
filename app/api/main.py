@@ -23,9 +23,8 @@ from seitt_core import rule_engine as _rule_engine
 from seitt_core.adapters import StaticNarrationAdapter
 from seitt_core.domain import (
     NAT_APPLICABLE_MARKERS,
-    SEITTDomainError,
-    DomainInvariantViolation,
     Marker,
+    SEITTDomainError,
     UnitDisposition,
     certainty_to_percent,
 )
