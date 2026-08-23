@@ -114,10 +114,15 @@ instala y corre sin ninguno de los dos.
 3. **Verificar la instalación** (los tres deben pasar en verde):
 
 ```bash
-python spec/validate_spec.py              # validación estructural de la spec
-python -m pytest tests/ seitt_core/tests/ # regresión + arquitectura + API
-python seitt_core/eval/eval_harness.py    # Eval Harness (Consigna 3)
+python spec/validate_spec.py     # 87/87 — validación estructural de la spec
+python -m pytest                 # 75 passed — regresión + arquitectura + API + empaquetado
+python seitt_core/eval/eval_harness.py   # 33/33, kappa 1.0 — Eval Harness (Consigna 3)
 ```
+
+> **En Windows:** `validate_spec.py` y el Eval Harness imprimen símbolos
+> de estado no-ASCII. Si la consola abre en cp1252, el propio arnés muere
+> con `UnicodeEncodeError` antes de reportar nada. Anteponer
+> `PYTHONIOENCODING=utf-8` o usar el contenedor, que ya lo trae fijado.
 
 4. **Levantar la demo web:**
 
@@ -131,6 +136,55 @@ En `http://127.0.0.1:8000/`. La interfaz trae botones de caso precargado
 > `legacy/main.py` es la GUI original en Tkinter del TP2. Se preserva
 > como referencia histórica y **no se ejecuta** contra el motor
 > refactorizado: fue reemplazada por la interfaz web, no adaptada.
+
+---
+
+## 🐳 Ejecución en contenedor (Consigna 4)
+
+La vía reproducible: no necesita Python, ni venv, ni instalar nada del
+proyecto en la máquina. Solo Docker.
+
+```bash
+# Demo — la interfaz que se muestra en la defensa
+docker compose --profile app up --build
+# -> http://127.0.0.1:8000/
+
+# Si el puerto 8000 ya está ocupado en el host:
+SEITT_PORT=8001 docker compose --profile app up --build
+
+# Validación completa, con código de salida (sirve como gate de CI)
+docker compose --profile ci up --build --exit-code-from ci
+```
+
+El perfil `ci` corre las tres validaciones dentro de la imagen y devuelve
+`0` en verde, distinto de `0` si alguna falla. Corre sin red
+(`network_mode: none`), lo que de paso demuestra que la validación del
+núcleo simbólico no depende de ningún servicio externo.
+
+Detalles que importan para la defensa:
+
+* **La imagen es autocontenida.** El perfil `app` no bind-montea el
+  código: lo que corre es la wheel instalada, no los archivos del host.
+  Si leyera del host no estaría demostrando que la imagen funciona.
+* **No corre como root** (`uid 1001`), con `read_only`, `cap_drop: ALL`
+  y `no-new-privileges`.
+* **`legacy/` no entra a la imagen.** `import legacy` dentro del
+  contenedor da `ModuleNotFoundError`: el TP2 con Tkinter se preserva en
+  el repo, no en el artefacto.
+* **Base pineada por digest** y dependencias cerradas en
+  `constraints.txt`, transitivas incluidas: dos builds del mismo commit
+  producen el mismo entorno.
+* **`/api/health`** publica la readiness calculada al arranque (KB
+  cargada, reglas parseadas, schema validado, frontend montado). Es lo
+  que consume el `HEALTHCHECK`. Si algo de eso falta, el proceso no
+  arranca — antes fallaba en silencio.
+
+Para iterar sobre el frontend sin reconstruir hay un perfil aparte, que
+**no** es la demo:
+
+```bash
+docker compose --profile dev up --build   # monta app/web/ en solo lectura
+```
 
 ---
 

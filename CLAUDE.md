@@ -23,8 +23,10 @@ LLM participe jamás de la inferencia clínica (arquitectura no-wrapper).
 3. **Eval Harness**: evaluación automatizada — Tasa de Acierto, tiempo
    promedio de inferencia, concordancia (Cohen's Kappa) vs. criterio
    clínico experto, con foco reforzado en Zona Gris (0.9–1.1 S/CO).
-4. **IDE fijo / entorno controlado**: linting, formateador estandarizado,
-   Docker Compose, reproducibilidad de builds. **Pendiente.**
+4. **IDE fijo / entorno controlado**: Docker Compose y reproducibilidad
+   de builds **cerrados** (imagen multi-stage, base pineada por digest,
+   `constraints.txt`, perfiles `app`/`ci`). Linter, formateador y type
+   checker **siguen pendientes**: no hay ninguno configurado como gate.
 5. **No-Wrapper LLM**: MedGemma nunca decide el veredicto. Solo extrae
    (pre-analítico) y traduce el log explicativo a lenguaje natural
    (post-analítico). La frontera está forzada por schema, no por convención.
@@ -54,17 +56,17 @@ spec/         Fase 0: especificación formal.
   domain_model.md          Invariantes (INV-01..08), fórmulas, hallazgos
   contracts.py             Modelos Pydantic v2 (enums, validadores)
   validate_spec.py         Arnés que valida schemas + KB + casos límite
-  schemas/*.schema.json    5 JSON Schemas (Draft 2020-12)
-  rules/kb_rules.json      KB declarativa: 20 reglas reales (22 entradas,
-                            R2 desdoblada en 3 variantes de certeza)
+  schemas/*.schema.json    8 JSON Schemas (Draft 2020-12)
+  rules/kb_rules.json      KB declarativa: 23 entradas (R1..R21, con R2
+                            desdoblada en 3 variantes de certeza)
 
 seitt_core/   Fase 1: refactor del motor, DSL-driven (reemplaza a legacy/).
   domain.py, fuzzy_engine.py, rule_engine.py, explicador.py,
   expert_system.py
   rules/kb_rules.json       (copia sincronizada de spec/rules/)
-  tests/                    23 tests pytest (regresión + fuzzy engine)
+  tests/                    tests pytest de regresión + fuzzy engine
   eval/                     Fase 2: Eval Harness
-    eval_dataset.json       28 casos con criterio experto (ground truth)
+    eval_dataset.json       33 casos con criterio experto (ground truth)
     eval_harness.py         Corre el dataset, mide métricas
     eval_report.json        Último reporte generado
 
@@ -76,9 +78,20 @@ app/          Fase 3: interfaz de usuario nueva, arquitectura web.
   web/                      Frontend estático (HTML/CSS/JS plano, sin
                             paso de build), servido por FastAPI.
 
+tests/        Tests de nivel repo (no de un módulo): arquitectura
+              (INV-13, por AST), API HTTP y empaquetado del artefacto
+              distribuible.
+
 docs/         Papers académicos ya existentes (Poster, PIF, TP2) — leer
               con cautela, tienen discrepancias documentadas vs. el código
               real (ver domain_model.md §4bis).
+
+Dockerfile          Imagen multi-stage: builder / runtime / test.
+docker-compose.yml  Perfiles `app` (demo), `ci` (validación), `dev`.
+constraints.txt     Versiones exactas de TODO el árbol, transitivas
+                    incluidas. Se regenera desde la imagen, no del host.
+.dockerignore       Deja fuera legacy/, .venv/, .git/, artefactos.
+.gitattributes      LF forzado (Windows + core.autocrlf=true).
 ```
 
 ## Origen y propiedad del repositorio
@@ -114,9 +127,26 @@ defensa.
 ## Estado actual (verificar corriendo esto al empezar cualquier sesión)
 
 ```bash
-python spec/validate_spec.py              # esperado: 45/45 OK
-python -m pytest seitt_core/tests/ -v     # esperado: 23/23 passed
-python seitt_core/eval/eval_harness.py    # esperado: 28/28, Tasa de Acierto 100%, kappa 1.0
+python spec/validate_spec.py              # esperado: 87/87 OK
+python -m pytest                          # esperado: 75 passed
+python seitt_core/eval/eval_harness.py    # esperado: 33/33, Tasa de Acierto 100%, kappa 1.0
+```
+
+**En Windows**: `validate_spec.py` y el Eval Harness imprimen símbolos de
+estado no-ASCII. Si la consola abre en cp1252 (habitual bajo un shell no
+interactivo), el arnés muere con `UnicodeEncodeError` antes de reportar
+nada — no es un fallo de validación. Anteponer `PYTHONIOENCODING=utf-8`.
+
+Nótese que `pytest` corre **sin argumentos**: `tests/` (arquitectura, API,
+empaquetado) y `seitt_core/tests/` (regresión, fuzzy) se recogen juntos.
+Acotarlo a `seitt_core/tests/` deja fuera la mitad de la red de seguridad.
+
+Lo mismo dentro del contenedor, que además valida la wheel real:
+
+```bash
+docker compose --profile ci up --build --exit-code-from ci   # exit 0 en verde
+docker compose --profile app up --build                      # demo en :8000
+SEITT_PORT=8001 docker compose --profile app up --build      # si 8000 está ocupado
 ```
 
 Si alguno falla, es la primera prioridad a resolver antes de tocar cualquier
@@ -191,13 +221,74 @@ entre sesiones ni se redescubran desde cero.
   R2_* con `certeza_sco`, las reglas por marcador con `marcador`) — que
   son justamente donde un placeholder equivocado pasa desapercibido.
 
+- **`RuleEngine.load()` omite la validación si falta el schema.** La
+  carga hace `if schema_path.exists()` antes de validar la KB contra
+  `rule.schema.json`. Si el archivo no está, las reglas se cargan **sin
+  validar** y el motor sigue emitiendo veredictos como si nada — en un
+  CDSS, reglas clínicas nunca verificadas sirviendo decisiones. Es el
+  mismo patrón de degradación silenciosa que tenía el montaje del
+  frontend. Se detectó al empaquetar (Consigna 4), porque una wheel sin
+  los JSON Schema entra exactamente por ese camino.
+  *Contención actual (en el borde, no es la solución):* el arranque de la
+  API verifica que el schema exista **antes** de cargar la KB y se niega
+  a levantar si falta (`_verificar_arranque()` en `app/api/main.py`), y
+  `/api/health` publica `kb_schema_validado`. Pero eso solo protege a
+  quien entra por la API: un script que importe `seitt_core` directo
+  sigue teniendo el agujero.
+  *Corrección de fondo pendiente:* que `RuleEngine.load()` falle si el
+  schema no está, con un parámetro explícito para el único caso que
+  legítimamente quiera saltearlo. Fuera de alcance de esta sesión por
+  tocar el núcleo simbólico.
+
+- **`_DEFAULT_RULES_PATH` / `_DEFAULT_SCHEMA_PATH` son privadas y las lee
+  `app/`.** `app/api/main.py` importa esas dos constantes de
+  `seitt_core.rule_engine` para el chequeo de arranque. Se eligió eso
+  antes que reconstruir las rutas en el adaptador, porque una ruta
+  duplicada se desincroniza en silencio del motor — que es justo el fallo
+  que el arranque existe para impedir. Pero deja al borde HTTP acoplado a
+  un nombre privado del núcleo.
+  *Corrección pendiente:* promoverlas a API pública de `rule_engine` (o
+  exponer un `RuleEngine.describe()` con rutas y cantidad de reglas) la
+  próxima vez que se toque el núcleo.
+
+- **El pineo de dependencias es por versión, no por hash.**
+  `constraints.txt` fija versiones exactas de todo el árbol, lo que
+  protege contra la deriva natural de PyPI. No protege contra que se
+  reemplace el contenido de una versión ya publicada. El paso siguiente
+  es `--require-hashes` con los digests generados por plataforma; se
+  difiere porque la base ya está pineada por digest y el costo/beneficio
+  no lo justifica todavía.
+
+- **El Eval Harness escribe `eval_report.json` dentro del paquete.**
+  `_REPORT_PATH = Path(__file__).parent / "eval_report.json"`, o sea que
+  escribe en `site-packages` cuando corre desde una instalación real. Hoy
+  no molesta porque el arnés solo corre en la etapa `test` de la imagen,
+  que es root. Si algún día se corriera en el contenedor de runtime (no
+  root, `read_only: true`), fallaría con `PermissionError`. Lo correcto
+  sería un `--output` con default en el cwd.
+
 ## Pendiente / próximos frentes (en orden sugerido)
 
 1. Reorganización del repo (`legacy/`, `spec/`, `seitt_core/` como hermanos
    en la raíz) — completa y validada (45/45 spec, 23/23 tests, 28/28 eval
    harness, corrido en Windows con .venv).
-2. Dockerización + entorno reproducible (Consigna 4).
-3. Contrato JSON MedGemma ↔ Motor Difuso (extiende `sample_input.schema.json`).
+2. Dockerización + entorno reproducible (Consigna 4) — **completa**.
+   Imagen multi-stage con base pineada por digest, usuario no-root,
+   `HEALTHCHECK` contra `/api/health`, `constraints.txt` con todo el árbol
+   cerrado, y perfiles `app`/`ci`/`dev` en Compose. Verificado desde un
+   clon limpio: 87/87, 75 passed, 33/33 con kappa 1.0 dentro de la imagen,
+   y veredicto + traza explicativa idénticos a los del host.
+3. **Linter / formateador / type checker (resto de la Consigna 4).** Hoy
+   no hay NINGUNO configurado como gate ejecutable: ni ruff, ni black, ni
+   mypy. Es la única parte de la consigna que sigue abierta. Advertencia
+   registrada: `mypy --strict` sobre el motor de reglas probablemente
+   destape problemas reales de tipado en la frontera difusa (`dict` sin
+   tipar en `kb_rules`, `Any` en `_resolve_fact_value`), así que merece
+   una sesión propia y una decisión previa sobre si se adopta estricto
+   desde el día 1 o con baseline de excepciones documentadas.
+4. Contrato JSON MedGemma ↔ Motor Difuso (extiende `sample_input.schema.json`).
+   El hueco del servicio ya está documentado en `docker-compose.yml`, en
+   comentario y sin implementar, para no reestructurar el compose después.
 
 ### Decisión de interfaz (Fase 3, Paso 3A)
 
