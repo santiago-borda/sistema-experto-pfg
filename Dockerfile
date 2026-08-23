@@ -143,6 +143,21 @@ COPY tests/ ./tests/
 # y el numero que se defiende tiene que ser reproducible.
 RUN pip install -c constraints.txt ".[dev,api]"
 
+# Gate de estilo. Va PRIMERO porque es el mas barato y el que da el
+# diagnostico mas directo: si el formato esta fuera de norma conviene
+# saberlo antes de gastar el tiempo de las tres validaciones.
+#
+# `format --check` no reescribe nada: falla si el archivo difiere de como
+# quedaria formateado. Es la unica forma de que el formateador sea un gate
+# y no una sugerencia -- si el build formateara, el repo podria vivir
+# indefinidamente desalineado sin que nadie se entere.
+#
+# legacy/ ni siquiera esta en la imagen (lo excluye .dockerignore), asi
+# que aca el exclude de pyproject es redundante y esta bien que lo sea:
+# las dos barreras dicen lo mismo por si alguien afloja una.
+RUN ruff format --check .
+RUN ruff check .
+
 # Gate de build: si una validacion se pone en rojo, `docker build
 # --target test` falla y no llega a producirse imagen. Las tres corren
 # desde /src, que es donde estan los fuentes -- tests/test_architecture.py
@@ -163,4 +178,4 @@ RUN cd /tmp && python -c "import json, urllib.request; from app.api.main import 
 # contenedor y `--exit-code-from` lo pueda propagar. Es exec-form; no hay
 # ningun archivo de script, y por lo tanto ningun shebang que CRLF pueda
 # romper. El `&&` corta en la primera que falle.
-CMD ["sh", "-c", "python -m pytest -q && python spec/validate_spec.py && python seitt_core/eval/eval_harness.py"]
+CMD ["sh", "-c", "ruff format --check . && ruff check . && python -m pytest -q && python spec/validate_spec.py && python seitt_core/eval/eval_harness.py"]

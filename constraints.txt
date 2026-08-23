@@ -56,6 +56,12 @@ uvicorn==0.52.4
 # ── Validacion (extra [dev]) ────────────────────────────────────────────
 pytest==9.1.1
 httpx==0.28.1
+# ruff se pinea con el mismo criterio que el resto, y con una razon extra:
+# es un gate. Una version nueva puede agregar reglas o cambiar como
+# formatea, y entonces un build que no toco una linea de codigo empieza a
+# fallar solo. Actualizarlo tiene que ser una decision, no un efecto del
+# calendario.
+ruff==0.16.4
 
 # ── Transitivas ─────────────────────────────────────────────────────────
 # Nadie las nombra en pyproject, pero estan en el entorno y por lo tanto
