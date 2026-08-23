@@ -1,0 +1,136 @@
+# docker-compose.yml — SE-ITT (Consigna 4).
+#
+# Dos perfiles, ninguno por defecto: `docker compose up` a secas no
+# levanta nada. Es intencional -- obliga a decir para que se esta
+# levantando el sistema, porque la demo y la validacion no se parecen en
+# nada (una sirve HTTP indefinidamente, la otra corre y termina con un
+# codigo de salida).
+#
+#   docker compose --profile app up --build
+#   docker compose --profile ci  up --build --exit-code-from ci
+#
+# No se declara `version:`: Compose v2 la ignora y solo emite un warning.
+
+services:
+
+  # ── Demo: la interfaz que se muestra en la defensa ────────────────────
+  app:
+    profiles: ["app"]
+    build:
+      context: .
+      target: runtime
+    image: seitt:runtime
+    container_name: seitt-app
+    # El puerto del HOST es configurable; el del contenedor no. En la
+    # maquina de desarrollo ya habia un uvicorn escuchando en
+    # 127.0.0.1:8000, y como Windows resuelve la loopback al binding mas
+    # especifico, la demo contestaba con el servidor viejo del host en vez
+    # del contenedor -- con un 404 desconcertante y ningun error a la
+    # vista. Preferible un override declarado que averiguarlo en vivo:
+    #   SEITT_PORT=8001 docker compose --profile app up
+    ports:
+      - "${SEITT_PORT:-8000}:8000"
+    # SIN bind mount del codigo, a proposito. La imagen tiene que ser
+    # autocontenida: si el contenedor de la demo leyera los fuentes del
+    # host, no estaria demostrando que la imagen funciona -- estaria
+    # demostrando que la maquina de quien la corre funciona, que es
+    # justo lo que la Consigna 4 viene a descartar. Para iterar sobre el
+    # frontend esta el perfil `dev` de mas abajo.
+    restart: unless-stopped
+    # El HEALTHCHECK vive en el Dockerfile (viaja con la imagen, no con
+    # este archivo). Aca solo se ajustan los tiempos para una demo, donde
+    # conviene enterarse rapido de que algo no levanto.
+    healthcheck:
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    # Endurecimiento barato: el proceso ya corre como uid 1001 y no
+    # necesita escribir en ningun lado ni ganar privilegios.
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+
+  # ── Validacion: la red de seguridad, con codigo de salida ─────────────
+  ci:
+    profiles: ["ci"]
+    build:
+      context: .
+      target: test
+    image: seitt:test
+    container_name: seitt-ci
+    # Corre las tres validaciones y termina. `--exit-code-from ci` propaga
+    # su codigo de salida, asi que sirve tal cual como gate de un pipeline.
+    # `restart` queda sin declarar (default `no`): un contenedor de CI que
+    # se reinicia solo enmascararia el fallo que tiene que reportar.
+    network_mode: "none"
+
+  # ── Iteracion sobre el frontend (opcional, no es la demo) ─────────────
+  # Perfil aparte y explicito para que nadie confunda "anda con el mount"
+  # con "la imagen anda". Monta app/web/ en modo lectura sobre la ruta del
+  # paquete instalado: alcanza para ver cambios de HTML/CSS/JS sin
+  # reconstruir, porque el frontend no tiene paso de build. El codigo
+  # Python NO se monta: para eso se reconstruye, que tarda segundos.
+  dev:
+    profiles: ["dev"]
+    build:
+      context: .
+      target: runtime
+    image: seitt:runtime
+    container_name: seitt-dev
+    ports:
+      - "${SEITT_PORT:-8000}:8000"
+    volumes:
+      - ./app/web:/opt/venv/lib/python3.12/site-packages/app/web:ro
+
+# ── Hueco previsto para MedGemma (Fase 3) — NO implementado ─────────────
+#
+# Se documenta aca, sin codigo, para que incorporar la capa de extraccion
+# pre-analitica no obligue a reestructurar este archivo. La frontera ya
+# existe en el repo: seitt_core/ports/extraction_port.py declara el
+# Protocol, y spec/schemas/extraction_envelope.schema.json fija la forma
+# de lo que puede cruzar.
+#
+# El servicio iria mas o menos asi:
+#
+#   medgemma:
+#     profiles: ["app"]
+#     image: <servidor de inferencia>:<tag pineado por digest>
+#     volumes:
+#       - medgemma-weights:/models:ro
+#     deploy:
+#       resources:
+#         reservations:
+#           devices: [{ driver: nvidia, count: 1, capabilities: [gpu] }]
+#
+# y `app` recibiria SEITT_EXTRACTION_URL=http://medgemma:8080 para elegir
+# el adaptador en _narrador()/_extractor(), sin tocar nada mas.
+#
+# Tres condiciones que este hueco tiene que respetar cuando se llene, y
+# que conviene dejar escritas antes de que haya prisa por conectarlo:
+#
+#   1. `ci` NUNCA depende de `medgemma`. El nucleo simbolico emite el
+#      veredicto sin el modelo (INV-13), y la validacion tiene que poder
+#      correr en un runner sin GPU y sin red. De ahi el network_mode:
+#      "none" de arriba: hoy es gratis, y ademas deja demostrado que las
+#      tres validaciones no tocan la red.
+#
+#   2. `medgemma` no expone puertos al host. Habla solo con `app` por la
+#      red interna de Compose. Lo que entra al sistema entra por el
+#      puerto de extraccion y valida contra schema, no por un canal
+#      lateral.
+#
+#   3. Si `medgemma` no esta o no responde, `app` sigue levantando y
+#      emitiendo veredictos. El adaptador estatico de narracion es el
+#      DEFAULT, no un fallback degradado. Un `depends_on` con
+#      `condition: service_healthy` invertiria esa relacion y convertiria
+#      al LLM en dependencia dura del veredicto clinico -- que es
+#      precisamente lo que la Consigna 5 prohibe.
+
+volumes:
+  # Declarado sin uso todavia: los pesos del modelo no son parte de la
+  # imagen ni del repo. Queda nombrado para que el dia que exista el
+  # servicio no haya que discutir donde viven.
+  medgemma-weights:
