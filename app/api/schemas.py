@@ -106,3 +106,30 @@ class MarcadorInfo(BaseModel):
     marcador: Marker
     nat_aplicable: bool
     sifilis_aplicable: bool
+
+
+class EstadoSalud(BaseModel):
+    """Respuesta de GET /api/health — readiness calculada al arranque.
+
+    No es un ping: es la lista de recursos no-Python de los que depende el
+    veredicto (la KB declarativa, su JSON Schema, el frontend estático) y
+    que un empaquetado incompleto puede dejar afuera sin que el proceso se
+    entere. Antes de la Consigna 4, `pip install .` producía exactamente
+    esa instalación: servidor sano, cero reglas, 404 en `/`.
+
+    Los valores se congelan durante el arranque y se sirven tal cual: el
+    sondeo es O(1) y no vuelve a tocar el disco ni ejecuta inferencia. Si
+    algo de esto estuviera mal, el proceso no habría llegado a escuchar
+    (ver `_verificar_arranque()` en `main.py`) — de modo que un 200 acá
+    significa "este contenedor puede emitir un veredicto", no "el puerto
+    está abierto".
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    estado: str
+    kb_cargada: bool
+    kb_reglas: int
+    kb_schema_validado: bool
+    web_montado: bool
+    engine_version: str

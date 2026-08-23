@@ -30,17 +30,54 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
-packages = ["spec", "seitt_core", "app", "app.api"]
-# Solo se empaquetan los modulos Python de spec/ y seitt_core/ (imports en
-# modo editable, ver "pip install -e ." en CLAUDE.md). Explicitamente NO
-# se declara package_data ni se activa include-package-data: los JSON
-# Schema (spec/schemas/), la KB (spec/rules/, seitt_core/rules/), los
-# datasets (seitt_core/eval/) y domain_model.md son artefactos de
-# especificacion / datos de runtime que el codigo lee via rutas relativas
-# a Path(__file__) (ver SCHEMAS_DIR en validate_spec.py, _DEFAULT_RULES_PATH
-# en rule_engine.py) — nunca via importlib.resources sobre el paquete
-# instalado. En modo editable esto funciona porque el arbol fuente no se
-# mueve; si en el futuro (Consigna 4, Docker) se construye una wheel real
-# para distribucion, esta lista de exclusion debe revisarse a proposito,
-# no heredarse por default de setuptools.
+packages = [
+    "spec",
+    "seitt_core",
+    "seitt_core.adapters",
+    "seitt_core.eval",
+    "seitt_core.ports",
+    "app",
+    "app.api",
+]
+# REVISION Consigna 4 (Dockerizacion). Hasta esta version, esta lista
+# omitia seitt_core.adapters, seitt_core.ports y seitt_core.eval, y NO
+# declaraba package-data: la nota anterior asumia que bastaba con el
+# modo editable, donde el finder mapea los paquetes de vuelta al arbol
+# fuente y por lo tanto Path(__file__) siempre cae dentro del repo.
+#
+# Esa asuncion se verifico empiricamente y es FALSA para una wheel real:
+# `pip install .` producia una instalacion que no podia emitir un solo
+# veredicto (faltaba kb_rules.json, la KB misma) y en la que
+# `import app.api.main` fallaba por los subpaquetes ausentes. La
+# instalacion editable enmascaraba el defecto, que es de DECLARACION de
+# artefacto distribuible, no de resolucion de rutas.
+#
+# La correccion es enteramente declarativa: no se toco una linea de
+# seitt_core/. Las rutas cruzadas (seitt_core/../spec/schemas/) siguen
+# resolviendo porque las wheels se instalan como directorios reales y
+# spec/ y seitt_core/ quedan hermanos en site-packages igual que en el
+# repo. Por eso NO se introdujo importlib.resources.
 include-package-data = false
+
+[tool.setuptools.package-data]
+# Recursos leidos en runtime. Se enumeran uno por uno en vez de activar
+# include-package-data: el contenido de la wheel queda determinado por
+# este archivo y solo por este archivo, sin depender de MANIFEST.in ni de
+# que archivos esten versionados. Es un requisito de la Consigna 4 —
+# dos builds del mismo commit deben producir el mismo artefacto.
+spec = [
+    "schemas/*.json",   # 8 JSON Schema Draft 2020-12; rule.schema.json lo
+                        # lee RuleEngine.load() en cada arranque, y
+                        # eval_case.schema.json el Eval Harness.
+    "rules/*.json",     # KB normativa (fuente); seitt_core/rules/ es la copia.
+]
+seitt_core = ["rules/*.json"]
+# Solo el dataset de ground truth. eval_report.json queda deliberadamente
+# afuera: es una SALIDA del arnes (gitignorada), no una entrada, y
+# empaquetar el resultado de una corrida dentro del artefacto que se va a
+# evaluar invita a confundir evidencia con insumo.
+"seitt_core.eval" = ["eval_dataset.json"]
+# Frontend estatico. Sin paso de build: los archivos se sirven tal cual.
+# El glob recursivo cubre subdirectorios futuros (assets/, img/) sin
+# requerir otra revision de empaquetado.
+app = ["web/*", "web/**/*"]

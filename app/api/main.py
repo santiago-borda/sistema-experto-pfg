@@ -12,12 +12,14 @@ exactamente lo que INV-13 promete.
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
+from seitt_core import rule_engine as _rule_engine
 from seitt_core.adapters import StaticNarrationAdapter
 from seitt_core.domain import (
     NAT_APPLICABLE_MARKERS,
@@ -27,17 +29,94 @@ from seitt_core.domain import (
     UnitDisposition,
     certainty_to_percent,
 )
-from seitt_core.expert_system import evaluar_caso
+from seitt_core.expert_system import ENGINE_VERSION, evaluar_caso
 from seitt_core.ports import NarrationPort
+from seitt_core.rule_engine import RuleEngine
 
 from .schemas import (
     ErrorInvariante,
+    EstadoSalud,
     EvaluacionRequest,
     EvaluacionResponse,
     MarcadorInfo,
 )
 
 _WEB_DIR = Path(__file__).resolve().parent.parent / "web"
+
+# Ubicacion de los recursos que el nucleo lee en runtime. Se toman de
+# `seitt_core.rule_engine` en vez de reconstruirlas aca para que exista UNA
+# sola fuente de verdad sobre donde vive la KB: una ruta duplicada en el
+# adaptador HTTP se desincronizaria en silencio del motor, que es
+# exactamente la clase de fallo que este arranque existe para impedir.
+# (Promover estas dos constantes a API publica de `rule_engine` es el
+# siguiente retoque natural del nucleo; queda registrado como deuda.)
+_KB_PATH: Path = _rule_engine._DEFAULT_RULES_PATH
+_KB_SCHEMA_PATH: Path = _rule_engine._DEFAULT_SCHEMA_PATH
+
+
+class SEITTArranqueError(RuntimeError):
+    """Falta un recurso del que depende el veredicto. El proceso no arranca.
+
+    NO hereda de `SEITTDomainError` a proposito: no es la violacion de un
+    invariante clinico, y mapearla a un 400 seria mentir. Es una falla de
+    DESPLIEGUE —empaquetado incompleto, imagen mal construida— y su unica
+    respuesta correcta es que el servidor no llegue a escuchar.
+    """
+
+
+def _verificar_arranque() -> EstadoSalud:
+    """Comprueba, una sola vez, que este despliegue puede emitir un veredicto.
+
+    Hasta la Consigna 4 el montaje del frontend era `if _WEB_DIR.is_dir()`,
+    y la KB se cargaba perezosamente en la primera inferencia. Una wheel a
+    la que le faltaran esos archivos —que es exactamente lo que producia
+    `pip install .`— levantaba un servidor sano que respondia 404 en `/` y
+    solo fallaba al evaluar la primera muestra. En una defensa de PFG esa
+    degradacion silenciosa es indistinguible de un problema de red.
+
+    Ahora cada recurso se verifica antes de aceptar la primera conexion, y
+    su ausencia es ruidosa y temprana.
+    """
+    if not _WEB_DIR.is_dir():
+        raise SEITTArranqueError(
+            f"El frontend estatico no esta en el despliegue: no existe {_WEB_DIR}. "
+            "Si esto es una instalacion via pip, la wheel se construyo sin el "
+            "package-data de `app` (ver [tool.setuptools.package-data] en pyproject.toml)."
+        )
+
+    # Se verifica ANTES de cargar la KB porque `RuleEngine.load()` omite la
+    # validacion cuando el schema no existe (`if schema_path.exists()`). Sin
+    # este control, una wheel sin los JSON Schema cargaria la KB SIN validar
+    # y el sistema seguiria contestando: reglas clinicas no verificadas
+    # sirviendo veredictos, en silencio.
+    if not _KB_SCHEMA_PATH.exists():
+        raise SEITTArranqueError(
+            f"Falta el JSON Schema de reglas: {_KB_SCHEMA_PATH}. Sin el, la KB se "
+            "cargaria sin validar y el motor emitiria veredictos sobre reglas no "
+            "verificadas."
+        )
+
+    try:
+        RuleEngine.load()
+        reglas = json.loads(_KB_PATH.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError, SEITTDomainError) as exc:
+        raise SEITTArranqueError(
+            f"La base de conocimiento no pudo cargarse desde {_KB_PATH}: {exc}"
+        ) from exc
+
+    return EstadoSalud(
+        estado="ok",
+        kb_cargada=True,
+        kb_reglas=len(reglas),
+        kb_schema_validado=True,
+        web_montado=True,
+        engine_version=ENGINE_VERSION,
+    )
+
+
+# Se evalua en tiempo de import, que para uvicorn es el arranque: si algo
+# falta, la excepcion sube antes de que el socket escuche.
+_ESTADO_ARRANQUE: EstadoSalud = _verificar_arranque()
 
 app = FastAPI(
     title="SE-ITT — Sistema Experto para Infecciones Transmisibles por Transfusión",
@@ -73,6 +152,21 @@ async def _manejar_error_de_dominio(_: Request, exc: SEITTDomainError) -> JSONRe
         status_code=400,
         content=ErrorInvariante(invariant_id=invariant_id, detail=detail).model_dump(),
     )
+
+
+@app.get("/api/health", response_model=EstadoSalud)
+def health() -> EstadoSalud:
+    """Readiness del despliegue, congelada durante el arranque.
+
+    Devuelve el objeto calculado por `_verificar_arranque()`: no relee el
+    disco ni ejecuta una inferencia, asi que el sondeo es O(1) y se puede
+    correr cada pocos segundos sin costo. La verificacion cara ya ocurrio, y
+    si hubiera fallado este proceso no estaria contestando — por eso un 200
+    aca significa "puedo emitir un veredicto", no "el puerto esta abierto".
+
+    Es el endpoint que consume el HEALTHCHECK del contenedor (Consigna 4).
+    """
+    return _ESTADO_ARRANQUE
 
 
 @app.get("/api/marcadores", response_model=list[MarcadorInfo])
@@ -179,5 +273,6 @@ class _EstaticosSinCache(StaticFiles):
 
 
 # El frontend estático se monta al final para que no tape las rutas /api/*.
-if _WEB_DIR.is_dir():
-    app.mount("/", _EstaticosSinCache(directory=str(_WEB_DIR), html=True), name="web")
+# Sin condicional: `_verificar_arranque()` ya garantizó que el directorio
+# existe, y si no existiera este módulo nunca habría terminado de importarse.
+app.mount("/", _EstaticosSinCache(directory=str(_WEB_DIR), html=True), name="web")
