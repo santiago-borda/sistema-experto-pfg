@@ -116,7 +116,7 @@ instala y corre sin ninguno de los dos.
 ```bash
 ruff format --check . && ruff check .    # estilo: sin diferencias, "All checks passed!"
 python spec/validate_spec.py     # 87/87 — validación estructural de la spec
-python -m pytest                 # 75 passed — regresión + arquitectura + API + empaquetado
+python -m pytest                 # 83 passed — regresión + arquitectura + API + empaquetado
 python seitt_core/eval/eval_harness.py   # 33/33, kappa 1.0 — Eval Harness (Consigna 3)
 ```
 

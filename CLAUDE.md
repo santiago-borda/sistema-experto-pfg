@@ -67,7 +67,9 @@ seitt_core/   Fase 1: refactor del motor, DSL-driven (reemplaza a legacy/).
   rules/kb_rules.json       (copia sincronizada de spec/rules/)
   tests/                    tests pytest de regresión + fuzzy engine
   eval/                     Fase 2: Eval Harness
-    eval_dataset.json       33 casos con criterio experto (ground truth)
+    eval_dataset.json       33 casos con criterio experto (ground truth),
+                            incluido el contenido esperado de la traza
+                            (expected.explanation_citations)
     eval_harness.py         Corre el dataset, mide métricas
     eval_report.json        Último reporte generado
 
@@ -130,8 +132,8 @@ defensa.
 ```bash
 ruff format --check . && ruff check .     # esperado: sin diferencias, "All checks passed!"
 python spec/validate_spec.py              # esperado: 87/87 OK
-python -m pytest                          # esperado: 75 passed
-python seitt_core/eval/eval_harness.py    # esperado: 33/33, Tasa de Acierto 100%, kappa 1.0
+python -m pytest                          # esperado: 83 passed
+python seitt_core/eval/eval_harness.py    # esperado: 33/33, kappa 1.0, traza 33/33, 22/23 reglas
 ```
 
 `ruff format --check` **verifica, no reescribe**. Para aplicar el formato:
@@ -212,21 +214,66 @@ entre sesiones ni se redescubran desde cero.
   y el frontend oculta el bloque de certeza. Ver el comentario en
   `app/web/app.js`, función `mostrarVeredicto()`.
 
-- **El Eval Harness no cubre la traza explicativa.** El bug de la
-  plantilla de R20 (documentaba `{sco_label}` —el centinela `No Reactivo`—
-  donde debía nombrar la calidad de muestra) convivió con **33/33 y
-  kappa 1.0**: el harness compara `final_unit_disposition`,
-  `final_donor_disposition`, presencia de acción pendiente y trazabilidad
-  de `rule_id`, pero **nunca el contenido de `explanation_log`**. O sea
-  que el argumento central del CDSS —la explicación auditable— es hoy la
-  única salida del sistema sin ninguna verificación automatizada, y un
-  error ahí no pone nada en rojo. Lo detectó una lectura humana al
-  construir el adaptador de narración, no el arnés.
-  *Extensión candidata (después de la demo):* assertions sobre el
-  `explanation_log` esperado en `eval_dataset.json`, al menos para los
-  casos cuya traza cita el valor de un campo (R20 con `calidad_muestra`,
-  R2_* con `certeza_sco`, las reglas por marcador con `marcador`) — que
-  son justamente donde un placeholder equivocado pasa desapercibido.
+- ~~**El Eval Harness no cubre la traza explicativa.**~~ **SALDADA.**
+  El arnés ahora verifica el contenido de `explanation_log` en los 33
+  casos: `expected.explanation_citations` declara, por línea, qué campo
+  cita la regla y con qué valor renderizado, y `verificar_traza()` lo
+  compara. La línea esperada se **re-renderiza desde la plantilla vigente
+  de la KB** con los valores golden, así que reescribir la redacción de
+  una regla no rompe los 33 casos, pero citar otro campo sí. Control
+  negativo en `seitt_core/tests/test_eval_harness.py`: con el bug
+  histórico de R20 reintroducido, el arnés baja a 31/33 y sale con
+  código 1.
+
+- **[PRIORIDAD ALTA] Las tres trazas de Sífilis afirman "unidad apta", dos
+  de ellas en veredictos de Descarte.** Mismo patrón que el bug de R20 —
+  una línea del log de auditoría clínicamente falsa — pero peor, porque
+  **contradice el propio veredicto del caso**:
+
+  ```
+  EV21  vdrl=Reactivo    clia=Reactivo   -> Descarte / Diferido_Temporal
+  EV22  vdrl=No Reactivo clia=Reactivo   -> Descarte / Diferido_Temporal
+        y sin embargo el explanation_log incluye:
+        "Marcador Sifilis: tamizaje negativo completo y ausencia de
+         factores de riesgo epidemiológico. Regla R1: unidad apta."
+  ```
+
+  Causa: el S/CO de Sífilis es No Reactivo (se evalúa por VDRL/CLIA), así
+  que el antecedente de R1 matchea. El arbitraje por peso elige bien el
+  veredicto —por eso 33/33 y kappa 1.0 no se mueven— pero R1 igual
+  aporta su línea al log, y esa línea llega tal cual al frontend.
+  *Por qué la extensión de la traza NO lo atrapa:* verifica **qué cita
+  cada línea**, no **si la línea debería estar**. La citación de R1
+  (`marcador=Sifilis`) es correcta; el defecto es que R1 figure. Es otra
+  clase de defecto y es del núcleo.
+  *Va primero en la sesión de contrato formal de la KB* — es el hallazgo
+  que debería ordenar esa sesión, no un ítem más de la lista.
+
+- **El redondeo de `certeza_sco` colapsa clasificaciones distintas en el
+  mismo número.** En el borde exacto de umbral, dos casos que el motor
+  clasifica **distinto** muestran el mismo porcentaje en pantalla:
+
+  ```
+  EV06 sco=1.01     certeza=45.00000000000002  -> "45.0"  -> R2_alta_certeza
+  EV07 sco=1.010001 certeza=44.99950000000006  -> "45.0"  -> R2_baja_certeza
+  EV08 sco=1.04     certeza=30.000000000000014 -> "30.0"  -> R2_baja_certeza
+  EV09 sco=1.040001 certeza=29.999500000000058 -> "30.0"  -> R2_critica
+  ```
+
+  No es un bug: es el comportamiento documentado (comparación a precisión
+  completa, redondeo solo para presentación, ver §2). Lo salva que el
+  texto dice "alta"/"baja"/"crítica", así que la traza completa no es
+  ambigua — solo el número lo es. Se registra porque cae justo en Zona
+  Gris, el foco de la Consigna 3, y porque cualquier decisión futura
+  sobre cómo se presenta la certeza debería conocerlo.
+
+- **`trace_match` en el Eval Harness usa `any`, no `all`.** Un caso que
+  declara `expected_rule_ids: ["R2_alta_certeza", "R3"]` pasa aunque solo
+  dispare una de las dos. Es una debilidad preexistente y distinta de la
+  del contenido de la traza (que sí quedó cubierta): esta es sobre qué
+  reglas se exigen, no sobre qué dice el texto. Endurecerla a `all`
+  probablemente no rompa nada hoy, pero conviene hacerlo con el resto de
+  los cambios del núcleo y no de forma suelta.
 
 - **`RuleEngine.load()` omite la validación si falta el schema.** La
   carga hace `if schema_path.exists()` antes de validar la KB contra
@@ -296,7 +343,16 @@ entre sesiones ni se redescubran desde cero.
    Harness. Decidir antes de empezar: ¿estricto desde el día 1, o baseline
    con excepciones documentadas que se van cerrando? Lo que **no** hay que
    hacer es colarlo como anexo de otra sesión.
-4. Contrato JSON MedGemma ↔ Motor Difuso (extiende `sample_input.schema.json`).
+4. **Caso golden para R13 — requiere consulta al bioquímico de referencia.**
+   R13 ("Zona Gris con NAT reactivo") es la única de las 23 entradas de la
+   KB que ningún caso del Eval Harness ejercita: necesita S/CO en Zona Gris
+   **y** NAT Reactivo a la vez. El `case_id` **EV34** queda reservado. No se
+   completa por inferencia — una laguna de dominio la resuelve el
+   bioquímico, no el criterio de quien escribe el arnés, que es el mismo
+   criterio que ya se aplica a la KB. El hueco se reporta en **cada
+   corrida** del harness (bloque "Cobertura de traza") para que se lea como
+   pendiente explícito y no como omisión.
+5. Contrato JSON MedGemma ↔ Motor Difuso (extiende `sample_input.schema.json`).
    El hueco del servicio ya está documentado en `docker-compose.yml`, en
    comentario y sin implementar, para no reestructurar el compose después.
 

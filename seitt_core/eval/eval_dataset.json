@@ -17,6 +17,14 @@
       "has_pending_action": false,
       "expected_rule_ids": [
         "R1"
+      ],
+      "explanation_citations": [
+        {
+          "rule_id": "R1",
+          "cites": {
+            "marcador": "HIV"
+          }
+        }
       ]
     }
   },
@@ -38,6 +46,14 @@
       "has_pending_action": false,
       "expected_rule_ids": [
         "R1"
+      ],
+      "explanation_citations": [
+        {
+          "rule_id": "R1",
+          "cites": {
+            "marcador": "HCV"
+          }
+        }
       ]
     }
   },
@@ -59,6 +75,14 @@
       "has_pending_action": false,
       "expected_rule_ids": [
         "R1"
+      ],
+      "explanation_citations": [
+        {
+          "rule_id": "R1",
+          "cites": {
+            "marcador": "HIV"
+          }
+        }
       ]
     }
   },
@@ -80,6 +104,15 @@
       "has_pending_action": true,
       "expected_rule_ids": [
         "R2_alta_certeza"
+      ],
+      "explanation_citations": [
+        {
+          "rule_id": "R2_alta_certeza",
+          "cites": {
+            "certeza_sco": "100.0",
+            "marcador": "HIV"
+          }
+        }
       ]
     }
   },
@@ -101,6 +134,15 @@
       "has_pending_action": true,
       "expected_rule_ids": [
         "R2_alta_certeza"
+      ],
+      "explanation_citations": [
+        {
+          "rule_id": "R2_alta_certeza",
+          "cites": {
+            "certeza_sco": "45.01",
+            "marcador": "HIV"
+          }
+        }
       ]
     }
   },
@@ -122,6 +164,15 @@
       "has_pending_action": true,
       "expected_rule_ids": [
         "R2_alta_certeza"
+      ],
+      "explanation_citations": [
+        {
+          "rule_id": "R2_alta_certeza",
+          "cites": {
+            "certeza_sco": "45.0",
+            "marcador": "HIV"
+          }
+        }
       ]
     }
   },
@@ -143,6 +194,15 @@
       "has_pending_action": true,
       "expected_rule_ids": [
         "R2_baja_certeza"
+      ],
+      "explanation_citations": [
+        {
+          "rule_id": "R2_baja_certeza",
+          "cites": {
+            "certeza_sco": "45.0",
+            "marcador": "HIV"
+          }
+        }
       ]
     }
   },
@@ -164,6 +224,15 @@
       "has_pending_action": true,
       "expected_rule_ids": [
         "R2_baja_certeza"
+      ],
+      "explanation_citations": [
+        {
+          "rule_id": "R2_baja_certeza",
+          "cites": {
+            "certeza_sco": "30.0",
+            "marcador": "HIV"
+          }
+        }
       ]
     }
   },
@@ -185,6 +254,15 @@
       "has_pending_action": true,
       "expected_rule_ids": [
         "R2_critica"
+      ],
+      "explanation_citations": [
+        {
+          "rule_id": "R2_critica",
+          "cites": {
+            "certeza_sco": "30.0",
+            "marcador": "HIV"
+          }
+        }
       ]
     }
   },
@@ -206,6 +284,15 @@
       "has_pending_action": true,
       "expected_rule_ids": [
         "R2_critica"
+      ],
+      "explanation_citations": [
+        {
+          "rule_id": "R2_critica",
+          "cites": {
+            "certeza_sco": "0.0",
+            "marcador": "HCV"
+          }
+        }
       ]
     }
   },
@@ -228,6 +315,19 @@
       "expected_rule_ids": [
         "R7",
         "R17"
+      ],
+      "explanation_citations": [
+        {
+          "rule_id": "R7",
+          "cites": {
+            "marcador": "HIV"
+          }
+        },
+        {
+          "rule_id": "R17",
+          "cites": {},
+          "nombra_marcador": true
+        }
       ]
     }
   },
@@ -248,6 +348,13 @@
       "has_pending_action": false,
       "expected_rule_ids": [
         "R11"
+      ],
+      "explanation_citations": [
+        {
+          "rule_id": "R11",
+          "cites": {},
+          "nombra_marcador": true
+        }
       ]
     }
   },
@@ -268,6 +375,13 @@
       "has_pending_action": false,
       "expected_rule_ids": [
         "R12"
+      ],
+      "explanation_citations": [
+        {
+          "rule_id": "R12",
+          "cites": {},
+          "nombra_marcador": true
+        }
       ]
     }
   },
@@ -288,6 +402,13 @@
       "has_pending_action": false,
       "expected_rule_ids": [
         "R14"
+      ],
+      "explanation_citations": [
+        {
+          "rule_id": "R14",
+          "cites": {},
+          "nombra_marcador": true
+        }
       ]
     }
   },
@@ -308,6 +429,19 @@
       "has_pending_action": false,
       "expected_rule_ids": [
         "R15"
+      ],
+      "explanation_citations": [
+        {
+          "rule_id": "R21",
+          "cites": {
+            "marcador": "HCV"
+          }
+        },
+        {
+          "rule_id": "R15",
+          "cites": {},
+          "nombra_marcador": true
+        }
       ]
     }
   },
@@ -328,6 +462,19 @@
       "has_pending_action": false,
       "expected_rule_ids": [
         "R16"
+      ],
+      "explanation_citations": [
+        {
+          "rule_id": "R21",
+          "cites": {
+            "marcador": "HBV"
+          }
+        },
+        {
+          "rule_id": "R16",
+          "cites": {},
+          "nombra_marcador": true
+        }
       ]
     }
   },
@@ -349,6 +496,14 @@
       "has_pending_action": false,
       "expected_rule_ids": [
         "R4"
+      ],
+      "explanation_citations": [
+        {
+          "rule_id": "R4",
+          "cites": {
+            "marcador": "HIV"
+          }
+        }
       ]
     }
   },
@@ -370,6 +525,25 @@
       "has_pending_action": false,
       "expected_rule_ids": [
         "R5"
+      ],
+      "explanation_citations": [
+        {
+          "rule_id": "R4",
+          "cites": {
+            "marcador": "HBV"
+          }
+        },
+        {
+          "rule_id": "R5",
+          "cites": {
+            "marcador": "HBV"
+          }
+        },
+        {
+          "rule_id": "R16",
+          "cites": {},
+          "nombra_marcador": true
+        }
       ]
     }
   },
@@ -391,6 +565,19 @@
       "has_pending_action": false,
       "expected_rule_ids": [
         "R7"
+      ],
+      "explanation_citations": [
+        {
+          "rule_id": "R7",
+          "cites": {
+            "marcador": "HIV"
+          }
+        },
+        {
+          "rule_id": "R17",
+          "cites": {},
+          "nombra_marcador": true
+        }
       ]
     }
   },
@@ -412,6 +599,19 @@
       "has_pending_action": true,
       "expected_rule_ids": [
         "R8"
+      ],
+      "explanation_citations": [
+        {
+          "rule_id": "R8",
+          "cites": {},
+          "nombra_marcador": true
+        },
+        {
+          "rule_id": "R1",
+          "cites": {
+            "marcador": "Sifilis"
+          }
+        }
       ]
     }
   },
@@ -433,6 +633,24 @@
       "has_pending_action": false,
       "expected_rule_ids": [
         "R9"
+      ],
+      "explanation_citations": [
+        {
+          "rule_id": "R8",
+          "cites": {},
+          "nombra_marcador": true
+        },
+        {
+          "rule_id": "R9",
+          "cites": {},
+          "nombra_marcador": true
+        },
+        {
+          "rule_id": "R1",
+          "cites": {
+            "marcador": "Sifilis"
+          }
+        }
       ]
     }
   },
@@ -454,6 +672,19 @@
       "has_pending_action": false,
       "expected_rule_ids": [
         "R10"
+      ],
+      "explanation_citations": [
+        {
+          "rule_id": "R10",
+          "cites": {},
+          "nombra_marcador": true
+        },
+        {
+          "rule_id": "R1",
+          "cites": {
+            "marcador": "Sifilis"
+          }
+        }
       ]
     }
   },
@@ -474,6 +705,14 @@
       "has_pending_action": false,
       "expected_rule_ids": [
         "R6"
+      ],
+      "explanation_citations": [
+        {
+          "rule_id": "R6",
+          "cites": {
+            "marcador": "Chagas"
+          }
+        }
       ]
     }
   },
@@ -496,6 +735,21 @@
       "has_pending_action": false,
       "expected_rule_ids": [
         "R3"
+      ],
+      "explanation_citations": [
+        {
+          "rule_id": "R2_alta_certeza",
+          "cites": {
+            "certeza_sco": "50.0",
+            "marcador": "HBV"
+          }
+        },
+        {
+          "rule_id": "R3",
+          "cites": {
+            "marcador": "HBV"
+          }
+        }
       ]
     }
   },
@@ -518,6 +772,19 @@
       "has_pending_action": false,
       "expected_rule_ids": [
         "R18"
+      ],
+      "explanation_citations": [
+        {
+          "rule_id": "R2_alta_certeza",
+          "cites": {
+            "certeza_sco": "50.0",
+            "marcador": "HCV"
+          }
+        },
+        {
+          "rule_id": "R18",
+          "cites": {}
+        }
       ]
     }
   },
@@ -540,6 +807,19 @@
       "has_pending_action": false,
       "expected_rule_ids": [
         "R19"
+      ],
+      "explanation_citations": [
+        {
+          "rule_id": "R2_alta_certeza",
+          "cites": {
+            "certeza_sco": "50.0",
+            "marcador": "HIV"
+          }
+        },
+        {
+          "rule_id": "R19",
+          "cites": {}
+        }
       ]
     }
   },
@@ -559,6 +839,14 @@
       "has_pending_action": false,
       "expected_rule_ids": [
         "R20"
+      ],
+      "explanation_citations": [
+        {
+          "rule_id": "R20",
+          "cites": {
+            "calidad_muestra": "Hemolizada"
+          }
+        }
       ]
     }
   },
@@ -578,6 +866,14 @@
       "has_pending_action": false,
       "expected_rule_ids": [
         "R20"
+      ],
+      "explanation_citations": [
+        {
+          "rule_id": "R20",
+          "cites": {
+            "calidad_muestra": "Lipemica"
+          }
+        }
       ]
     }
   },
@@ -599,6 +895,14 @@
       "has_pending_action": true,
       "expected_rule_ids": [
         "R21"
+      ],
+      "explanation_citations": [
+        {
+          "rule_id": "R21",
+          "cites": {
+            "marcador": "HIV"
+          }
+        }
       ]
     }
   },
@@ -620,6 +924,14 @@
       "has_pending_action": true,
       "expected_rule_ids": [
         "R21"
+      ],
+      "explanation_citations": [
+        {
+          "rule_id": "R21",
+          "cites": {
+            "marcador": "HBV"
+          }
+        }
       ]
     }
   },
@@ -640,6 +952,14 @@
       "has_pending_action": true,
       "expected_rule_ids": [
         "R21"
+      ],
+      "explanation_citations": [
+        {
+          "rule_id": "R21",
+          "cites": {
+            "marcador": "HCV"
+          }
+        }
       ]
     }
   },
@@ -661,6 +981,19 @@
       "has_pending_action": false,
       "expected_rule_ids": [
         "R17"
+      ],
+      "explanation_citations": [
+        {
+          "rule_id": "R21",
+          "cites": {
+            "marcador": "HIV"
+          }
+        },
+        {
+          "rule_id": "R17",
+          "cites": {},
+          "nombra_marcador": true
+        }
       ]
     }
   },
@@ -681,6 +1014,14 @@
       "has_pending_action": false,
       "expected_rule_ids": [
         "R1"
+      ],
+      "explanation_citations": [
+        {
+          "rule_id": "R1",
+          "cites": {
+            "marcador": "Chagas"
+          }
+        }
       ]
     }
   }

@@ -123,7 +123,8 @@
       "type": "object",
       "required": [
         "final_unit_disposition",
-        "expected_rule_ids"
+        "expected_rule_ids",
+        "explanation_citations"
       ],
       "properties": {
         "final_unit_disposition": {
@@ -161,8 +162,40 @@
           },
           "minItems": 1,
           "description": "Al menos una de estas reglas debe estar en triggered_rules (verificación de trazabilidad, no solo de disposición final)."
+        },
+        "explanation_citations": {
+          "type": "array",
+          "minItems": 1,
+          "description": "Verificacion del CONTENIDO de explanation_log, una entrada por linea y en el mismo orden que triggered_rules (explanation_log[i] corresponde a fired_rules[i] por construccion). Existe porque el arnes comparaba disposiciones y rule_ids pero nunca el texto: el bug donde la traza de R20 citaba {sco_label} -el centinela 'No Reactivo'- en vez de {calidad_muestra} convivio con 33/33 y kappa 1.0, y lo encontro una lectura humana de la UI, no el arnes.",
+          "items": {
+            "type": "object",
+            "required": [
+              "rule_id",
+              "cites"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "rule_id": {
+                "type": "string",
+                "description": "Regla que produjo esta linea. Debe coincidir con triggered_rules en la misma posicion."
+              },
+              "cites": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "description": "Placeholder de explanation_template -> valor RENDERIZADO esperado. El conjunto de claves debe ser exactamente el conjunto de placeholders de la plantilla (sin rule_id): si la plantilla pasa a citar otro campo, la discrepancia es explicita. Objeto vacio para reglas de texto estatico, donde igual se verifica la linea completa. Los valores van como string aun cuando sean numericos ('100.0'), porque lo que se verifica es lo que el bioquimico lee en pantalla."
+              },
+              "nombra_marcador": {
+                "type": "boolean",
+                "default": false,
+                "description": "true si la PROSA de la regla nombra el marcador sin usar el placeholder {marcador} -- 'Chagas reactivo', 'HTLV I/II reactivo', 'Sifilis: VDRL...'. En esas reglas la correspondencia entre antecedente y texto es una dependencia implicita que ningun placeholder expone: si el antecedente se aflojara, la traza nombraria el marcador equivocado. Es ademas la UNICA comprobacion que ata la prosa al INPUT del caso y no a la KB, asi que es la unica que sobrevive a que alguien edite mal la plantilla."
+              }
+            }
+          }
         }
       }
     }
-  }
+  },
+  "$comment": "HUECO DE COBERTURA DECLARADO — R13 ('Zona Gris con NAT reactivo'). Ninguno de los 33 casos golden la ejercita: requiere S/CO en Zona Gris Y NAT Reactivo a la vez. El case_id EV34 queda RESERVADO para ella. No se completa por inferencia: una laguna de dominio la resuelve el bioquimico de referencia, no el criterio de quien escribe el arnes -- el mismo criterio que se aplica a la KB. El Eval Harness reporta este hueco en cada corrida (bloque 'Cobertura de traza'), para que se lea como pendiente explicito y no como omision."
 }
