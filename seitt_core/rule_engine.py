@@ -152,24 +152,54 @@ class RuleEngine:
         cls,
         rules_path: Path = _DEFAULT_RULES_PATH,
         schema_path: Path = _DEFAULT_SCHEMA_PATH,
+        *,
+        require_schema: bool = True,
     ) -> RuleEngine:
         """Carga y valida la KB en tiempo de ejecución (no confía en que el
         archivo siga siendo válido solo porque lo fue al momento de
-        diseñarlo — Consigna 2: sin asunciones implícitas)."""
+        diseñarlo — Consigna 2: sin asunciones implícitas).
+
+        Si falta `schema_path`, la carga FALLA. Antes hacía
+        `if schema_path.exists()` y, sin el archivo, cargaba las reglas sin
+        validar: el motor seguía emitiendo veredictos como si nada, con
+        reglas clínicas nunca verificadas. En un CDSS eso es peor que no
+        arrancar. Se detectó al empaquetar (Consigna 4), porque una wheel
+        sin los JSON Schema entra exactamente por ese camino.
+
+        `require_schema=False` existe para el único caso que legítimamente
+        quiera saltear la validación —un consumidor que ya validó la KB por
+        su cuenta, o una prueba que construye reglas al vuelo— y es
+        explícito a propósito: quien lo pasa está declarando que asume la
+        responsabilidad, en vez de heredarla de un archivo ausente.
+
+        Raises:
+            MalformedRuleError: si el schema no está y `require_schema` es
+                True, o si alguna regla no conforma `rule.schema.json`.
+        """
         with open(rules_path, encoding="utf-8") as f:
             rules = json.load(f)
 
-        if schema_path.exists():
-            with open(schema_path, encoding="utf-8") as f:
-                schema = json.load(f)
-            validator = jsonschema.Draft202012Validator(schema)
-            for rule in rules:
-                errors = list(validator.iter_errors(rule))
-                if errors:
-                    raise MalformedRuleError(
-                        f"Regla '{rule.get('rule_id', '???')}' no conforma rule.schema.json: "
-                        f"{errors[0].message}"
-                    )
+        if not schema_path.exists():
+            if require_schema:
+                raise MalformedRuleError(
+                    f"No se encontró rule.schema.json en '{schema_path}': la KB no puede "
+                    f"validarse y el motor no se construye. Cargar reglas clínicas sin "
+                    f"verificar es una degradación silenciosa, no un modo degradado "
+                    f"aceptable. Si el llamador ya validó la KB por otra vía, pasar "
+                    f"require_schema=False explícitamente."
+                )
+            return cls(rules)
+
+        with open(schema_path, encoding="utf-8") as f:
+            schema = json.load(f)
+        validator = jsonschema.Draft202012Validator(schema)
+        for rule in rules:
+            errors = list(validator.iter_errors(rule))
+            if errors:
+                raise MalformedRuleError(
+                    f"Regla '{rule.get('rule_id', '???')}' no conforma rule.schema.json: "
+                    f"{errors[0].message}"
+                )
 
         return cls(rules)
 

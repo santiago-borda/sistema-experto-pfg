@@ -82,11 +82,20 @@ def _verificar_arranque() -> EstadoSalud:
             "package-data de `app` (ver [tool.setuptools.package-data] en pyproject.toml)."
         )
 
-    # Se verifica ANTES de cargar la KB porque `RuleEngine.load()` omite la
-    # validacion cuando el schema no existe (`if schema_path.exists()`). Sin
-    # este control, una wheel sin los JSON Schema cargaria la KB SIN validar
-    # y el sistema seguiria contestando: reglas clinicas no verificadas
-    # sirviendo veredictos, en silencio.
+    # Este control nacio como CONTENCION: `RuleEngine.load()` omitia la
+    # validacion cuando el schema no existia (`if schema_path.exists()`), de
+    # modo que una wheel sin los JSON Schema cargaba la KB SIN validar y el
+    # sistema seguia contestando -- reglas clinicas no verificadas sirviendo
+    # veredictos, en silencio. Protegia solo a quien entraba por la API: un
+    # script que importara seitt_core directo mantenia el agujero.
+    #
+    # El agujero ya esta cerrado en el nucleo: `load()` levanta
+    # MalformedRuleError si el schema falta, y saltearlo exige pasar
+    # `require_schema=False` explicitamente. Este chequeo se conserva igual,
+    # por dos razones que no dependen de aquel defecto: falla en el IMPORT y
+    # no en la primera inferencia, y da un mensaje que habla del despliegue
+    # (que le falta a esta wheel) en vez de hablar del motor. Ya no es la
+    # unica linea de defensa, que es justamente lo que se queria cambiar.
     if not _KB_SCHEMA_PATH.exists():
         raise SEITTArranqueError(
             f"Falta el JSON Schema de reglas: {_KB_SCHEMA_PATH}. Sin el, la KB se "
