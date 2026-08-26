@@ -65,17 +65,25 @@ def evaluar_caso(
             no reconocida, o marcador desconocido.
     """
     # R20 es una guard clause de INTEGRIDAD FÍSICA A NIVEL DE MUESTRA, no
-    # de marcador — pero construir_hechos() exige sco_inicial_valor
-    # siempre. Ante interferencia física, no hay lectura serológica
-    # confiable que fuzzificar: se sintetiza un valor centinela y se deja
-    # que R20 corte el ciclo por invariant_tag INV-02-GUARD-FISICO, tal
-    # como hace el legado (que retorna 'hechos' temprano sin fuzzificar).
+    # de marcador. Ante interferencia física no hay lectura serológica
+    # confiable que fuzzificar, así que el S/CO se descarta y se deja que
+    # R20 corte el ciclo por invariant_tag INV-02-GUARD-FISICO, tal como
+    # hace el legado (que retorna 'hechos' temprano sin fuzzificar).
+    #
+    # Se pasa None y no el centinela 0.0 que había antes (INV-16). El 0.0
+    # fuzzificaba a certeza 100%, de modo que el rechazo técnico llegaba
+    # con el certainty_index MÁS ALTO del sistema en el único camino donde
+    # nadie leyó un S/CO: un artefacto del centinela con forma de dato
+    # clínico. Con None, construir_hechos() entra por la misma rama que un
+    # marcador sin S/CO (Sífilis) y deja certeza_sco=None. La etiqueta sco
+    # sigue siendo el centinela "No Reactivo", que R20 ya no lee: su
+    # plantilla cita {calidad_muestra}.
     interferencia = calidad_muestra in ("Hemolizada", "Lipemica")
     hechos = construir_hechos(
         calidad_muestra=calidad_muestra,
         marcador=marcador,
         riesgo=riesgo,
-        sco_inicial_valor=sco_inicial_valor if not interferencia else 0.0,
+        sco_inicial_valor=None if interferencia else sco_inicial_valor,
         sco_repeticion_valor=sco_repeticion_valor,
         nat=nat,
         vdrl=vdrl,

@@ -464,3 +464,53 @@ class TestInvariantesDeDominio:
                 sco_inicial_valor=0.2,
                 riesgo=False,
             )
+
+
+class TestINV16CertezaSinLectura:
+    """INV-16 — `certeza_sco` existe si y solo si hubo un S/CO real medido.
+
+    El defecto que motiva el invariante: ante interferencia física
+    `evaluar_caso()` sintetizaba un S/CO centinela `0.0` para que R20
+    pudiera cortar el ciclo, y `fuzzificar_sco(0.0)` devuelve 100% de
+    certeza. El rechazo técnico llegaba entonces con el `certainty_index`
+    más alto que el sistema puede emitir, en el único camino donde nadie
+    fuzzificó un S/CO real.
+    """
+
+    @pytest.mark.parametrize("calidad", ["Hemolizada", "Lipemica"])
+    def test_interferencia_fisica_no_reporta_certeza(self, calidad):
+        v = evaluar_caso(
+            sample_id="INV16A",
+            calidad_muestra=calidad,
+            marcador="HIV",
+            riesgo=False,
+        )
+        assert "R20" in _triggered(v)
+        assert v.certainty_index is None, (
+            "el rechazo técnico volvió a reportar certeza: el centinela se está fuzzificando"
+        )
+
+    def test_marcador_sin_sco_no_reporta_certeza(self):
+        """Sífilis se evalúa por VDRL/CLIA: tampoco hay S/CO que fuzzificar."""
+        v = evaluar_caso(
+            sample_id="INV16B",
+            calidad_muestra="Normal",
+            marcador="Sifilis",
+            riesgo=False,
+            vdrl="Reactivo",
+            clia="Reactivo",
+        )
+        assert v.certainty_index is None
+
+    def test_con_lectura_real_la_certeza_si_se_reporta(self):
+        """El reverso, sin el cual devolver siempre None pasaría los otros dos."""
+        v = evaluar_caso(
+            sample_id="INV16C",
+            calidad_muestra="Normal",
+            marcador="HIV",
+            riesgo=False,
+            sco_inicial_valor=1.0,
+            nat="No Reactivo",
+        )
+        assert v.certainty_index is not None
+        assert 0.0 <= v.certainty_index <= 1.0

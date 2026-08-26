@@ -202,6 +202,24 @@ Ambos presentes, o ambos ausentes, es una violación de invariante.
 
 **Retrofit de código a spec:** esta es la forma que ya imponía `check_pending_action_consistency()` en `seitt_core/domain.py.InferenceVerdict` desde antes de esta spec — no es un invariante nuevo, es la formalización de un validador que el código real ya ejecutaba, ahora promovido junto con el resto del modelo a `spec/contracts.py` como fuente única (`seitt_core/domain.py` reexporta, no redefine).
 
+### INV-16 — Ausencia de certeza sin lectura
+
+**Enunciado.** `certeza_sco` (y su proyección externa `certainty_index`) está definida **si y solo si** existe un `sco_inicial_valor` real medido:
+
+$$
+sco\_inicial\_valor = ot \implies certeza\_sco = ot
+$$
+
+Toda etiqueta `sco` derivada de un centinela sintético — interferencia física (INV-02) o marcador cuya inferencia no depende de S/CO (INV-05) — se acompaña de `certeza_sco = None`, nunca de un grado de pertenencia calculado sobre el centinela.
+
+**Fundamento.** Fuzzificar un centinela produce un número con forma de dato clínico y sin referente. El rechazo técnico por hemólisis llegaba con `certainty_index = 1.0` — la certeza más alta que el sistema puede emitir — en el único camino donde nadie leyó un S/CO. Un valor así no es un dato pobre: es un dato **inventado**, y en un CDSS se lee como confianza máxima justo donde no hubo medición.
+
+**Enforcement.** `construir_hechos()` deja `certeza_sco = None` cuando `sco_inicial_valor is None`, y `expert_system.evaluar_caso()` no sintetiza valor ante interferencia (pasa `None`, no `0.0`). El contrato ya lo admite: `InferenceVerdict.certainty_index` es `float | None`, y `verdict.schema.json` no lo incluye entre los `required`. El Eval Harness lo verifica sobre los casos de `interferencia_fisica`.
+
+**Nota de alcance.** El invariante gobierna la CERTEZA, no la etiqueta. La etiqueta `sco` sigue siendo el centinela `No Reactivo` en ambos caminos, y eso es un defecto **abierto y distinto**: es lo que permite que R1 dispare sobre datos de Sífilis y aporte al log una línea que afirma "tamizaje negativo completo / unidad apta" en casos de Descarte. Se registra la conexión acá para que no se lea INV-16 como si hubiera cerrado el problema del centinela completo: cerró la mitad numérica.
+
+---
+
 # Invariantes de la frontera neuro-simbólica (INV-09 … INV-14)
 
 > Bloque a integrar en `spec/domain_model.md`. Verificar que los IDs estén

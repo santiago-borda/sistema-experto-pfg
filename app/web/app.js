@@ -238,25 +238,25 @@ function mostrarVeredicto(v) {
   }
 
   // ── Certeza difusa ───────────────────────────────────────────────
-  // El backend marca cuándo el número no corresponde a una lectura real,
-  // vía certeza_es_significativa. Acá solo se obedece esa marca: la
-  // decisión de qué es clínicamente significativo vive del lado del
-  // servidor, no en una condición de presentación.
+  // El backend marca cuándo hay un número que mostrar, vía
+  // certeza_es_significativa. Acá solo se obedece esa marca: la decisión
+  // de qué es clínicamente significativo vive del lado del servidor, no
+  // en una condición de presentación.
   //
-  // HALLAZGO REGISTRADO (Fase 3, Paso 3A) — por qué existe esta marca:
-  // ante interferencia física, expert_system.evaluar_caso() sintetiza un
-  // S/CO centinela (0.0) para que R20 pueda cortar el ciclo, y
-  // fuzzificar_sco(0.0) devuelve 100% de certeza. Es decir que un
-  // veredicto de rechazo técnico llega con certainty_index = 1.0: el
-  // número más confiado del sistema, justo en el único caso donde NADIE
-  // fuzzificó un S/CO real. Es un artefacto del centinela, no un dato
-  // clínico, y mostrarlo sería afirmar una medición que no ocurrió.
+  // Esta marca nació como CONTENCIÓN de un defecto del núcleo: ante
+  // interferencia física, evaluar_caso() sintetizaba un S/CO centinela
+  // (0.0) para que R20 cortara el ciclo, y fuzzificar_sco(0.0) devuelve
+  // 100% de certeza — o sea que el rechazo técnico llegaba con
+  // certainty_index = 1.0, el número más confiado del sistema, justo
+  // donde NADIE fuzzificó un S/CO real. El frontend lo ocultaba mirando
+  // la disposición.
   //
-  // La corrección de fondo (dejar certainty_index = None en ese camino)
-  // queda pendiente: toca el núcleo simbólico y obliga a revalidar el
-  // Eval Harness, ambos fuera de alcance de 3A. Ver CLAUDE.md, sección
-  // "Hallazgos conocidos". Mientras tanto esto es contención en el borde,
-  // no la solución.
+  // El defecto ya está corregido en el núcleo (INV-16: sin lectura no hay
+  // certeza; el centinela dejó de sintetizarse). La marca sobrevive porque
+  // ahora expresa el hecho en vez de taparlo: el backend la deriva de que
+  // certainty_index exista, no del veredicto. Esta condición no cambió y
+  // sigue siendo correcta — lo que cambió es que ya no depende de un
+  // parche aguas arriba.
   const bloqueCerteza = $("bloque-certeza");
   if (v.certeza_porcentaje === null || !v.certeza_es_significativa) {
     bloqueCerteza.hidden = true;

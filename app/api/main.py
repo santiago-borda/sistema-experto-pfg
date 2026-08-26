@@ -25,7 +25,6 @@ from seitt_core.domain import (
     NAT_APPLICABLE_MARKERS,
     Marker,
     SEITTDomainError,
-    UnitDisposition,
     certainty_to_percent,
 )
 from seitt_core.expert_system import ENGINE_VERSION, evaluar_caso
@@ -218,13 +217,19 @@ def evaluar(payload: EvaluacionRequest) -> EvaluacionResponse:
         else None
     )
 
-    # Ante interferencia física, expert_system sintetiza un S/CO centinela
-    # (0.0) para que R20 pueda cortar el ciclo, y ese centinela produce una
-    # certeza de 100% que NO corresponde a ninguna lectura real: nadie leyó
-    # el S/CO de una muestra hemolizada. Se marca como no significativa
-    # para que el frontend no muestre el número más confiado del sistema
-    # justo donde no hubo medición.
-    certeza_significativa = verdict.final_unit_disposition != UnitDisposition.CUARENTENA
+    # La certeza es significativa cuando EXISTE, y punto: por INV-16 el motor
+    # solo la emite si hubo un S/CO real medido. Antes esto se derivaba de la
+    # disposición (`!= Cuarentena`), porque el núcleo sintetizaba un centinela
+    # 0.0 ante interferencia física y devolvía certainty_index = 1.0 en el
+    # único camino donde nadie leyó un S/CO; el borde HTTP tapaba el número
+    # inventado a partir del veredicto, que es un proxy, no el hecho.
+    #
+    # Con INV-16 el hecho está disponible directamente y el proxy sobra. El
+    # campo se conserva en la respuesta —es contrato publicado y el frontend
+    # lo consume— pero ahora dice lo que siempre afirmó decir: si hay número
+    # que mostrar. Un proxy por disposición volvería a mentir en cuanto una
+    # regla futura emitiera Cuarentena sobre un S/CO sí medido.
+    certeza_significativa = verdict.certainty_index is not None
 
     dump = verdict.model_dump(mode="json")
     return EvaluacionResponse(

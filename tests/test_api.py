@@ -109,12 +109,30 @@ def test_caso4_hemolizada_es_cuarentena_sin_disposicion_de_donante(cliente):
 
 
 def test_caso4_certeza_marcada_como_no_significativa(cliente):
-    """Ante interferencia física el motor sintetiza un S/CO centinela, y
-    la certeza resultante no corresponde a ninguna lectura real: nadie
-    leyó el S/CO de una muestra hemolizada. La API lo marca para que el
-    frontend no muestre un 100% engañoso."""
-    resp = _evaluar(cliente, marcador="HIV", calidad_muestra="Hemolizada")
-    assert resp.json()["certeza_es_significativa"] is False
+    """Sin lectura de S/CO no hay certeza que mostrar (INV-16).
+
+    Antes esto era contención en el borde: el núcleo emitía
+    certainty_index = 1.0 ante interferencia física —el número más
+    confiado del sistema, sobre un S/CO que nadie leyó— y la API lo
+    tapaba mirando la disposición. Ahora el núcleo no lo emite, y la
+    marca deriva de ese hecho en vez de sustituirlo.
+    """
+    cuerpo = _evaluar(cliente, marcador="HIV", calidad_muestra="Hemolizada").json()
+    assert cuerpo["certainty_index"] is None
+    assert cuerpo["certeza_porcentaje"] is None
+    assert cuerpo["certeza_es_significativa"] is False
+
+
+def test_certeza_significativa_cuando_hubo_lectura_real(cliente):
+    """El reverso: con un S/CO medido la certeza se emite y se marca.
+
+    Sin este control, devolver siempre False dejaría el test anterior en
+    verde y la barra de certeza no se mostraría nunca.
+    """
+    cuerpo = _evaluar(cliente, marcador="HIV", sco_inicial_valor=1.0, nat="No Reactivo").json()
+    assert cuerpo["certainty_index"] is not None
+    assert cuerpo["certeza_porcentaje"] is not None
+    assert cuerpo["certeza_es_significativa"] is True
 
 
 def test_caso4_traza_nombra_la_calidad_no_la_etiqueta_sco(cliente):
