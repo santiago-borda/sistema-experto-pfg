@@ -5,15 +5,22 @@ Corre eval_dataset.json (33 casos con criterio experto, foco reforzado en
 Zona Gris) contra expert_system.evaluar_caso() y mide:
 
   1. Tasa de Acierto: proporción de casos donde disposición de unidad,
-     disposición de donante, presencia de acción pendiente, trazabilidad
-     de reglas y CONTENIDO de la traza explicativa coinciden TODOS con el
-     criterio experto.
+     disposición de donante, estado epidemiológico, presencia de acción
+     pendiente, trazabilidad de reglas y CONTENIDO de la traza explicativa
+     coinciden TODOS con el criterio experto.
   2. Tiempo promedio de inferencia (ms), con p95, por caso.
   3. Concordancia vs. criterio clínico experto: Cohen's Kappa sobre
      final_unit_disposition (incluyendo 'Pendiente' como categoría),
      que corrige la Tasa de Acierto por el acuerdo esperable al azar —
      más riguroso que un accuracy plano para justificar el sistema ante
      una auditoría de calidad.
+
+`epidemiological_status` se incorporó al criterio por la misma razón que la
+traza, y con el mismo diagnóstico: era una salida del veredicto que el arnés
+no miraba. Es además el campo que MedGemma leerá en fase post-analítica
+(verdict.schema.json), y su valor lo decide el desempate por prioridad entre
+reglas de igual peso (INV-07) — un desempate no especificado regla por regla.
+Sin golden, cualquier reordenamiento de prioridades lo cambiaba en silencio.
 
 La verificación de contenido de la traza (ver `verificar_traza`) se agregó
 después de un incidente concreto: el explanation_template de R20 citaba
@@ -82,6 +89,7 @@ class CaseResult:
     correct: bool
     unit_match: bool
     donor_match: bool
+    epi_match: bool
     pending_match: bool
     trace_match: bool
     trace_content_match: bool
@@ -239,6 +247,7 @@ def _run_case(case: dict, reglas: Mapping[str, dict]) -> CaseResult:
             correct=False,
             unit_match=False,
             donor_match=False,
+            epi_match=False,
             pending_match=False,
             trace_match=False,
             trace_content_match=False,
@@ -257,6 +266,12 @@ def _run_case(case: dict, reglas: Mapping[str, dict]) -> CaseResult:
 
     unit_match = actual_unit == expected.get("final_unit_disposition")
     donor_match = actual_donor == expected.get("final_donor_disposition")
+    # Se lee con ["..."], no con .get(): el campo es required en
+    # eval_case.schema.json y null es un valor declarado, no una ausencia. Un
+    # .get() con default convertiria "el golden no lo declara" en "se esperaba
+    # None" -- el default silencioso que INV-12 prohibe en el dominio y que no
+    # tiene por que ser tolerable en el arnes que lo verifica.
+    epi_match = verdict.epidemiological_status == expected["epidemiological_status"]
     pending_match = actual_pending == expected.get("has_pending_action", False)
     trace_match = any(rid in verdict.triggered_rules for rid in expected["expected_rule_ids"])
 
@@ -274,7 +289,14 @@ def _run_case(case: dict, reglas: Mapping[str, dict]) -> CaseResult:
     )
     trace_content_match = not trace_issues
 
-    correct = unit_match and donor_match and pending_match and trace_match and trace_content_match
+    correct = (
+        unit_match
+        and donor_match
+        and epi_match
+        and pending_match
+        and trace_match
+        and trace_content_match
+    )
 
     return CaseResult(
         case_id=case_id,
@@ -282,6 +304,7 @@ def _run_case(case: dict, reglas: Mapping[str, dict]) -> CaseResult:
         correct=correct,
         unit_match=unit_match,
         donor_match=donor_match,
+        epi_match=epi_match,
         pending_match=pending_match,
         trace_match=trace_match,
         trace_content_match=trace_content_match,
@@ -294,6 +317,8 @@ def _run_case(case: dict, reglas: Mapping[str, dict]) -> CaseResult:
             "triggered_rules": list(verdict.triggered_rules),
             "expected_donor": expected.get("final_donor_disposition"),
             "actual_donor": actual_donor,
+            "expected_epi": expected["epidemiological_status"],
+            "actual_epi": verdict.epidemiological_status,
         },
     )
 
@@ -412,9 +437,15 @@ def run(threshold: float = 1.0) -> int:
                 print(f"        esperado unidad={r.expected_unit!r} vs actual={r.actual_unit!r}")
                 print(
                     f"        unit_match={r.unit_match} donor_match={r.donor_match} "
-                    f"pending_match={r.pending_match} trace_match={r.trace_match} "
+                    f"epi_match={r.epi_match} pending_match={r.pending_match} "
+                    f"trace_match={r.trace_match} "
                     f"trace_content_match={r.trace_content_match}"
                 )
+                if not r.epi_match:
+                    print(
+                        f"        epi: esperado={r.details['expected_epi']!r} "
+                        f"vs actual={r.details['actual_epi']!r}"
+                    )
                 for issue in r.trace_issues:
                     print(f"        traza: {issue}")
     print(sep + "\n")
@@ -447,6 +478,7 @@ def run(threshold: float = 1.0) -> int:
                 "actual_unit": r.actual_unit,
                 "unit_match": r.unit_match,
                 "donor_match": r.donor_match,
+                "epi_match": r.epi_match,
                 "pending_match": r.pending_match,
                 "trace_match": r.trace_match,
                 "trace_content_match": r.trace_content_match,

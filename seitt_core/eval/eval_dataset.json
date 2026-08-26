@@ -14,6 +14,7 @@
     "expected": {
       "final_unit_disposition": "Apta",
       "final_donor_disposition": "Habilitado",
+      "epidemiological_status": null,
       "has_pending_action": false,
       "expected_rule_ids": [
         "R1"
@@ -43,6 +44,7 @@
     "expected": {
       "final_unit_disposition": "Apta",
       "final_donor_disposition": "Habilitado",
+      "epidemiological_status": null,
       "has_pending_action": false,
       "expected_rule_ids": [
         "R1"
@@ -72,6 +74,7 @@
     "expected": {
       "final_unit_disposition": "Apta",
       "final_donor_disposition": "Habilitado",
+      "epidemiological_status": null,
       "has_pending_action": false,
       "expected_rule_ids": [
         "R1"
@@ -101,6 +104,7 @@
     "expected": {
       "final_unit_disposition": null,
       "final_donor_disposition": null,
+      "epidemiological_status": null,
       "has_pending_action": true,
       "expected_rule_ids": [
         "R2_alta_certeza"
@@ -131,6 +135,7 @@
     "expected": {
       "final_unit_disposition": null,
       "final_donor_disposition": null,
+      "epidemiological_status": null,
       "has_pending_action": true,
       "expected_rule_ids": [
         "R2_alta_certeza"
@@ -161,6 +166,7 @@
     "expected": {
       "final_unit_disposition": null,
       "final_donor_disposition": null,
+      "epidemiological_status": null,
       "has_pending_action": true,
       "expected_rule_ids": [
         "R2_alta_certeza"
@@ -191,6 +197,7 @@
     "expected": {
       "final_unit_disposition": null,
       "final_donor_disposition": null,
+      "epidemiological_status": null,
       "has_pending_action": true,
       "expected_rule_ids": [
         "R2_baja_certeza"
@@ -221,6 +228,7 @@
     "expected": {
       "final_unit_disposition": null,
       "final_donor_disposition": null,
+      "epidemiological_status": null,
       "has_pending_action": true,
       "expected_rule_ids": [
         "R2_baja_certeza"
@@ -251,6 +259,7 @@
     "expected": {
       "final_unit_disposition": null,
       "final_donor_disposition": null,
+      "epidemiological_status": null,
       "has_pending_action": true,
       "expected_rule_ids": [
         "R2_critica"
@@ -281,6 +290,7 @@
     "expected": {
       "final_unit_disposition": null,
       "final_donor_disposition": null,
+      "epidemiological_status": null,
       "has_pending_action": true,
       "expected_rule_ids": [
         "R2_critica"
@@ -311,6 +321,7 @@
     "expected": {
       "final_unit_disposition": "Descarte",
       "final_donor_disposition": "Diferido_Permanente",
+      "epidemiological_status": null,
       "has_pending_action": false,
       "expected_rule_ids": [
         "R7",
@@ -345,6 +356,7 @@
     "expected": {
       "final_unit_disposition": "Descarte",
       "final_donor_disposition": "Diferido_Permanente",
+      "epidemiological_status": null,
       "has_pending_action": false,
       "expected_rule_ids": [
         "R11"
@@ -372,6 +384,7 @@
     "expected": {
       "final_unit_disposition": "Descarte",
       "final_donor_disposition": "Diferido_Permanente",
+      "epidemiological_status": null,
       "has_pending_action": false,
       "expected_rule_ids": [
         "R12"
@@ -399,6 +412,7 @@
     "expected": {
       "final_unit_disposition": "Descarte",
       "final_donor_disposition": "Diferido_Temporal",
+      "epidemiological_status": null,
       "has_pending_action": false,
       "expected_rule_ids": [
         "R14"
@@ -426,6 +440,7 @@
     "expected": {
       "final_unit_disposition": "Descarte",
       "final_donor_disposition": "Diferido_Permanente",
+      "epidemiological_status": null,
       "has_pending_action": false,
       "expected_rule_ids": [
         "R15"
@@ -459,6 +474,7 @@
     "expected": {
       "final_unit_disposition": "Descarte",
       "final_donor_disposition": "Diferido_Permanente",
+      "epidemiological_status": null,
       "has_pending_action": false,
       "expected_rule_ids": [
         "R16"
@@ -493,6 +509,7 @@
     "expected": {
       "final_unit_disposition": "Descarte",
       "final_donor_disposition": "Diferido_Permanente",
+      "epidemiological_status": "Periodo_Ventana",
       "has_pending_action": false,
       "expected_rule_ids": [
         "R4"
@@ -522,6 +539,7 @@
     "expected": {
       "final_unit_disposition": "Descarte",
       "final_donor_disposition": "Diferido_Permanente",
+      "epidemiological_status": "Periodo_Ventana",
       "has_pending_action": false,
       "expected_rule_ids": [
         "R5"
@@ -562,6 +580,7 @@
     "expected": {
       "final_unit_disposition": "Descarte",
       "final_donor_disposition": "Diferido_Permanente",
+      "epidemiological_status": null,
       "has_pending_action": false,
       "expected_rule_ids": [
         "R7"
@@ -596,6 +615,7 @@
     "expected": {
       "final_unit_disposition": null,
       "final_donor_disposition": null,
+      "epidemiological_status": null,
       "has_pending_action": true,
       "expected_rule_ids": [
         "R8"
@@ -630,6 +650,7 @@
     "expected": {
       "final_unit_disposition": "Descarte",
       "final_donor_disposition": "Diferido_Temporal",
+      "epidemiological_status": "Sifilis_Confirmada",
       "has_pending_action": false,
       "expected_rule_ids": [
         "R9"
@@ -669,6 +690,7 @@
     "expected": {
       "final_unit_disposition": "Descarte",
       "final_donor_disposition": "Diferido_Temporal",
+      "epidemiological_status": "Cicatriz_Serologica",
       "has_pending_action": false,
       "expected_rule_ids": [
         "R10"
@@ -702,6 +724,7 @@
     "expected": {
       "final_unit_disposition": "Descarte",
       "final_donor_disposition": "Diferido_Temporal",
+      "epidemiological_status": "Precaucion_Riesgo_Declarado",
       "has_pending_action": false,
       "expected_rule_ids": [
         "R6"
@@ -732,6 +755,7 @@
     "expected": {
       "final_unit_disposition": "Descarte",
       "final_donor_disposition": "Diferido_Temporal",
+      "epidemiological_status": "Serologia_Dudosa",
       "has_pending_action": false,
       "expected_rule_ids": [
         "R3"
@@ -769,6 +793,7 @@
     "expected": {
       "final_unit_disposition": "Descarte",
       "final_donor_disposition": "Diferido_Temporal",
+      "epidemiological_status": "Serologia_Dudosa_Persistente",
       "has_pending_action": false,
       "expected_rule_ids": [
         "R18"
@@ -804,6 +829,7 @@
     "expected": {
       "final_unit_disposition": "Descarte",
       "final_donor_disposition": "Diferido_Permanente",
+      "epidemiological_status": "Reactividad_Confirmada",
       "has_pending_action": false,
       "expected_rule_ids": [
         "R19"
@@ -836,6 +862,7 @@
     "expected": {
       "final_unit_disposition": "Cuarentena",
       "final_donor_disposition": null,
+      "epidemiological_status": null,
       "has_pending_action": false,
       "expected_rule_ids": [
         "R20"
@@ -863,6 +890,7 @@
     "expected": {
       "final_unit_disposition": "Cuarentena",
       "final_donor_disposition": null,
+      "epidemiological_status": null,
       "has_pending_action": false,
       "expected_rule_ids": [
         "R20"
@@ -892,6 +920,7 @@
     "expected": {
       "final_unit_disposition": null,
       "final_donor_disposition": null,
+      "epidemiological_status": null,
       "has_pending_action": true,
       "expected_rule_ids": [
         "R21"
@@ -921,6 +950,7 @@
     "expected": {
       "final_unit_disposition": null,
       "final_donor_disposition": null,
+      "epidemiological_status": null,
       "has_pending_action": true,
       "expected_rule_ids": [
         "R21"
@@ -949,6 +979,7 @@
     "expected": {
       "final_unit_disposition": null,
       "final_donor_disposition": null,
+      "epidemiological_status": null,
       "has_pending_action": true,
       "expected_rule_ids": [
         "R21"
@@ -978,6 +1009,7 @@
     "expected": {
       "final_unit_disposition": "Descarte",
       "final_donor_disposition": "Diferido_Permanente",
+      "epidemiological_status": null,
       "has_pending_action": false,
       "expected_rule_ids": [
         "R17"
@@ -1011,6 +1043,7 @@
     "expected": {
       "final_unit_disposition": "Apta",
       "final_donor_disposition": "Habilitado",
+      "epidemiological_status": null,
       "has_pending_action": false,
       "expected_rule_ids": [
         "R1"

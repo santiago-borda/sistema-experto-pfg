@@ -123,6 +123,7 @@
       "type": "object",
       "required": [
         "final_unit_disposition",
+        "epidemiological_status",
         "expected_rule_ids",
         "explanation_citations"
       ],
@@ -150,6 +151,14 @@
             "Diferido_Permanente",
             null
           ]
+        },
+        "epidemiological_status": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Estado epidemiologico esperado (InferenceVerdict.epidemiological_status). Es OBLIGATORIO y admite null explicito: la mayoria de las reglas no lo emiten, y distinguir 'la regla no emite estado' de 'nadie declaro que esperaba' es justamente lo que un default silencioso borraria. Se verifica porque es el campo del veredicto que MedGemma lee en fase post-analitica (verdict.schema.json) y hasta ahora ningun arnes lo miraba: era la segunda salida del sistema sin verificacion automatizada, despues de explanation_log.",
+          "$comment": "Cuando dos reglas empatan en peso de decision (INV-07) el arbitraje lo resuelve la prioridad, y con el la regla que impone su epidemiological_status. Ese desempate no esta especificado regla por regla: se declaro como deuda de diseno (23 grupos de empate) y este golden es lo que impide que cambie sin que nadie se entere."
         },
         "has_pending_action": {
           "type": "boolean",

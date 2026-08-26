@@ -26,6 +26,7 @@ import pytest
 
 from seitt_core.eval.eval_harness import (
     _load_dataset,
+    _run_case,
     cargar_reglas,
     placeholders_de,
     verificar_traza,
@@ -220,3 +221,69 @@ def test_detecta_una_linea_de_traza_sin_cubrir(caso_r20: dict, reglas: dict) -> 
 
     assert problemas
     assert "2 lineas" in problemas[0] and "1 citaciones" in problemas[0]
+
+
+# ── Control negativo: epidemiological_status ────────────────────────────
+#
+# Mismo principio que la traza: incorporar el campo al criterio no sirve de
+# nada si el criterio no falla cuando el valor no coincide. Acá el defecto se
+# construye del lado del GOLDEN (se adultera lo esperado) porque lo que se
+# mide es que la comparación exista y muerda, no que el motor se equivoque.
+
+
+def _caso_con_epi_no_nulo() -> dict:
+    """Un caso golden cuyo epidemiological_status esperado NO es null.
+
+    Se busca en vez de fijarse por case_id: si mañana se reordena el dataset,
+    el test sigue midiendo lo mismo en vez de romperse por una razón ajena.
+    """
+    for caso in _load_dataset():
+        if caso["expected"]["epidemiological_status"] is not None:
+            return caso
+    pytest.fail("ningún caso golden declara un epidemiological_status no nulo")
+
+
+def test_detecta_un_epidemiological_status_equivocado(reglas: dict) -> None:
+    """Un valor distinto al que emite la regla ganadora tiene que dar rojo."""
+    caso = copy.deepcopy(_caso_con_epi_no_nulo())
+    original = caso["expected"]["epidemiological_status"]
+    caso["expected"]["epidemiological_status"] = "Estado_Que_Ninguna_Regla_Emite"
+
+    resultado = _run_case(caso, reglas)
+
+    assert not resultado.epi_match, "el arnés no comparó epidemiological_status"
+    assert not resultado.correct, "epi_match no entra en el criterio de acierto"
+    # El resto del veredicto sigue coincidiendo: sin este campo en el criterio,
+    # el caso habría contado como correcto. Eso es exactamente lo que pasaba
+    # antes de este commit.
+    assert resultado.unit_match and resultado.donor_match and resultado.trace_content_match
+    assert resultado.details["actual_epi"] == original
+
+
+def test_detecta_un_epidemiological_status_borrado(reglas: dict) -> None:
+    """Declarar null donde la regla sí emite un estado también es un fallo.
+
+    Es el sentido que un `.get(campo)` con default habría dejado pasar: null y
+    'no declarado' colapsarían en el mismo valor esperado.
+    """
+    caso = copy.deepcopy(_caso_con_epi_no_nulo())
+    caso["expected"]["epidemiological_status"] = None
+
+    resultado = _run_case(caso, reglas)
+
+    assert not resultado.epi_match
+    assert not resultado.correct
+
+
+def test_detecta_un_epidemiological_status_inventado(reglas: dict) -> None:
+    """Y al revés: esperar un estado donde el motor no emite ninguno."""
+    caso = copy.deepcopy(
+        next(c for c in _load_dataset() if c["expected"]["epidemiological_status"] is None)
+    )
+    caso["expected"]["epidemiological_status"] = "Periodo_Ventana"
+
+    resultado = _run_case(caso, reglas)
+
+    assert not resultado.epi_match
+    assert not resultado.correct
+    assert resultado.details["actual_epi"] is None
