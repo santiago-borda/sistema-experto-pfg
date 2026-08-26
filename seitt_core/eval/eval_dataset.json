@@ -527,7 +527,7 @@
   {
     "case_id": "EV18",
     "category": "nat_ventana",
-    "notes": "Serología y NAT ambos reactivos -> infección confirmada.",
+    "notes": "Serología y NAT ambos reactivos -> infección confirmada (R5), NO período de ventana: R4 dejó de aplicar al acotarse a serología no reactiva.",
     "inputs": {
       "sample_id": "EV18",
       "calidad_muestra": "Normal",
@@ -539,18 +539,12 @@
     "expected": {
       "final_unit_disposition": "Descarte",
       "final_donor_disposition": "Diferido_Permanente",
-      "epidemiological_status": "Periodo_Ventana",
+      "epidemiological_status": null,
       "has_pending_action": false,
       "expected_rule_ids": [
         "R5"
       ],
       "explanation_citations": [
-        {
-          "rule_id": "R4",
-          "cites": {
-            "marcador": "HBV"
-          }
-        },
         {
           "rule_id": "R5",
           "cites": {

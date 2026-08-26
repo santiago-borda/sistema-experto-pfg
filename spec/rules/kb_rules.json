@@ -187,16 +187,26 @@
   },
   {
     "rule_id": "R4",
-    "description": "NAT reactivo (aplica solo a HIV/HBV/HCV, INV-08): sospecha de periodo de ventana serológica, descarte permanente por mayor sensibilidad analítica del NAT.",
-    "legacy_notes": null,
+    "description": "NAT reactivo con serologia AUN NO reactiva (aplica solo a HIV/HBV/HCV, INV-08): sospecha de periodo de ventana serologica, descarte permanente por mayor sensibilidad analitica del NAT. La condicion sco='No Reactivo' es constitutiva, no un detalle: periodo de ventana significa que el NAT ya detecta el genoma viral ANTES de que la serologia sea reactiva. Con serologia reactiva no hay ventana que sospechar -- hay infeccion establecida, y de eso hablan R5 (concordancia) y las reglas por marcador.",
+    "legacy_notes": "CORRECCION (sesion de contenido del nucleo simbolico): el antecedente era el desnudo `nat EQ 'Reactivo'`, sin ninguna condicion sobre sco. Como R4 gana el arbitraje por prioridad (11) a igual peso de decision (3) contra R5 (10) y contra las reglas por marcador, le imponia su epidemiological_status='Periodo_Ventana' a TODO caso con NAT reactivo, incluidos los de serologia reactiva: EV18 (HBV, S/CO 2.0) se descartaba con la etiqueta epidemiologica equivocada. El veredicto era correcto por otras reglas, asi que 33/33 y kappa 1.0 no se movian. Respaldo: el caso de prueba 'Periodo de Ventana' del TP2 (legacy/test_cases_manual/caso_2_periodo_ventana.json) usa sco_inicial=0.5 -- No Reactivo -- con nat=Reactivo.",
     "priority": 11,
     "legal_reference": [
       "Ley 22.990 - Art. 45 (tamizaje obligatorio NAT) [verificar articulado oficial]"
     ],
     "antecedent": {
-      "fact_path": "nat",
-      "operator": "EQ",
-      "value": "Reactivo"
+      "operator": "AND",
+      "conditions": [
+        {
+          "fact_path": "sco",
+          "operator": "EQ",
+          "value": "No Reactivo"
+        },
+        {
+          "fact_path": "nat",
+          "operator": "EQ",
+          "value": "Reactivo"
+        }
+      ]
     },
     "consequent": {
       "rule_type": "terminal",
