@@ -223,8 +223,8 @@
   },
   {
     "rule_id": "R5",
-    "description": "Serología y biología molecular concordantes en reactividad: infección confirmada.",
-    "legacy_notes": null,
+    "description": "Serologia y NAT reactivos de forma concordante. Son dos tamizajes independientes -- inmunoensayo y biologia molecular -- que interrogan analitos distintos; ninguno es confirmatorio del otro. Su coincidencia no confirma: concuerda, y esa concordancia basta para el descarte definitivo.",
+    "legacy_notes": "CORRECCION DE CONTENIDO (sesion de contenido del nucleo simbolico): el texto afirmaba que el NAT 'confirma' la serologia. Es incorrecto y lo confirma la bioquimica de referencia: serologia y NAT son dos tamizajes independientes sobre analitos distintos (anticuerpos/antigeno vs. acido nucleico); ninguno es prueba confirmatoria del otro. Se corrige la redaccion sin tocar antecedente ni consecuente: el veredicto no cambia, cambia lo que la traza de auditoria afirma.",
     "priority": 10,
     "legal_reference": [
       "Ley 22.990 - Art. 45 [verificar articulado oficial]"
@@ -249,7 +249,7 @@
       "unit_disposition": "Descarte",
       "donor_disposition": "Diferido_Permanente",
       "epidemiological_status": null,
-      "explanation_template": "Marcador {marcador}: serología y NAT reactivos concordantes. Regla {rule_id}: infección confirmada, descarte definitivo.",
+      "explanation_template": "Marcador {marcador}: serología y NAT reactivos de forma concordante (dos tamizajes independientes). Regla {rule_id}: descarte definitivo de la unidad.",
       "action": null
     },
     "invariant_tags": [
@@ -293,8 +293,8 @@
   },
   {
     "rule_id": "R7",
-    "description": "Reactividad serológica persistente pese a NAT no reactivo: se prioriza la seguridad del receptor por sobre la ausencia de confirmación molecular.",
-    "legacy_notes": null,
+    "description": "Reactividad serologica con NAT no reactivo. La discordancia no descarta el hallazgo serologico: el NAT no es prueba confirmatoria de la serologia y su resultado negativo no la anula. Se prioriza la seguridad del receptor.",
+    "legacy_notes": "CORRECCION DE CONTENIDO (sesion de contenido del nucleo simbolico): el texto afirmaba que el NAT 'confirma' la serologia. Es incorrecto y lo confirma la bioquimica de referencia: serologia y NAT son dos tamizajes independientes sobre analitos distintos (anticuerpos/antigeno vs. acido nucleico); ninguno es prueba confirmatoria del otro. Se corrige la redaccion sin tocar antecedente ni consecuente: el veredicto no cambia, cambia lo que la traza de auditoria afirma.",
     "priority": 9,
     "legal_reference": [
       "Ley 22.990 - Art. 45 [verificar articulado oficial]"
@@ -319,7 +319,7 @@
       "unit_disposition": "Descarte",
       "donor_disposition": "Diferido_Permanente",
       "epidemiological_status": null,
-      "explanation_template": "Marcador {marcador}: serología reactiva con NAT no reactivo. Regla {rule_id}: se prioriza la seguridad del receptor, descarte definitivo.",
+      "explanation_template": "Marcador {marcador}: serología reactiva con NAT no reactivo (tamizajes discordantes; el NAT no confirma ni descarta la serología). Regla {rule_id}: se prioriza la seguridad del receptor, descarte definitivo.",
       "action": null
     },
     "invariant_tags": [
@@ -498,8 +498,8 @@
   },
   {
     "rule_id": "R13",
-    "description": "Zona Gris con NAT reactivo, ya cursada la repeticion por duplicado con resultado No Reactivo: dos tamizajes independientes con hallazgos discordantes, y el de biologia molecular es reactivo. Descarte definitivo.",
-    "legacy_notes": "CORRECCION (sesion de contenido del nucleo simbolico): se agrega `sco_repeticion EQ 'No Reactivo'` al antecedente. Motivo OPERATIVO, confirmado por la bioquimica de referencia: el banco de sangre deriva las muestras de NAT a un laboratorio externo y el informe llega al dia siguiente, de modo que cuando el NAT esta disponible la repeticion por duplicado YA se curso. Un antecedente que no la exige describe un flujo que en este banco no ocurre. Bajo un modelo con NAT propio en paralelo esta precondicion no aplicaria -- ver la nota de alcance en domain_model.md INV-04.",
+    "description": "Zona Gris con NAT reactivo, ya cursada la repeticion por duplicado con resultado No Reactivo. Dos tamizajes independientes con hallazgos discordantes, y el de biologia molecular es reactivo: el NAT no confirma la lectura serologica dudosa -- aporta un hallazgo propio, y ese hallazgo es reactivo. Descarte definitivo.",
+    "legacy_notes": "CORRECCION (sesion de contenido del nucleo simbolico): se agrega `sco_repeticion EQ 'No Reactivo'` al antecedente. Motivo OPERATIVO, confirmado por la bioquimica de referencia: el banco de sangre deriva las muestras de NAT a un laboratorio externo y el informe llega al dia siguiente, de modo que cuando el NAT esta disponible la repeticion por duplicado YA se curso. Un antecedente que no la exige describe un flujo que en este banco no ocurre. Bajo un modelo con NAT propio en paralelo esta precondicion no aplicaria -- ver la nota de alcance en domain_model.md INV-04. CORRECCION DE CONTENIDO (sesion de contenido del nucleo simbolico): el texto afirmaba que el NAT 'confirma' la serologia. Es incorrecto y lo confirma la bioquimica de referencia: serologia y NAT son dos tamizajes independientes sobre analitos distintos (anticuerpos/antigeno vs. acido nucleico); ninguno es prueba confirmatoria del otro. Se corrige la redaccion sin tocar antecedente ni consecuente: el veredicto no cambia, cambia lo que la traza de auditoria afirma.",
     "priority": 15,
     "legal_reference": [
       "Ley 22.990 - Art. 45 [verificar articulado oficial]"
@@ -529,7 +529,7 @@
       "unit_disposition": "Descarte",
       "donor_disposition": "Diferido_Permanente",
       "epidemiological_status": null,
-      "explanation_template": "Marcador {marcador}: Zona Gris con NAT reactivo. Regla {rule_id}: confirmación molecular de infección real, descarte definitivo.",
+      "explanation_template": "Marcador {marcador}: Zona Gris con repetición no reactiva y NAT reactivo. Regla {rule_id}: hallazgo reactivo en biología molecular, descarte definitivo.",
       "action": null
     },
     "invariant_tags": [
