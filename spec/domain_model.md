@@ -42,7 +42,7 @@ $$
 
 Dentro de Zona Gris, $certeza(0.9)=100\%$ (máxima confianza de estar cerca del límite "No Reactivo") y $certeza(1.1)=0\%$ (mínima confianza, el valor está pegado al límite "Reactivo"). Es una métrica de *proximidad direccional*, no de pertenencia difusa clásica — decisión de diseño del equipo, no un error, pero merece nombrarse con precisión: no es literalmente el trapecio $[a,b,c,d]$ que describen los papers académicos (Poster §3.2), es una simplificación lineal de un solo tramo. Se documenta así para que la memoria técnica no describa una fórmula que el código no implementa.
 
-`certeza_sco` se calcula para **las tres etiquetas** (no solo Zona Gris), aunque hoy solo `R2_alta_certeza`/`R2_baja_certeza`/`R2_critica` la consumen como condición.
+`certeza_sco` se calcula para **las tres etiquetas** (no solo Zona Gris), aunque hoy solo `R2_alta_certeza`/`R2_baja_certeza`/`R2_critica` la consumen como condición. Se calcula, eso sí, **solo si hubo una lectura real**: sin `sco_inicial_valor` no hay certeza que derivar, y fuzzificar un centinela produciría un número sin referente clínico — ver **INV-16**.
 
 $$
 sco\_label(x) = \begin{cases}
@@ -224,8 +224,10 @@ Toda etiqueta `sco` derivada de un centinela sintético — interferencia físic
 
 > Bloque a integrar en `spec/domain_model.md`. Verificar que los IDs estén
 > libres antes de insertar: al cierre del Paso 2.5 estaban ocupados INV-01…08
-> e INV-15 (forma dual del veredicto), más los `INV-STRUCT-*`. Si alguno de
-> INV-09…14 ya está tomado, corrervlos y avisar.
+> e INV-15 (forma dual del veredicto), más los `INV-STRUCT-*`. Al cierre de la
+> sesión de contenido del núcleo simbólico se suma **INV-16** (ausencia de
+> certeza sin lectura, §INV-16 arriba), que es de dominio y no de frontera.
+> Si alguno de INV-09…14 ya está tomado, correrlos y avisar.
 >
 > INV-10 y INV-14 pertenecen a la mitad post-analítica del contrato
 > (narrativa). Se incluyen aquí **solo para reservar el ID y fijar el

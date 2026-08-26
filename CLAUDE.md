@@ -67,9 +67,10 @@ seitt_core/   Fase 1: refactor del motor, DSL-driven (reemplaza a legacy/).
   rules/kb_rules.json       (copia sincronizada de spec/rules/)
   tests/                    tests pytest de regresión + fuzzy engine
   eval/                     Fase 2: Eval Harness
-    eval_dataset.json       33 casos con criterio experto (ground truth),
+    eval_dataset.json       34 casos con criterio experto (ground truth),
                             incluido el contenido esperado de la traza
-                            (expected.explanation_citations)
+                            (expected.explanation_citations) y el
+                            epidemiological_status esperado
     eval_harness.py         Corre el dataset, mide métricas
     eval_report.json        Último reporte generado
 
@@ -132,8 +133,8 @@ defensa.
 ```bash
 ruff format --check . && ruff check .     # esperado: sin diferencias, "All checks passed!"
 python spec/validate_spec.py              # esperado: 87/87 OK
-python -m pytest                          # esperado: 83 passed
-python seitt_core/eval/eval_harness.py    # esperado: 33/33, kappa 1.0, traza 33/33, 22/23 reglas
+python -m pytest                          # esperado: 97 passed
+python seitt_core/eval/eval_harness.py    # esperado: 34/34, kappa 1.0, traza 34/34, 23/23 reglas
 ```
 
 `ruff format --check` **verifica, no reescribe**. Para aplicar el formato:
@@ -200,19 +201,24 @@ Defectos reales detectados y **deliberadamente no corregidos todavía**,
 con el motivo del diferimiento. Se listan acá para que no se pierdan
 entre sesiones ni se redescubran desde cero.
 
-- **`certainty_index = 1.0` en rechazo técnico (R20).** `expert_system`
-  sintetiza un S/CO centinela (`0.0`) cuando hay interferencia física,
-  para que R20 pueda cortar el ciclo; `fuzzificar_sco(0.0)` devuelve 100%
-  de certeza. Resultado: un veredicto de Cuarentena llega con la certeza
-  más alta del sistema, en el único caso donde nadie fuzzificó un S/CO
-  real. Es un artefacto del centinela, no un dato clínico.
-  *Corrección de fondo pendiente:* dejar `certainty_index = None` en ese
-  camino. Fuera de alcance de la Fase 3 Paso 3A por tocar el núcleo
-  simbólico y requerir revalidar el Eval Harness.
-  *Contención actual (solo en el borde, no es la solución):* la API marca
-  `certeza_es_significativa = false` cuando la disposición es Cuarentena,
-  y el frontend oculta el bloque de certeza. Ver el comentario en
-  `app/web/app.js`, función `mostrarVeredicto()`.
+- ~~**`certainty_index = 1.0` en rechazo técnico (R20).**~~ **SALDADA.**
+  `expert_system` sintetizaba un S/CO centinela (`0.0`) ante interferencia
+  física, y `fuzzificar_sco(0.0)` devuelve 100% de certeza: el rechazo
+  técnico llegaba con la certeza **más alta** del sistema, en el único
+  camino donde nadie leyó un S/CO. Se corrige pasando `None` en vez de
+  `0.0`, y se formaliza como **INV-16** (ausencia de certeza sin lectura)
+  en `domain_model.md`. El contrato ya lo admitía (`certainty_index` era
+  `float | None` y no figura en los `required` de `verdict.schema.json`),
+  así que no hubo ningún invariante que reescribir — verificado con un
+  barrido, no por lectura.
+  La contención del borde dejó de ser contención: `certeza_es_significativa`
+  se derivaba de la disposición (`!= Cuarentena`), un proxy que tapaba el
+  número inventado sin conocer el hecho; ahora deriva de que
+  `certainty_index` exista. El linter confirmó que el acoplamiento se fue
+  (`UnitDisposition` quedó sin uso en `app/api/main.py`).
+  *Ojo con el alcance:* INV-16 gobierna la **certeza**, no la **etiqueta**.
+  El centinela de `sco` sigue vivo y es la causa del hallazgo de Sífilis de
+  más abajo. Se cerró la mitad numérica del problema del centinela.
 
 - ~~**El Eval Harness no cubre la traza explicativa.**~~ **SALDADA.**
   El arnés ahora verifica el contenido de `explanation_log` en los 33
@@ -220,34 +226,69 @@ entre sesiones ni se redescubran desde cero.
   cita la regla y con qué valor renderizado, y `verificar_traza()` lo
   compara. La línea esperada se **re-renderiza desde la plantilla vigente
   de la KB** con los valores golden, así que reescribir la redacción de
-  una regla no rompe los 33 casos, pero citar otro campo sí. Control
+  una regla no rompe los 34 casos, pero citar otro campo sí. Control
   negativo en `seitt_core/tests/test_eval_harness.py`: con el bug
   histórico de R20 reintroducido, el arnés baja a 31/33 y sale con
   código 1.
 
-- **[PRIORIDAD ALTA] Las tres trazas de Sífilis afirman "unidad apta", dos
-  de ellas en veredictos de Descarte.** Mismo patrón que el bug de R20 —
-  una línea del log de auditoría clínicamente falsa — pero peor, porque
-  **contradice el propio veredicto del caso**:
+- **[PRIORIDAD ALTA — BLOQUEADO esperando al bioquímico] R1 dispara sobre
+  un centinela sintético y mete al log una afirmación falsa.** Investigado
+  a fondo; el veredicto de la inspección es **defecto real**, no ambigüedad
+  de presentación. Evidencia medida:
 
   ```
+  EV20  vdrl=Reactivo    clia=Pendiente  -> None/None (pendiente)
   EV21  vdrl=Reactivo    clia=Reactivo   -> Descarte / Diferido_Temporal
   EV22  vdrl=No Reactivo clia=Reactivo   -> Descarte / Diferido_Temporal
-        y sin embargo el explanation_log incluye:
+        los tres arrastran, literal:
         "Marcador Sifilis: tamizaje negativo completo y ausencia de
          factores de riesgo epidemiológico. Regla R1: unidad apta."
   ```
 
-  Causa: el S/CO de Sífilis es No Reactivo (se evalúa por VDRL/CLIA), así
-  que el antecedente de R1 matchea. El arbitraje por peso elige bien el
-  veredicto —por eso 33/33 y kappa 1.0 no se mueven— pero R1 igual
-  aporta su línea al log, y esa línea llega tal cual al frontend.
-  *Por qué la extensión de la traza NO lo atrapa:* verifica **qué cita
-  cada línea**, no **si la línea debería estar**. La citación de R1
-  (`marcador=Sifilis`) es correcta; el defecto es que R1 figure. Es otra
-  clase de defecto y es del núcleo.
-  *Va primero en la sesión de contrato formal de la KB* — es el hallazgo
-  que debería ordenar esa sesión, no un ítem más de la lista.
+  **Mecanismo.** Los tres casos son de UN solo marcador (Sífilis) y **no
+  traen `sco_inicial_valor`**. `construir_hechos()` sintetiza entonces
+  `fuzzificar_sco(0.0)` → `sco = "No Reactivo"`, y `nat = "No Aplica"` lo
+  deriva el motor del marcador por INV-08. Las tres condiciones de R1
+  (`sco`, `nat`, `riesgo=false`) quedan satisfechas **por datos que nadie
+  midió**. El delator está en los hechos: `sco_inicial_valor = None`
+  mientras `sco = No Reactivo` — la etiqueta sin valor que la respalde.
+  El comentario de `fuzzy_engine.py` declara su propia condición de
+  seguridad ("ninguna regla dispara solo con `sco=No Reactivo`…") y esa
+  condición es **falsa para R1**.
+
+  **Alcance mayor al registrado antes.** Son **tres** casos, no dos: EV20
+  es el peor, porque no tiene veredicto y aun así muestra "unidad apta".
+  Y no se limita a R1: con `riesgo=True`, **R6** dispara sobre el mismo
+  centinela y afirma *"serología No Reactiva"* de un marcador que no tiene
+  serología S/CO.
+
+  **Por qué no se arregla solo.** R1 es la **única** regla que produce
+  `Apta`, así que tiene que seguir alcanzando a Sífilis: verificado, una
+  Sífilis limpia (`vdrl` y `clia` No Reactivos) da `Apta/Habilitado` por
+  R1 y ahí la línea es correcta. Excluir Sífilis de R1 reabre el hallazgo
+  #10 de `domain_model.md §4bis`.
+
+  **Se evaluó reusar el mecanismo de anulación de `rule_engine.py`** (el
+  que ya anula `best_candidate` cuando es `Apta` y disparó una intermedia)
+  para suprimir también la línea. **Medido: alcanza solo a EV20.** En
+  EV21/EV22 R1 nunca llega a ser `best_candidate` —R9 y R10 ganan por
+  peso— así que la guarda `best_candidate.unit_disposition == APTA` es
+  falsa. Generalizarlo a "toda terminal que pierde el arbitraje" sí cubre
+  los tres, pero borraría líneas **verdaderas** en EV11, EV18 y EV19
+  (R17 "HIV reactivo", R16 "HBV reactivo", R5). Perder-el-arbitraje no
+  implica ser-falso: **el discriminante correcto es la procedencia del
+  hecho (centinela vs. medición), no el rango de la regla.** Una variante
+  mínima —suprimir la línea de una terminal perdedora que además sea
+  `Apta`, o sea "la línea de R1 solo si R1 gana"— cubre los tres casos con
+  cero daño colateral, pero seguiría siendo contención: R1 dispararía
+  igual, solo que sin contarlo.
+
+  **La pregunta que hay que llevarle al bioquímico** no es "¿borramos la
+  línea?" sino **qué es el `explanation_log`**, porque de ahí salen dos
+  fixes distintos: (a) registro completo de evidencia → toda regla que
+  matcheó queda, y el defecto está en que R1 *matchee* (arreglar el hecho
+  o el antecedente, tocando el núcleo); (b) justificación del veredicto →
+  solo quedan las líneas que lo sostienen, y la variante mínima alcanza.
 
 - **El redondeo de `certeza_sco` colapsa clasificaciones distintas en el
   mismo número.** En el borde exacto de umbral, dos casos que el motor
@@ -267,6 +308,37 @@ entre sesiones ni se redescubran desde cero.
   Gris, el foco de la Consigna 3, y porque cualquier decisión futura
   sobre cómo se presenta la certeza debería conocerlo.
 
+- **[PRIORIDAD ALTA] El `epidemiological_status` lo decide un desempate por
+  prioridad que nadie especificó — 23 grupos abiertos.** Cuando dos reglas
+  terminales empatan en peso de decisión (INV-07), el arbitraje lo resuelve
+  la prioridad, y con ella **qué `epidemiological_status` se publica**. Ese
+  desempate no está declarado regla por regla: es un efecto lateral del
+  orden. Medido sobre la KB actual: **32 pares** de terminales empatan en
+  peso con `epidemiological_status` distinto; 9 involucraban a R4 y quedaron
+  resueltos al acotarla, **23 siguen abiertos** (sífilis interno R9/R10,
+  R19 vs. las reglas por marcador, R18/R6/R3/R14).
+  *Por qué sube a prioridad alta:* es el campo del veredicto que **MedGemma
+  va a leer en fase post-analítica** — `verdict.schema.json` lo declara
+  parte del único artefacto que el módulo neuronal puede consumir para
+  redactar el reporte final. Un campo cuyo valor depende de un orden no
+  especificado no es una base aceptable para el contrato neuro-simbólico.
+  El golden de los 34 casos ya lo congela, así que hoy no puede cambiar en
+  silencio; lo que falta es **decidirlo**, con consulta clínica.
+  Sesión propia: es diseño, no limpieza.
+
+- **El Eval Harness no ejercita el adaptador de narración.**
+  `seitt_core/adapters/static_narration.py` es el adaptador **por defecto**
+  (INV-13) y produce la prosa que el bioquímico lee en pantalla, pero
+  ningún caso del arnés lo invoca: el harness llama a `evaluar_caso()` y
+  compara el `InferenceVerdict`, nunca `narrate()`. El caso concreto que lo
+  hizo visible es `epidemiological_status`: `StaticNarrationAdapter` lo
+  imprime como *"Estado epidemiológico: …"* desde hace tiempo, o sea que
+  **estaba en pantalla y era invisible al arnés** — exactamente la brecha
+  que ya costó el bug de R20 y las tres líneas de Sífilis. Que el golden lo
+  verifique ahora cubre el veredicto, no la narración.
+  *Nota:* la narración tiene una segunda rama sin cubrir, la de veredicto
+  pendiente (INV-15 forma ii).
+
 - **`trace_match` en el Eval Harness usa `any`, no `all`.** Un caso que
   declara `expected_rule_ids: ["R2_alta_certeza", "R3"]` pasa aunque solo
   dispare una de las dos. Es una debilidad preexistente y distinta de la
@@ -275,27 +347,29 @@ entre sesiones ni se redescubran desde cero.
   probablemente no rompa nada hoy, pero conviene hacerlo con el resto de
   los cambios del núcleo y no de forma suelta.
 
-- **`RuleEngine.load()` omite la validación si falta el schema.** La
-  carga hace `if schema_path.exists()` antes de validar la KB contra
-  `rule.schema.json`. Si el archivo no está, las reglas se cargan **sin
-  validar** y el motor sigue emitiendo veredictos como si nada — en un
-  CDSS, reglas clínicas nunca verificadas sirviendo decisiones. Es el
-  mismo patrón de degradación silenciosa que tenía el montaje del
-  frontend. Se detectó al empaquetar (Consigna 4), porque una wheel sin
-  los JSON Schema entra exactamente por ese camino.
-  *Contención actual (en el borde, no es la solución):* el arranque de la
-  API verifica que el schema exista **antes** de cargar la KB y se niega
-  a levantar si falta (`_verificar_arranque()` en `app/api/main.py`), y
-  `/api/health` publica `kb_schema_validado`. Pero eso solo protege a
-  quien entra por la API: un script que importe `seitt_core` directo
-  sigue teniendo el agujero.
-  *Corrección de fondo pendiente:* que `RuleEngine.load()` falle si el
-  schema no está, con un parámetro explícito para el único caso que
-  legítimamente quiera saltearlo. Fuera de alcance de esta sesión por
-  tocar el núcleo simbólico.
+- ~~**`RuleEngine.load()` omite la validación si falta el schema.**~~
+  **SALDADA.** La carga hacía `if schema_path.exists()` antes de validar
+  la KB: sin el archivo, las reglas se cargaban **sin validar** y el motor
+  seguía emitiendo veredictos. Ahora la ausencia del schema levanta
+  `MalformedRuleError` **al construir el motor, no al evaluar** — la
+  diferencia importa: fallando en `evaluar()`, un despliegue con la KB rota
+  levanta sano, pasa el health check y falla por primera vez con una
+  muestra real. Saltear la validación exige `require_schema=False`
+  explícito, para que sea una decisión firmada y no la consecuencia de que
+  falte un archivo. Tests en `seitt_core/tests/test_rule_engine.py`,
+  incluido uno que corrompe una regla con un operador que el DSL no tiene.
+  El chequeo de `_verificar_arranque()` en la API se conserva: ya no es la
+  única línea de defensa (que era el problema — protegía solo a quien
+  entraba por la API), pero falla en el import y no en la primera
+  inferencia, y su mensaje habla del despliegue en vez del motor.
 
 - **`_DEFAULT_RULES_PATH` / `_DEFAULT_SCHEMA_PATH` son privadas y las lee
-  `app/`.** `app/api/main.py` importa esas dos constantes de
+  `app/`.** *(La ventana que esta deuda declaraba —"la próxima vez que se
+  toque el núcleo"— se abrió y se dejó pasar a propósito: la sesión que
+  corrigió `RuleEngine.load()` tenía alcance cerrado por commit y promover
+  nombres a API pública cambia la superficie del módulo, que es decisión
+  propia y no anexo de otra. Sigue abierta, ahora con el precedente de que
+  el disparador ya sonó una vez.)* `app/api/main.py` importa esas dos constantes de
   `seitt_core.rule_engine` para el chequeo de arranque. Se eligió eso
   antes que reconstruir las rutas en el adaptador, porque una ruta
   duplicada se desincroniza en silencio del motor — que es justo el fallo
@@ -343,15 +417,15 @@ entre sesiones ni se redescubran desde cero.
    Harness. Decidir antes de empezar: ¿estricto desde el día 1, o baseline
    con excepciones documentadas que se van cerrando? Lo que **no** hay que
    hacer es colarlo como anexo de otra sesión.
-4. **Caso golden para R13 — requiere consulta al bioquímico de referencia.**
-   R13 ("Zona Gris con NAT reactivo") es la única de las 23 entradas de la
-   KB que ningún caso del Eval Harness ejercita: necesita S/CO en Zona Gris
-   **y** NAT Reactivo a la vez. El `case_id` **EV34** queda reservado. No se
-   completa por inferencia — una laguna de dominio la resuelve el
-   bioquímico, no el criterio de quien escribe el arnés, que es el mismo
-   criterio que ya se aplica a la KB. El hueco se reporta en **cada
-   corrida** del harness (bloque "Cobertura de traza") para que se lea como
-   pendiente explícito y no como omisión.
+4. ~~**Caso golden para R13.**~~ **CERRADO.** R13 era la única de las 23
+   entradas de la KB que ningún caso del Eval Harness ejercitaba. Se cerró
+   con **EV34** (el `case_id` que estaba reservado), confirmado por la
+   bioquímica de referencia y sobre R13 ya corregida: su antecedente exige
+   ahora que la repetición por duplicado se haya cursado, precondición
+   **operativa** (el NAT se deriva a laboratorio externo y su informe llega
+   con el duplicado ya hecho) documentada en la nota de alcance de INV-04.
+   Cobertura de la KB: **23/23**.
+
 5. Contrato JSON MedGemma ↔ Motor Difuso (extiende `sample_input.schema.json`).
    El hueco del servicio ya está documentado en `docker-compose.yml`, en
    comentario y sin implementar, para no reestructurar el compose después.
