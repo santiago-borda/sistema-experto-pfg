@@ -206,5 +206,5 @@
       }
     }
   },
-  "$comment": "HUECO DE COBERTURA DECLARADO — R13 ('Zona Gris con NAT reactivo'). Ninguno de los 33 casos golden la ejercita: requiere S/CO en Zona Gris Y NAT Reactivo a la vez. El case_id EV34 queda RESERVADO para ella. No se completa por inferencia: una laguna de dominio la resuelve el bioquimico de referencia, no el criterio de quien escribe el arnes -- el mismo criterio que se aplica a la KB. El Eval Harness reporta este hueco en cada corrida (bloque 'Cobertura de traza'), para que se lea como pendiente explicito y no como omision."
+  "$comment": "HUECO DE COBERTURA CERRADO — R13 ('Zona Gris con NAT reactivo'). Fue, durante toda la Consigna 3, la unica de las 23 entradas de la KB que ningun caso golden ejercitaba: requiere S/CO en Zona Gris Y NAT Reactivo a la vez. No se completo por inferencia -- una laguna de dominio la resuelve el bioquimico de referencia, no el criterio de quien escribe el arnes, que es el mismo criterio que ya se aplica a la KB. Se cerro con EV34 (el case_id que estaba reservado para ella) una vez confirmado el escenario, y sobre R13 ya corregida: su antecedente exige ahora que la repeticion por duplicado se haya cursado. El bloque 'Cobertura de traza' del arnes sigue reportando la cobertura en cada corrida, asi que un hueco nuevo vuelve a quedar a la vista sin que nadie tenga que acordarse de mirar."
 }

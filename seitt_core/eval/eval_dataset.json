@@ -1051,5 +1051,49 @@
         }
       ]
     }
+  },
+  {
+    "case_id": "EV34",
+    "category": "zona_gris_repeticion",
+    "notes": "Zona Gris inicial, repetición No Reactiva y NAT reactivo. Cierra el único hueco de cobertura de la KB: R13 era la sola de las 23 entradas que ningún caso golden ejercitaba. Escenario confirmado por la bioquímica de referencia sobre R13 ya corregida (la precondición de repetición es operativa: el NAT se deriva a laboratorio externo y su informe llega con el duplicado ya cursado). Nótese que R13 gana el arbitraje a R3 pese a que ambas describen el mismo caso: igual eje de unidad (Descarte) pero mayor peso de decisión por el diferimiento permanente.",
+    "inputs": {
+      "sample_id": "EV34",
+      "calidad_muestra": "Normal",
+      "marcador": "HCV",
+      "riesgo": false,
+      "sco_inicial_valor": 1.05,
+      "sco_repeticion_valor": 0.5,
+      "nat": "Reactivo"
+    },
+    "expected": {
+      "final_unit_disposition": "Descarte",
+      "final_donor_disposition": "Diferido_Permanente",
+      "epidemiological_status": null,
+      "has_pending_action": false,
+      "expected_rule_ids": [
+        "R13"
+      ],
+      "explanation_citations": [
+        {
+          "rule_id": "R2_critica",
+          "cites": {
+            "marcador": "HCV",
+            "certeza_sco": "25.0"
+          }
+        },
+        {
+          "rule_id": "R13",
+          "cites": {
+            "marcador": "HCV"
+          }
+        },
+        {
+          "rule_id": "R3",
+          "cites": {
+            "marcador": "HCV"
+          }
+        }
+      ]
+    }
   }
 ]
