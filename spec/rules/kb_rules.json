@@ -498,8 +498,8 @@
   },
   {
     "rule_id": "R13",
-    "description": "Zona Gris con NAT reactivo: la biología molecular confirma que la duda serológica es una infección real, no un artefacto analítico.",
-    "legacy_notes": null,
+    "description": "Zona Gris con NAT reactivo, ya cursada la repeticion por duplicado con resultado No Reactivo: dos tamizajes independientes con hallazgos discordantes, y el de biologia molecular es reactivo. Descarte definitivo.",
+    "legacy_notes": "CORRECCION (sesion de contenido del nucleo simbolico): se agrega `sco_repeticion EQ 'No Reactivo'` al antecedente. Motivo OPERATIVO, confirmado por la bioquimica de referencia: el banco de sangre deriva las muestras de NAT a un laboratorio externo y el informe llega al dia siguiente, de modo que cuando el NAT esta disponible la repeticion por duplicado YA se curso. Un antecedente que no la exige describe un flujo que en este banco no ocurre. Bajo un modelo con NAT propio en paralelo esta precondicion no aplicaria -- ver la nota de alcance en domain_model.md INV-04.",
     "priority": 15,
     "legal_reference": [
       "Ley 22.990 - Art. 45 [verificar articulado oficial]"
@@ -516,6 +516,11 @@
           "fact_path": "nat",
           "operator": "EQ",
           "value": "Reactivo"
+        },
+        {
+          "fact_path": "sco_repeticion",
+          "operator": "EQ",
+          "value": "No Reactivo"
         }
       ]
     },

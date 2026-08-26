@@ -213,16 +213,46 @@ class TestCasosBordeYReglasAdicionales:
         assert v.final_unit_disposition.value == "Cuarentena"
 
     def test_tc15_zona_gris_nat_reactivo(self):
+        """R13 exige que la repetición por duplicado ya se haya cursado.
+
+        La precondición `sco_repeticion = No Reactivo` es operativa: el NAT se
+        deriva a un laboratorio externo y su informe llega al día siguiente,
+        cuando el duplicado ya está hecho (ver domain_model.md, nota de alcance
+        en INV-04). Este test declaraba solo S/CO inicial y NAT, describiendo un
+        flujo que el banco no tiene.
+        """
         v = evaluar_caso(
             sample_id="TC15",
+            calidad_muestra="Normal",
+            marcador="HIV",
+            sco_inicial_valor=1.05,
+            sco_repeticion_valor=0.5,
+            nat="Reactivo",
+            riesgo=False,
+        )
+        assert "R13" in _triggered(v)
+        assert v.final_donor_disposition.value == "Diferido_Permanente"
+
+    def test_tc15b_zona_gris_nat_reactivo_sin_repeticion_no_concluye(self):
+        """Sin repetición cursada, R13 no alcanza y el ciclo queda pendiente.
+
+        Es el reverso del test anterior y lo que hace verificable la
+        precondición: sin él, agregar la condición al antecedente y borrarla
+        darían el mismo verde. No hay relajación de seguridad — pendiente no
+        es Apta, la unidad no se libera: lo que el motor pide es completar el
+        duplicado antes de pronunciarse.
+        """
+        v = evaluar_caso(
+            sample_id="TC15B",
             calidad_muestra="Normal",
             marcador="HIV",
             sco_inicial_valor=1.05,
             nat="Reactivo",
             riesgo=False,
         )
-        assert "R13" in _triggered(v)
-        assert v.final_donor_disposition.value == "Diferido_Permanente"
+        assert "R13" not in _triggered(v)
+        assert v.final_unit_disposition is None
+        assert v.pending_action is not None
 
 
 class TestNATPendiente:

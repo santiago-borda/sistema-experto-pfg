@@ -79,6 +79,12 @@ sco\_label = \text{No Reactivo} \land nat\_result = \text{Reactivo} \implies ver
 $$
 El NAT tiene precedencia sobre la serología convencional cuando discrepan, por mayor sensibilidad analítica en periodo de ventana.
 
+**Conformidad de R4 con este invariante (corregida).** El antecedente de R4 era el desnudo `nat = Reactivo`, sin la conjunción `sco\_label = 	ext{No Reactivo}` que este invariante sí exige: la implementación era **más laxa que su propia especificación**. El efecto no era sobre el veredicto sino sobre `epidemiological_status` — R4 gana el arbitraje por prioridad a igual peso, así que etiquetaba `Periodo_Ventana` también los casos de serología reactiva (EV18), donde no hay ventana sino infección establecida. Se acotó el antecedente a lo que INV-04 ya decía. No es un cambio de criterio clínico: es cerrar la brecha entre la spec y la KB.
+
+**Alcance operativo de la precondición de repetición en R13.** R13 (`Zona Gris ∧ NAT reactivo`) exige además `sco\_repeticion = 	ext{No Reactivo}`. La precondición es **operativa, no clínica**, y depende del circuito del banco: las muestras de NAT se derivan a un laboratorio externo y el informe llega al día siguiente, de modo que para cuando el resultado de NAT está disponible la repetición por duplicado ya se cursó. Un antecedente que no la exigiera describiría un flujo que en este banco no ocurre. **Confirmado por la bioquímica de referencia** — no es inferencia de quien escribe la KB. Bajo un modelo con NAT propio corriendo en paralelo a la serología, esta precondición no aplicaría y R13 volvería a su forma de dos condiciones; queda dicho acá para que un cambio de circuito no obligue a reconstruir el razonamiento desde cero.
+
+Consecuencia registrada: una Zona Gris con NAT reactivo y **sin** repetición cursada ya no alcanza R13 y termina en veredicto pendiente por `R2_*` (se pide repetición o nueva muestra). No hay relajación de seguridad: pendiente no es `Apta` y la unidad no se libera. Lo que cambia no es el nivel de precaución, sino que se exige completar el paso del protocolo que el circuito real ya garantiza.
+
 ### INV-05 — Algoritmo de sífilis (no monotónico simple)
 $$
 vdrl\_reactive \land clia\_reactive \implies verdict = \text{Diferimiento Temporal}
