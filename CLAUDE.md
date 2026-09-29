@@ -340,20 +340,39 @@ entre sesiones ni se redescubran desde cero.
   consolidada está en `docs/consulta_bioquimico_arbitraje.md`, lista para
   enviar.
 
-- **El contrato de `WorkingMemoryFacts` admite `sco != sco_inicial`, estado
-  que el motor difuso no puede producir.** Hallazgo de la enumeración
-  exhaustiva de INV-18: los pares `(R3, R6)` y `(R3, R14)` no figuraban en
-  ninguna de las tres familias del dossier de arbitraje, y existen solo
-  porque `sco` y `sco_inicial` pueden diferir. `construir_hechos()` los
-  deriva **siempre** de la misma fuzzificación, así que por `evaluar_caso()`
-  el estado es inalcanzable; por `RuleEngine.evaluar()` directo, no. O bien
-  el acoplamiento es un invariante y le falta validador en `contracts.py`,
-  o los dos campos son genuinamente independientes y hay reglas que leen el
-  equivocado. No se decidió acá porque tocar el contrato de memoria de
-  trabajo excede el alcance de la sesión de arbitraje, y porque la respuesta
-  correcta depende de para qué existe `sco_inicial` separado de `sco` — que
-  es pregunta de modelo de dominio, no de motor. Los dos pares quedan
-  cubiertos de forma defensiva en la tabla mientras tanto.
+- **[PRIORIDAD ALTA] `sco` significa "vigente" en la spec y "inicial" en el
+  código.** `working_memory_facts.schema.json` define `sco` como *«clasificación
+  S/CO **vigente** para el marcador en el ciclo actual de evaluación»* y
+  `sco_inicial` como la inicial: son dos campos con semántica distinta. Pero
+  `construir_hechos()` hace `sco = sco_inicial_label` con el comentario explícito
+  de que *«el Inference Engine no lo recalcula»*, así que **nunca divergen**. La
+  spec declara una distinción que el motor no realiza.
+  *Cómo apareció:* la enumeración exhaustiva de INV-18 encontró los pares
+  `(R3, R6)` y `(R3, R14)`, ausentes de las tres familias del dossier. Existen
+  solo por esa brecha. `(R3, R6)` es el que importa: `sco_inicial = Zona Gris`,
+  `sco_repeticion = No Reactivo`, `sco = No Reactivo`, `riesgo = true` — o sea,
+  una Zona Gris resuelta a no reactiva por el duplicado, en un donante con riesgo
+  declarado. Es el desenlace **natural** del escenario de R3, no una
+  contradicción, y plantea una pregunta clínica real (`Serologia_Dudosa` vs
+  `Precaucion_Riesgo_Declarado`) que hoy no se puede alcanzar solo porque el
+  motor difuso no recalcula `sco`.
+  *Por qué es prioridad alta:* la inalcanzabilidad **no es deliberada**. Si
+  alguien hace que `sco` signifique lo que la spec dice —recalcularlo tras el
+  duplicado, que es la lectura obvia del nombre del campo— el par se vuelve
+  alcanzable de inmediato y sin aviso, con su `epidemiological_status` decidido
+  por nadie. La tabla lo cubre de forma defensiva (`pending_clinical_review`), y
+  por eso **no** se declaró `indistinct`: cerrarlo como "da igual" equivaldría a
+  darlo por inexistente, y no lo es.
+  *Qué hay que decidir:* o `sco` se recalcula y las reglas que hoy lo leen se
+  revisan una por una (¿R4, R6, R14, R5, R7 hablan de la lectura vigente o de la
+  inicial?), o el campo se renombra y la spec deja de prometer algo que el motor
+  no hace. Es sesión propia: toca el contrato de memoria de trabajo.
+  *Registro de un error propio, para que no se repita:* la primera redacción del
+  anexo de la consulta al bioquímico describía estos dos pares como «una lectura
+  registrada como no reactiva y en Zona Gris a la vez — entiendo que es
+  imposible», tratando `sco` y `sco_inicial` como el mismo dato. De haberse
+  enviado así, el bioquímico habría confirmado una imposibilidad que no existe y
+  se habrían cerrado por inexistencia dos pares vivos. Corregido antes de enviar.
 
 - **El Eval Harness no ejercita el adaptador de narración.**
   `seitt_core/adapters/static_narration.py` es el adaptador **por defecto**

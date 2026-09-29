@@ -136,21 +136,47 @@ determinante», lo acoto.
 
 ---
 
-## Anexo — dos casos que probablemente no requieran respuesta clínica
+## Anexo — dos situaciones que aparecieron al revisar el sistema
 
 Al revisar sistemáticamente todas las combinaciones posibles aparecieron dos que
-el relevamiento anterior no tenía. Las incluyo por completitud, pero creo que
-**ninguna de las dos puede darse en la práctica** y solo necesito que me confirme
-eso:
+el relevamiento anterior no tenía. No sé si son preguntas reales o artefactos de
+cómo está armado el sistema por dentro, y prefiero describírselas tal como son
+antes que darlas por cerradas.
 
-1. Una lectura que quede registrada como **no reactiva y en Zona Gris a la vez**.
-   Entiendo que es imposible: es la misma lectura.
-2. Lo mismo para **Brucelosis** registrada simultáneamente como reactiva y en
-   Zona Gris — que además, según lo que me indicó antes, no tiene Zona Gris por
-   ser una técnica binaria.
+**Situación 1 — Zona Gris que se resolvió como no reactiva, en un donante con
+riesgo declarado.**
 
-Si confirma que son imposibles, las cierro por inexistencia de caso, igual que
-hicimos con los dos anteriores.
+Concretamente:
+
+- lectura inicial en **Zona Gris**;
+- repetición por duplicado **no reactiva**;
+- y, además, **riesgo referido en la anamnesis**.
+
+Hoy el sistema tiene dos criterios que aplican a la vez y llevan a la misma
+conducta (descarte de la unidad, diferimiento temporal del donante), pero con
+etiquetas distintas: **«serología dudosa»** —porque la lectura inicial fue
+ambigua— y **«precaución por riesgo declarado»** —porque hay riesgo referido
+sobre una serología que terminó no reactiva.
+
+La pregunta es la misma que el punto 1: ¿cuál de las dos debe figurar, o las dos?
+
+Le aclaro algo que hace a si esto amerita su tiempo: por cómo está construido
+hoy el sistema, esta combinación no puede llegar a producirse en la práctica —
+hay una limitación interna que lo impide. Pero esa limitación no está puesta a
+propósito, y la voy a revisar. Si me dice cuál corresponde, queda decidido de
+antemano y no depende de que yo no toque esa parte.
+
+**Situación 2 — lo mismo, en Brucelosis.**
+
+Idéntico planteo, pero con Brucelosis: lectura inicial en Zona Gris y repetición
+no reactiva, junto con el criterio de Brucelosis reactiva.
+
+Acá sí creo que hay una imposibilidad genuina, y es la que usted ya me indicó:
+**la técnica de Brucelosis es binaria y no produce Zona Gris**, así que una
+lectura inicial de Brucelosis en Zona Gris no debería poder registrarse. Si me
+lo confirma, lo cierro por inexistencia de caso y además dejo asentada la
+validación que hoy falta —el sistema todavía acepta cargar una Zona Gris para
+Brucelosis, aunque no deba ocurrir.
 
 ---
 

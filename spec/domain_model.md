@@ -274,7 +274,9 @@ El barrido reporta también las **entradas muertas**: una resolución cuyo par y
 
 **Medición al cierre de esta sesión:** 24 pares co-satisfacibles con empate y estado distinto (de 44 que da el conteo estático ingenuo; 20 son antecedentes incompatibles). 10 resueltos —B1 por `winner`, B2-B8 por `concat`, C1/C2 por `indistinct`—, 14 en `pending_clinical_review`.
 
-**Dos pares que el relevamiento previo no tenía.** La enumeración exhaustiva encontró `(R3, R6)` y `(R3, R14)`, ausentes de las tres familias del dossier. Ambos dependen de que `sco` y `sco_inicial` puedan diferir: `construir_hechos()` los deriva siempre de la misma fuzzificación, pero `WorkingMemoryFacts` no los acopla, así que el estado es construible entrando directo por `RuleEngine.evaluar()`. Se registra como deuda propia (ver CLAUDE.md): el contrato de memoria de trabajo admite un estado que el motor difuso no puede producir, y hasta acá nadie lo había mirado.
+**Dos pares que el relevamiento previo no tenía.** La enumeración exhaustiva encontró `(R3, R6)` y `(R3, R14)`, ausentes de las tres familias del dossier. Ambos existen porque `sco` y `sco_inicial` son campos con **semántica distinta** — `working_memory_facts.schema.json` define `sco` como la clasificación *vigente* en el ciclo actual y `sco_inicial` como la inicial — que hoy coinciden solo porque `construir_hechos()` hace `sco = sco_inicial_label` y nada los recalcula. El estado es por eso inalcanzable por `evaluar_caso()` pero construible entrando directo por `RuleEngine.evaluar()`.
+
+No se los debe leer como contradicciones. `(R3, R6)` es `sco_inicial = Zona Gris`, `sco_repeticion = No Reactivo`, `sco = No Reactivo`, `riesgo = true`: el desenlace **natural** del escenario de R3 con riesgo declarado, y una pregunta clínica genuina (`Serologia_Dudosa` vs `Precaucion_Riesgo_Declarado`). Por eso se declaran `pending_clinical_review` y no `indistinct`: son inalcanzables por una limitación **no deliberada** del motor difuso, no por imposibilidad clínica, y si alguien hace que `sco` signifique lo que la spec promete, el par se vuelve alcanzable sin aviso. Se registra como deuda de prioridad alta (ver CLAUDE.md).
 
 ---
 
