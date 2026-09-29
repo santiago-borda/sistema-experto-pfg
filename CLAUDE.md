@@ -58,7 +58,7 @@ spec/         Fase 0: especificación formal.
   contracts.py             Modelos Pydantic v2 (enums, validadores)
   validate_spec.py         Arnés que valida schemas + KB + casos límite
   schemas/*.schema.json    8 JSON Schemas (Draft 2020-12)
-  rules/kb_rules.json      KB declarativa: 23 entradas (R1..R21, con R2
+  rules/kb_rules.json      KB declarativa: 25 entradas (R1..R23, con R2
                             desdoblada en 3 variantes de certeza)
 
 seitt_core/   Fase 1: refactor del motor, DSL-driven (reemplaza a legacy/).
@@ -67,7 +67,7 @@ seitt_core/   Fase 1: refactor del motor, DSL-driven (reemplaza a legacy/).
   rules/kb_rules.json       (copia sincronizada de spec/rules/)
   tests/                    tests pytest de regresión + fuzzy engine
   eval/                     Fase 2: Eval Harness
-    eval_dataset.json       34 casos con criterio experto (ground truth),
+    eval_dataset.json       39 casos con criterio experto (ground truth),
                             incluido el contenido esperado de la traza
                             (expected.explanation_citations) y el
                             epidemiological_status esperado
@@ -132,9 +132,9 @@ defensa.
 
 ```bash
 ruff format --check . && ruff check .     # esperado: sin diferencias, "All checks passed!"
-python spec/validate_spec.py              # esperado: 87/87 OK
-python -m pytest                          # esperado: 97 passed
-python seitt_core/eval/eval_harness.py    # esperado: 34/34, kappa 1.0, traza 34/34, 23/23 reglas
+python spec/validate_spec.py              # esperado: 89/89 OK
+python -m pytest                          # esperado: 99 passed
+python seitt_core/eval/eval_harness.py    # esperado: 39/39, kappa 1.0, traza 39/39, 25/25 reglas
 ```
 
 `ruff format --check` **verifica, no reescribe**. Para aplicar el formato:
@@ -231,64 +231,49 @@ entre sesiones ni se redescubran desde cero.
   histórico de R20 reintroducido, el arnés baja a 31/33 y sale con
   código 1.
 
-- **[PRIORIDAD ALTA — BLOQUEADO esperando al bioquímico] R1 dispara sobre
-  un centinela sintético y mete al log una afirmación falsa.** Investigado
-  a fondo; el veredicto de la inspección es **defecto real**, no ambigüedad
-  de presentación. Evidencia medida:
+- ~~**[PRIORIDAD ALTA] El veredicto de Sífilis podía liberar un reactivo
+  sin confirmar.**~~ **SALDADA la mitad de disposición — primera corrección
+  de esta cadena de sesiones con impacto real en `unit_disposition`/
+  `donor_disposition`, no solo en trazabilidad o texto de reporte.**
+  Confirmado con el bioquímico de referencia: un reactivo en cualquiera de
+  las dos técnicas (VDRL o CLIA), o discordancia entre ambas, es
+  `Descarte`/`Diferido_Temporal` inmediato — no hay estado clínico de
+  "solo esperar". Contra ese criterio, la matriz VDRL×CLIA tenía tres
+  huecos:
+  - **R8** (`vdrl=Reactivo`, CLIA no informado) era `intermediate`: dejaba
+    la unidad sin disposición (`null/null`) en vez de descartarla. Pasa a
+    `terminal`, acotada con `clia=Pendiente` en el antecedente (antes no
+    miraba `clia` en absoluto).
+  - **Discordancia sin regla** (`vdrl=Reactivo, clia=No Reactivo`): ningún
+    caso la representaba. Alta de **R22** (`OR` de dos grupos `AND` —
+    primer uso de `OR` anidado en la KB), que también cubre el defecto
+    original.
+  - **Defecto original** (`vdrl` no informado, `clia=Reactivo` → `Apta`):
+    R1 matcheaba sobre el centinela sintético (`sco`/`nat` derivados) sin
+    que ninguna regla intermedia invalidara la candidatura, y la unidad se
+    liberaba. Cerrado por R22.
+  - **VDRL y CLIA ambos sin informar**: única celda de la matriz sin
+    veredicto. Alta de **R23** (intermediate, bloquea vía la cláusula de
+    anulación ya existente en `rule_engine.py` — cero cambios de motor).
+  Ver `domain_model.md` §INV-05 para la matriz completa de 9 celdas y la
+  nota de fragilidad de R23 (el bloqueo depende de que exista una regla
+  intermedia para `vdrl=Pendiente AND clia=Pendiente`; si se elimina, R1
+  vuelve a liberar sin lectura, la misma clase de dependencia implícita ya
+  documentada para R20/INV-16).
 
-  ```
-  EV20  vdrl=Reactivo    clia=Pendiente  -> None/None (pendiente)
-  EV21  vdrl=Reactivo    clia=Reactivo   -> Descarte / Diferido_Temporal
-  EV22  vdrl=No Reactivo clia=Reactivo   -> Descarte / Diferido_Temporal
-        los tres arrastran, literal:
-        "Marcador Sifilis: tamizaje negativo completo y ausencia de
-         factores de riesgo epidemiológico. Regla R1: unidad apta."
-  ```
-
-  **Mecanismo.** Los tres casos son de UN solo marcador (Sífilis) y **no
-  traen `sco_inicial_valor`**. `construir_hechos()` sintetiza entonces
-  `fuzzificar_sco(0.0)` → `sco = "No Reactivo"`, y `nat = "No Aplica"` lo
-  deriva el motor del marcador por INV-08. Las tres condiciones de R1
-  (`sco`, `nat`, `riesgo=false`) quedan satisfechas **por datos que nadie
-  midió**. El delator está en los hechos: `sco_inicial_valor = None`
-  mientras `sco = No Reactivo` — la etiqueta sin valor que la respalde.
-  El comentario de `fuzzy_engine.py` declara su propia condición de
-  seguridad ("ninguna regla dispara solo con `sco=No Reactivo`…") y esa
-  condición es **falsa para R1**.
-
-  **Alcance mayor al registrado antes.** Son **tres** casos, no dos: EV20
-  es el peor, porque no tiene veredicto y aun así muestra "unidad apta".
-  Y no se limita a R1: con `riesgo=True`, **R6** dispara sobre el mismo
-  centinela y afirma *"serología No Reactiva"* de un marcador que no tiene
-  serología S/CO.
-
-  **Por qué no se arregla solo.** R1 es la **única** regla que produce
-  `Apta`, así que tiene que seguir alcanzando a Sífilis: verificado, una
-  Sífilis limpia (`vdrl` y `clia` No Reactivos) da `Apta/Habilitado` por
-  R1 y ahí la línea es correcta. Excluir Sífilis de R1 reabre el hallazgo
-  #10 de `domain_model.md §4bis`.
-
-  **Se evaluó reusar el mecanismo de anulación de `rule_engine.py`** (el
-  que ya anula `best_candidate` cuando es `Apta` y disparó una intermedia)
-  para suprimir también la línea. **Medido: alcanza solo a EV20.** En
-  EV21/EV22 R1 nunca llega a ser `best_candidate` —R9 y R10 ganan por
-  peso— así que la guarda `best_candidate.unit_disposition == APTA` es
-  falsa. Generalizarlo a "toda terminal que pierde el arbitraje" sí cubre
-  los tres, pero borraría líneas **verdaderas** en EV11, EV18 y EV19
-  (R17 "HIV reactivo", R16 "HBV reactivo", R5). Perder-el-arbitraje no
-  implica ser-falso: **el discriminante correcto es la procedencia del
-  hecho (centinela vs. medición), no el rango de la regla.** Una variante
-  mínima —suprimir la línea de una terminal perdedora que además sea
-  `Apta`, o sea "la línea de R1 solo si R1 gana"— cubre los tres casos con
-  cero daño colateral, pero seguiría siendo contención: R1 dispararía
-  igual, solo que sin contarlo.
-
-  **La pregunta que hay que llevarle al bioquímico** no es "¿borramos la
-  línea?" sino **qué es el `explanation_log`**, porque de ahí salen dos
-  fixes distintos: (a) registro completo de evidencia → toda regla que
-  matcheó queda, y el defecto está en que R1 *matchee* (arreglar el hecho
-  o el antecedente, tocando el núcleo); (b) justificación del veredicto →
-  solo quedan las líneas que lo sostienen, y la variante mínima alcanza.
+  **Lo que esta sesión NO tocó — sigue abierto:** el hallazgo original
+  era sobre una afirmación **falsa en el log**, no solo sobre disposición.
+  R1 sigue matcheando (y su línea "tamizaje negativo completo... unidad
+  apta" sigue apareciendo en `explanation_log`) en TODOS los casos de
+  Sífilis reactiva, incluidos los que ahora arbitran a R8/R9/R10/R22 —
+  simplemente ya no *gana* el arbitraje, pero la línea falsa sigue
+  imprimiéndose. La pregunta pendiente al bioquímico sigue siendo la
+  misma: ¿el `explanation_log` es registro completo de evidencia (toda
+  regla que matcheó queda, y el defecto está en que R1 *matchee*) o
+  justificación del veredicto (solo quedan las líneas que lo sostienen)?
+  Ninguna variante de supresión de línea se implementó en esta sesión —
+  sigue bloqueada, ahora exclusivamente por esa pregunta de diseño del
+  log, ya no por la disposición clínica.
 
 - **El redondeo de `certeza_sco` colapsa clasificaciones distintas en el
   mismo número.** En el borde exacto de umbral, dos casos que el motor
