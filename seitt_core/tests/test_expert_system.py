@@ -82,7 +82,10 @@ class TestCasosObligatorios:
             clia="Reactivo",
         )
         assert "R9" in _triggered(v)
-        assert "R8" in _triggered(v)  # acción intermedia también debe registrarse
+        # R8 ya no dispara aca: su antecedente exige clia=Pendiente (R8 pasa a
+        # terminal, acotada), y este caso tiene clia=Reactivo -- R9 y R22 ya
+        # arbitran las celdas con clia resuelto sin ayuda de R8.
+        assert "R8" not in _triggered(v)
         assert v.final_unit_disposition.value == "Descarte"
         assert v.final_donor_disposition.value == "Diferido_Temporal"
 
@@ -310,12 +313,13 @@ class TestNATPendiente:
         assert v.final_unit_disposition.value == "Descarte"
         assert v.pending_action is None
 
-    def test_tc19_accion_pendiente_no_libera_aunque_r1_matchee(self):
-        """Cláusula de acción pendiente (INV-07, §4ter): una regla
-        intermedia invalida un candidato terminal Apta. Sífilis con VDRL
-        reactivo y CLIA no realizado matchea R1 por antecedente (sco No
-        Reactivo, nat No Aplica, sin riesgo), pero R8 dejó una acción
-        pendiente: la unidad no se libera."""
+    def test_tc19_vdrl_reactivo_clia_pendiente_es_descarte_inmediato(self):
+        """Corrección de veredicto (bioquímico de referencia): un VDRL
+        reactivo sin CLIA todavía no es un estado de "solo esperar" -- es
+        veredicto inmediato. R8 pasa de intermediate a terminal (Descarte/
+        Diferido_Temporal), así que ya no hace falta la cláusula de
+        anulación de INV-07 para evitar que R1 libere la unidad: R8 gana
+        el arbitraje directamente por peso de decisión."""
         v = evaluar_caso(
             sample_id="TC19",
             calidad_muestra="Normal",
@@ -324,25 +328,18 @@ class TestNATPendiente:
             vdrl="Reactivo",
         )
         assert "R8" in _triggered(v)
-        assert v.final_unit_disposition is None
-        assert v.pending_action == "Realizar CLIA confirmatorio"
+        assert v.final_unit_disposition.value == "Descarte"
+        assert v.final_donor_disposition.value == "Diferido_Temporal"
+        assert v.epidemiological_status == "Pendiente_Confirmacion_Serologica"
+        assert v.pending_action is None
 
-    def test_tc19b_defecto_pre_fix_clia_reactivo_vdrl_pendiente(self):
-        """Golden PRE-FIX (§ deuda técnica, defecto original de Sífilis):
-        con CLIA reactivo y VDRL no informado, R1 matchea igual (sco
-        centinela 'No Reactivo', nat 'No Aplica' por INV-08, sin riesgo) y
-        ninguna regla intermedia dispara para este antecedente -- vdrl=
-        Pendiente no cumple `vdrl=Reactivo` de R8 -- así que la cláusula de
-        anulación de INV-07 no se activa y la unidad se libera como Apta
-        pese a un ensayo treponémico reactivo sin confirmar.
-
-        Este test PINEA el defecto, no lo valida clínicamente: existe para
-        que el commit que lo corrige (regla nueva de discordancia/reactivo-
-        sin-confirmar) muestre un diff intencional contra este snapshot.
-        Se espera que deje de pasar en cuanto se agregue esa regla, y en
-        ese momento se reemplaza por el criterio correcto (Descarte/
-        Diferido_Temporal, epidemiological_status=
-        'Pendiente_Confirmacion_Serologica')."""
+    def test_tc19b_clia_reactivo_vdrl_pendiente_ya_no_es_apta(self):
+        """Regresión del defecto original de Sífilis (CLAUDE.md, deuda
+        saldada): antes de R22, CLIA reactivo con VDRL aún no informado
+        matcheaba solo R1 -- el centinela sintético satisfacía su
+        antecedente sin que nadie leyera un VDRL -- y la unidad se
+        liberaba como Apta. R22 (OR de discordancias) ahora gana el
+        arbitraje por peso de decisión."""
         v = evaluar_caso(
             sample_id="TC19B",
             calidad_muestra="Normal",
@@ -350,10 +347,26 @@ class TestNATPendiente:
             riesgo=False,
             clia="Reactivo",
         )
-        assert _triggered(v) == {"R1"}
-        assert v.final_unit_disposition.value == "Apta"
-        assert v.final_donor_disposition.value == "Habilitado"
+        assert "R22" in _triggered(v)
+        assert v.final_unit_disposition.value == "Descarte"
+        assert v.final_donor_disposition.value == "Diferido_Temporal"
+        assert v.epidemiological_status == "Pendiente_Confirmacion_Serologica"
         assert v.pending_action is None
+
+    def test_tc19c_vdrl_clia_ambos_pendientes_queda_bloqueado(self):
+        """R23: la única celda de la matriz VDRL×CLIA sin veredicto es la
+        que no informó ninguna técnica. No requiere modelar qué protocolo
+        sigue el laboratorio -- las otras ocho celdas ya resuelven sin esa
+        información (confirmado con el bioquímico de referencia)."""
+        v = evaluar_caso(
+            sample_id="TC19C",
+            calidad_muestra="Normal",
+            marcador="Sifilis",
+            riesgo=False,
+        )
+        assert "R23" in _triggered(v)
+        assert v.final_unit_disposition is None
+        assert v.pending_action is not None
 
     def test_tc20_marcador_no_nat_no_reactivo_es_apta(self):
         """Regresión de §4bis hallazgo 10: antes del cierre del antecedente

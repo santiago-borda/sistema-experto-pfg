@@ -597,7 +597,7 @@
   {
     "case_id": "EV20",
     "category": "sifilis_algoritmo",
-    "notes": "VDRL reactivo, CLIA solicitada y no informada -> accion intermedia, sin veredicto. El pendiente se codifica con valor explicito 'Pendiente', no por ausencia de la clave (Paso 2.5: mismo concepto clinico, misma representacion que el NAT pendiente).",
+    "notes": "VDRL reactivo, CLIA aun no informado -> Descarte/Diferido_Temporal inmediato (R8 pasa a terminal). El bioquimico de referencia confirmo que no hay estado clinico de 'solo esperar': un reactivo sin confirmar es veredicto ya, no una accion intermedia sin disposicion (ver CLAUDE.md, deuda saldada 'primera correccion con impacto clinico real').",
     "inputs": {
       "sample_id": "EV20",
       "calidad_muestra": "Normal",
@@ -607,10 +607,10 @@
       "clia": "Pendiente"
     },
     "expected": {
-      "final_unit_disposition": null,
-      "final_donor_disposition": null,
-      "epidemiological_status": null,
-      "has_pending_action": true,
+      "final_unit_disposition": "Descarte",
+      "final_donor_disposition": "Diferido_Temporal",
+      "epidemiological_status": "Pendiente_Confirmacion_Serologica",
+      "has_pending_action": false,
       "expected_rule_ids": [
         "R8"
       ],
@@ -632,7 +632,7 @@
   {
     "case_id": "EV21",
     "category": "sifilis_algoritmo",
-    "notes": "VDRL + CLIA reactivos -> infección confirmada, diferimiento temporal.",
+    "notes": "VDRL + CLIA reactivos -> infección confirmada, diferimiento temporal. R8 ya no dispara aca: su antecedente exige clia=Pendiente, y aca clia=Reactivo.",
     "inputs": {
       "sample_id": "EV21",
       "calidad_muestra": "Normal",
@@ -650,11 +650,6 @@
         "R9"
       ],
       "explanation_citations": [
-        {
-          "rule_id": "R8",
-          "cites": {},
-          "nombra_marcador": true
-        },
         {
           "rule_id": "R9",
           "cites": {},
@@ -1091,6 +1086,171 @@
           "rule_id": "R3",
           "cites": {
             "marcador": "HCV"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "EV35",
+    "category": "sifilis_algoritmo",
+    "notes": "Discordancia: VDRL reactivo, CLIA no reactivo. Hueco nuevo detectado en la consulta al bioquimico de referencia -- ninguna de las 23 entradas previas lo representaba. R22 (alta de esta sesion) lo cubre.",
+    "inputs": {
+      "sample_id": "EV35",
+      "calidad_muestra": "Normal",
+      "marcador": "Sifilis",
+      "riesgo": false,
+      "vdrl": "Reactivo",
+      "clia": "No Reactivo"
+    },
+    "expected": {
+      "final_unit_disposition": "Descarte",
+      "final_donor_disposition": "Diferido_Temporal",
+      "epidemiological_status": "Pendiente_Confirmacion_Serologica",
+      "has_pending_action": false,
+      "expected_rule_ids": [
+        "R22"
+      ],
+      "explanation_citations": [
+        {
+          "rule_id": "R22",
+          "cites": {},
+          "nombra_marcador": true
+        },
+        {
+          "rule_id": "R1",
+          "cites": {
+            "marcador": "Sifilis"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "EV36",
+    "category": "sifilis_algoritmo",
+    "notes": "Defecto original cerrado: CLIA reactivo, VDRL aun no informado. Antes de R22, R1 matcheaba sobre el centinela sintetico (sco/nat derivados) y liberaba la unidad como Apta -- ver TC19B (pineado y luego reemplazado) en test_expert_system.py.",
+    "inputs": {
+      "sample_id": "EV36",
+      "calidad_muestra": "Normal",
+      "marcador": "Sifilis",
+      "riesgo": false,
+      "vdrl": "Pendiente",
+      "clia": "Reactivo"
+    },
+    "expected": {
+      "final_unit_disposition": "Descarte",
+      "final_donor_disposition": "Diferido_Temporal",
+      "epidemiological_status": "Pendiente_Confirmacion_Serologica",
+      "has_pending_action": false,
+      "expected_rule_ids": [
+        "R22"
+      ],
+      "explanation_citations": [
+        {
+          "rule_id": "R22",
+          "cites": {},
+          "nombra_marcador": true
+        },
+        {
+          "rule_id": "R1",
+          "cites": {
+            "marcador": "Sifilis"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "EV37",
+    "category": "sifilis_algoritmo",
+    "notes": "Bloqueo: VDRL y CLIA ambos pendientes (o ambos omitidos, mismo estado por Fuzzy Engine). Unico caso de la matriz sin veredicto -- R23 lo bloquea sin necesitar saber que protocolo sigue el laboratorio.",
+    "inputs": {
+      "sample_id": "EV37",
+      "calidad_muestra": "Normal",
+      "marcador": "Sifilis",
+      "riesgo": false,
+      "vdrl": "Pendiente",
+      "clia": "Pendiente"
+    },
+    "expected": {
+      "final_unit_disposition": null,
+      "final_donor_disposition": null,
+      "epidemiological_status": null,
+      "has_pending_action": true,
+      "expected_rule_ids": [
+        "R23"
+      ],
+      "explanation_citations": [
+        {
+          "rule_id": "R23",
+          "cites": {},
+          "nombra_marcador": true
+        },
+        {
+          "rule_id": "R1",
+          "cites": {
+            "marcador": "Sifilis"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "EV38",
+    "category": "sifilis_algoritmo",
+    "notes": "Control negativo (protocolo VDRL-primero): VDRL no reactivo, CLIA aun no solicitado. Confirmado con el bioquimico que sigue siendo Apta -- no requiere saber que protocolo sigue el laboratorio, y esta sesion no lo toca.",
+    "inputs": {
+      "sample_id": "EV38",
+      "calidad_muestra": "Normal",
+      "marcador": "Sifilis",
+      "riesgo": false,
+      "vdrl": "No Reactivo",
+      "clia": "Pendiente"
+    },
+    "expected": {
+      "final_unit_disposition": "Apta",
+      "final_donor_disposition": "Habilitado",
+      "epidemiological_status": null,
+      "has_pending_action": false,
+      "expected_rule_ids": [
+        "R1"
+      ],
+      "explanation_citations": [
+        {
+          "rule_id": "R1",
+          "cites": {
+            "marcador": "Sifilis"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "EV39",
+    "category": "sifilis_algoritmo",
+    "notes": "Control negativo (protocolo CLIA-primero): CLIA no reactivo, VDRL aun no solicitado. Confirmado con el bioquimico que sigue siendo Apta, mismo motivo que EV38.",
+    "inputs": {
+      "sample_id": "EV39",
+      "calidad_muestra": "Normal",
+      "marcador": "Sifilis",
+      "riesgo": false,
+      "vdrl": "Pendiente",
+      "clia": "No Reactivo"
+    },
+    "expected": {
+      "final_unit_disposition": "Apta",
+      "final_donor_disposition": "Habilitado",
+      "epidemiological_status": null,
+      "has_pending_action": false,
+      "expected_rule_ids": [
+        "R1"
+      ],
+      "explanation_citations": [
+        {
+          "rule_id": "R1",
+          "cites": {
+            "marcador": "Sifilis"
           }
         }
       ]
