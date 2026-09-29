@@ -35,6 +35,16 @@ from .domain import (
 _DEFAULT_RULES_PATH = Path(__file__).parent / "rules" / "kb_rules.json"
 _DEFAULT_SCHEMA_PATH = Path(__file__).parent.parent / "spec" / "schemas" / "rule.schema.json"
 
+_DEFAULT_EPI_PRECEDENCE_PATH = Path(__file__).parent / "rules" / "epi_precedence.json"
+_DEFAULT_EPI_PRECEDENCE_SCHEMA_PATH = (
+    Path(__file__).parent.parent / "spec" / "schemas" / "epi_precedence.schema.json"
+)
+
+# Separador de los términos de un epidemiological_status concatenado
+# (resolution="concat"). Se declara acá y no en la tabla porque es formato
+# de presentación del campo, no criterio clínico del par.
+_EPI_CONCAT_SEPARATOR = " + "
+
 _ATOMIC_OPERATORS = {"EQ", "NEQ", "GT", "GTE", "LT", "LTE", "IN"}
 _COMPOUND_OPERATORS = {"AND", "OR", "NOT"}
 
@@ -50,6 +60,12 @@ class MalformedRuleError(RuleEngineError):
 
 class RuleConflictError(RuleEngineError):
     """rule_id duplicado en la KB cargada."""
+
+
+class MalformedEpiPrecedenceError(RuleEngineError):
+    """Una entrada de epi_precedence.json no conforma epi_precedence.schema.json,
+    nombra un rule_id ausente de la KB, declara un 'winner' que no pertenece a
+    su propio par, o duplica un par ya resuelto."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -74,6 +90,13 @@ class InferenceResult:
     epidemiological_status: str | None
     fired_rules: tuple[FiredRule, ...]
     short_circuited: bool  # True si R20 (u otra guard clause) cortó el ciclo
+    # Pares de reglas terminales que empataron en peso de decisión con
+    # epidemiological_status distinto y SIN entrada en la tabla de precedencia
+    # (INV-18). No altera el veredicto: el motor conserva el incumbente del
+    # orden de evaluación, igual que antes de existir la tabla. Se expone para
+    # que el arnés y los tests puedan SEÑALAR el par en vez de que se resuelva
+    # en silencio por `priority`. Vacío es el estado sano.
+    epi_undeclared_pairs: tuple[tuple[str, str], ...] = ()
 
 
 def _resolve_fact_value(facts: WorkingMemoryFacts, fact_path: str) -> Any:
@@ -140,12 +163,56 @@ class RuleEngine:
     rule.schema.json, y expone evaluar() para forward chaining sobre un
     WorkingMemoryFacts de un único marcador."""
 
-    def __init__(self, rules: list[dict]) -> None:
+    def __init__(self, rules: list[dict], epi_precedence: list[dict] | None = None) -> None:
         self._rules = sorted(rules, key=lambda r: r["priority"], reverse=True)
         ids = [r["rule_id"] for r in self._rules]
         if len(ids) != len(set(ids)):
             duplicated = sorted({i for i in ids if ids.count(i) > 1})
             raise RuleConflictError(f"rule_id duplicados en la KB: {duplicated}")
+        self._epi_precedence = self._index_epi_precedence(epi_precedence or [], set(ids))
+
+    @staticmethod
+    def _index_epi_precedence(
+        entries: list[dict], known_rule_ids: set[str]
+    ) -> dict[frozenset[str], dict]:
+        """Indexa la tabla de precedencia por par NO ordenado.
+
+        La clave es un frozenset porque el conflicto entre dos reglas es
+        simétrico: declarar [R4, R19] resuelve también el encuentro R19-R4.
+        El orden de la lista `pair` se preserva dentro de la entrada, donde sí
+        importa (fija el orden de los términos en resolution='concat').
+
+        Se verifica acá, y no solo contra el JSON Schema, lo que el schema no
+        puede ver: que ambos miembros del par existan en la KB cargada, y que
+        el 'winner' pertenezca a su propio par. Una entrada que nombra una
+        regla inexistente es una resolución que nunca se va a aplicar — el
+        mismo tipo de falla silenciosa que motivó el fix de
+        `RuleEngine.load()` (una regla clínica que no se verifica no es un
+        modo degradado aceptable, es una degradación invisible).
+        """
+        indexed: dict[frozenset[str], dict] = {}
+        for entry in entries:
+            pair = entry["pair"]
+            desconocidas = sorted(set(pair) - known_rule_ids)
+            if desconocidas:
+                raise MalformedEpiPrecedenceError(
+                    f"Entrada de precedencia {pair} referencia rule_id inexistente(s) en la "
+                    f"KB: {desconocidas}. Una resolución sobre una regla que no existe nunca "
+                    f"se aplica y queda como decisión clínica aparentemente tomada."
+                )
+            if entry["resolution"] == "winner" and entry.get("winner") not in pair:
+                raise MalformedEpiPrecedenceError(
+                    f"Entrada de precedencia {pair}: winner='{entry.get('winner')}' no "
+                    f"pertenece al par."
+                )
+            key = frozenset(pair)
+            if key in indexed:
+                raise MalformedEpiPrecedenceError(
+                    f"Par {sorted(pair)} declarado más de una vez en epi_precedence.json: "
+                    f"dos resoluciones distintas para el mismo conflicto."
+                )
+            indexed[key] = entry
+        return indexed
 
     @classmethod
     def load(
@@ -154,6 +221,8 @@ class RuleEngine:
         schema_path: Path = _DEFAULT_SCHEMA_PATH,
         *,
         require_schema: bool = True,
+        epi_precedence_path: Path = _DEFAULT_EPI_PRECEDENCE_PATH,
+        epi_precedence_schema_path: Path = _DEFAULT_EPI_PRECEDENCE_SCHEMA_PATH,
     ) -> RuleEngine:
         """Carga y valida la KB en tiempo de ejecución (no confía en que el
         archivo siga siendo válido solo porque lo fue al momento de
@@ -179,6 +248,10 @@ class RuleEngine:
         with open(rules_path, encoding="utf-8") as f:
             rules = json.load(f)
 
+        epi_precedence = cls._load_epi_precedence(
+            epi_precedence_path, epi_precedence_schema_path, require_schema=require_schema
+        )
+
         if not schema_path.exists():
             if require_schema:
                 raise MalformedRuleError(
@@ -188,7 +261,7 @@ class RuleEngine:
                     f"aceptable. Si el llamador ya validó la KB por otra vía, pasar "
                     f"require_schema=False explícitamente."
                 )
-            return cls(rules)
+            return cls(rules, epi_precedence)
 
         with open(schema_path, encoding="utf-8") as f:
             schema = json.load(f)
@@ -201,7 +274,46 @@ class RuleEngine:
                     f"{errors[0].message}"
                 )
 
-        return cls(rules)
+        return cls(rules, epi_precedence)
+
+    @staticmethod
+    def _load_epi_precedence(path: Path, schema_path: Path, *, require_schema: bool) -> list[dict]:
+        """Carga y valida la tabla de precedencia de `epidemiological_status`.
+
+        La tabla ausente es válida y significa "ninguna resolución declarada":
+        el motor se comporta exactamente como antes de que el mecanismo
+        existiera (gana el incumbente del orden de evaluación). Es distinto de
+        la KB, cuya ausencia sí es un fallo — sin reglas no hay sistema, sin
+        tabla hay un sistema con desempates sin decidir, que es el estado del
+        que se viene. Lo que NO es válido es una tabla presente y no validada:
+        ahí rige el mismo criterio que para `kb_rules.json`.
+        """
+        if not path.exists():
+            return []
+
+        with open(path, encoding="utf-8") as f:
+            entries = json.load(f)
+
+        if not schema_path.exists():
+            if require_schema:
+                raise MalformedEpiPrecedenceError(
+                    f"No se encontró epi_precedence.schema.json en '{schema_path}' pero sí "
+                    f"la tabla en '{path}': una precedencia clínica sin validar es la misma "
+                    f"degradación silenciosa que motivó el fix de la carga de la KB."
+                )
+            return entries
+
+        with open(schema_path, encoding="utf-8") as f:
+            schema = json.load(f)
+        validator = jsonschema.Draft202012Validator(schema)
+        for entry in entries:
+            errors = list(validator.iter_errors(entry))
+            if errors:
+                raise MalformedEpiPrecedenceError(
+                    f"Entrada de precedencia {entry.get('pair', '???')} no conforma "
+                    f"epi_precedence.schema.json: {errors[0].message}"
+                )
+        return entries
 
     def evaluar(self, facts: WorkingMemoryFacts) -> InferenceResult:
         """Aplica forward chaining sobre la KB cargada.
@@ -216,6 +328,14 @@ class RuleEngine:
         fired: list[FiredRule] = []
         best_candidate: FiredRule | None = None
         best_weight = -1
+        # Todos los terminales empatados en el peso máximo, en orden de
+        # evaluación. `best_candidate` sigue siendo el primero de esta lista y
+        # sigue aportando LA DISPOSICIÓN, sin cambio alguno respecto del
+        # comportamiento anterior: el mecanismo de precedencia (INV-18)
+        # gobierna únicamente `epidemiological_status`. Esa separación es lo
+        # que hace que ningún caso golden pueda cambiar de disposición por
+        # editar la tabla.
+        tied: list[FiredRule] = []
 
         for rule in self._rules:
             if not _evaluate_condition(rule["antecedent"], facts):
@@ -260,6 +380,9 @@ class RuleEngine:
                 if weight > best_weight:
                     best_weight = weight
                     best_candidate = fired_rule
+                    tied = [fired_rule]
+                elif weight == best_weight:
+                    tied.append(fired_rule)
 
         # INV-07 — Una acción clínica pendiente invalida la LIBERACIÓN, nunca
         # el descarte. Si disparó alguna regla intermedia (R2_*, R8, R21), el
@@ -284,6 +407,7 @@ class RuleEngine:
             and any(fr.rule_type == "intermediate" for fr in fired)
         ):
             best_candidate = None
+            tied = []
 
         if best_candidate is None:
             return InferenceResult(
@@ -294,13 +418,86 @@ class RuleEngine:
                 short_circuited=False,
             )
 
+        epi_status, undeclared = self._resolver_epi(tied)
         return InferenceResult(
             unit_disposition=best_candidate.unit_disposition,
             donor_disposition=best_candidate.donor_disposition,
-            epidemiological_status=best_candidate.epidemiological_status,
+            epidemiological_status=epi_status,
             fired_rules=tuple(fired),
             short_circuited=False,
+            epi_undeclared_pairs=undeclared,
         )
+
+    def _resolver_epi(
+        self, tied: list[FiredRule]
+    ) -> tuple[str | None, tuple[tuple[str, str], ...]]:
+        """Resuelve `epidemiological_status` entre los terminales empatados en
+        peso de decisión, consultando la tabla de precedencia (INV-18).
+
+        El pliegue es pairwise contra el INCUMBENTE vigente —no contra todo el
+        conjunto— porque así reproduce exactamente la forma del desempate
+        anterior (un único candidato que se conserva o se reemplaza), con la
+        única diferencia de que ahora el reemplazo lo decide una entrada
+        declarada y no el orden de `priority`. Con la tabla vacía, el
+        resultado es idéntico al de antes del mecanismo.
+
+        Devuelve el estado resuelto y los pares que empataron con estados
+        distintos sin entrada en la tabla. Un par sin declarar NO levanta
+        excepción: el veredicto que lo contiene tiene disposición correcta y
+        tumbarlo en tiempo de inferencia sería negarle al bioquímico un
+        resultado válido por una deuda de especificación. La detección va a
+        CI, donde corresponde — ver el chequeo de completitud sobre pares
+        co-satisfacibles.
+        """
+        if not tied:
+            return None, ()
+
+        incumbente = tied[0]
+        # Términos acumulados para resolution='concat', como pares
+        # (rule_id, status) para poder ordenarlos según el `pair` declarado.
+        terminos: list[tuple[str, str]] = (
+            [(incumbente.rule_id, incumbente.epidemiological_status)]
+            if incumbente.epidemiological_status
+            else []
+        )
+        status = incumbente.epidemiological_status
+        undeclared: list[tuple[str, str]] = []
+
+        for candidato in tied[1:]:
+            if candidato.epidemiological_status == status:
+                continue
+
+            entrada = self._epi_precedence.get(frozenset({incumbente.rule_id, candidato.rule_id}))
+            if entrada is None:
+                undeclared.append(tuple(sorted((incumbente.rule_id, candidato.rule_id))))  # type: ignore[arg-type]
+                continue
+
+            resolucion = entrada["resolution"]
+            if resolucion == "indistinct":
+                continue
+            if resolucion == "winner":
+                if entrada["winner"] == candidato.rule_id:
+                    incumbente = candidato
+                    status = candidato.epidemiological_status
+                    terminos = [(candidato.rule_id, status)] if status else []
+                continue
+            # resolution == "concat": el veredicto publica ambos hallazgos.
+            # Los null se omiten en vez de rendirse un término vacío: hoy las
+            # siete reglas por marcador tienen epidemiological_status=null, así
+            # que la concatenación con R19 es degenerada y devuelve solo el
+            # término de R19 -- ver la nota de INV-18 y la consulta pendiente
+            # de nomenclatura.
+            if candidato.epidemiological_status:
+                terminos.append((candidato.rule_id, candidato.epidemiological_status))
+            orden = {rid: i for i, rid in enumerate(entrada["pair"])}
+            terminos.sort(key=lambda t: orden.get(t[0], len(orden)))
+            vistos: list[str] = []
+            for _, texto in terminos:
+                if texto not in vistos:
+                    vistos.append(texto)
+            status = _EPI_CONCAT_SEPARATOR.join(vistos) if vistos else None
+
+        return status, tuple(dict.fromkeys(undeclared))
 
     @staticmethod
     def _render_explanation(rule: dict, facts: WorkingMemoryFacts) -> str:

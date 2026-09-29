@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://seitt.ucp.edu.ar/schemas/epi_precedence.schema.json",
+  "title": "EpiPrecedenceEntry",
+  "description": "Resolucion explicita de 'epidemiological_status' entre DOS reglas terminales que empatan en peso de decision (INV-07). Existe porque 'priority' cumplia dos roles a la vez: ordenar la EVALUACION de reglas y, como efecto lateral, desempatar que epidemiological_status se publica. Esta tabla separa el segundo rol del primero: la precedencia epidemiologica se declara por par, con su fundamento clinico, y deja de ser una consecuencia del orden. Ver domain_model.md INV-18.\n\nLa entrada es por PAR y no un entero por regla a proposito: la resolucion R4>R19 (periodo de ventana gana sobre reactividad confirmada) es una excepcion acotada a ese par -- R4 no pasa por eso a tener precedencia sobre ninguna otra regla. Un orden total no puede expresar eso, ni la concatenacion, ni -- lo decisivo -- la diferencia entre 'se decidio que da igual' y 'nadie lo decidio todavia'.",
+  "type": "object",
+  "required": ["pair", "resolution", "rationale"],
+  "additionalProperties": false,
+  "properties": {
+    "pair": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "uniqueItems": true,
+      "items": { "type": "string", "pattern": "^R[0-9]{1,2}(_[a-z_]+)?$" },
+      "description": "Los dos rule_id en conflicto. El orden es significativo para resolution='concat' (fija el orden de los terminos concatenados); para 'winner' e 'indistinct' es indistinto. La tabla se consulta de forma simetrica: un par declarado como [A,B] resuelve tambien el encuentro B-A."
+    },
+    "resolution": {
+      "type": "string",
+      "enum": ["winner", "concat", "indistinct"],
+      "description": "'winner': gana el epidemiological_status de la regla nombrada en 'winner', sin importar peso ni prioridad. 'concat': el veredicto publica la union ordenada de ambos estados (los null se omiten; ver nota de INV-18 sobre la degeneracion actual de los pares marcador-vs-R19). 'indistinct': se decidio explicitamente que la eleccion no tiene consecuencia clinica; el motor conserva el incumbente del orden de evaluacion. Notese que 'indistinct' NO equivale a omitir la entrada: omitirla es lo que el chequeo de completitud senala como par sin decidir."
+    },
+    "winner": {
+      "type": ["string", "null"],
+      "pattern": "^R[0-9]{1,2}(_[a-z_]+)?$",
+      "description": "Obligatorio (y miembro de 'pair') si resolution='winner'. Null en los otros dos casos."
+    },
+    "rationale": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Por que se resuelve asi. Obligatorio en las tres resoluciones, incluida 'indistinct': declarar que da igual tambien es una decision y debe quedar fundada, o el proximo lector no puede distinguirla de un descuido."
+    },
+    "clinical_source": {
+      "type": ["string", "null"],
+      "description": "Origen de la decision clinica (ej. consulta al bioquimico de referencia, con fecha). Null cuando la resolucion es de ingenieria y no de criterio clinico."
+    }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "resolution": { "const": "winner" } }, "required": ["resolution"] },
+      "then": { "required": ["winner"], "properties": { "winner": { "type": "string" } } }
+    },
+    {
+      "if": {
+        "properties": { "resolution": { "enum": ["concat", "indistinct"] } },
+        "required": ["resolution"]
+      },
+      "then": { "properties": { "winner": { "type": "null" } } }
+    }
+  ]
+}
