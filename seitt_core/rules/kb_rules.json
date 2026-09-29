@@ -328,8 +328,8 @@
   },
   {
     "rule_id": "R8",
-    "description": "Algoritmo tradicional de sífilis, paso 1: VDRL reactivo requiere confirmación treponémica (CLIA) antes de cualquier disposición. Regla de acción intermedia.",
-    "legacy_notes": null,
+    "description": "VDRL reactivo, CLIA aun no informado: no se libera un reactivo sin confirmar. Pasa a terminal (antes era accion intermedia sin disposicion) porque el bioquimico de referencia confirmo que la espera no es un estado clinico valido -- el veredicto es inmediato, y la confirmacion treponemica queda como seguimiento narrativo, no como bloqueo del ciclo.",
+    "legacy_notes": "Hasta esta correccion, rule_type=intermediate dejaba la unidad sin disposicion (null/null) mientras llegaba el CLIA, lo cual permitia que R1 matcheara sobre el mismo caso y -- de no ser por la clausula de anulacion de INV-07 -- se liberara como Apta. El antecedente tambien se acoto con clia=Pendiente: antes no miraba clia en absoluto y disparaba igual en R/R y R/NR, donde R9 y la regla de discordancia ya arbitran el veredicto.",
     "priority": 19,
     "legal_reference": [
       "Res. 1507/2015 - Anexo Algoritmo Serológico de Sífilis [verificar articulado oficial]"
@@ -346,15 +346,21 @@
           "fact_path": "vdrl",
           "operator": "EQ",
           "value": "Reactivo"
+        },
+        {
+          "fact_path": "clia",
+          "operator": "EQ",
+          "value": "Pendiente"
         }
       ]
     },
     "consequent": {
-      "rule_type": "intermediate",
-      "unit_disposition": null,
-      "donor_disposition": null,
-      "action": "Realizar CLIA confirmatorio",
-      "explanation_template": "Sífilis: VDRL reactivo. Regla {rule_id}: se requiere prueba treponémica confirmatoria (CLIA) antes de disposición."
+      "rule_type": "terminal",
+      "unit_disposition": "Descarte",
+      "donor_disposition": "Diferido_Temporal",
+      "epidemiological_status": "Pendiente_Confirmacion_Serologica",
+      "explanation_template": "Sífilis: VDRL reactivo, CLIA aún no informado. Regla {rule_id}: no se libera un reactivo sin confirmar; diferimiento temporal, se recita para CLIA confirmatorio.",
+      "action": null
     },
     "invariant_tags": [
       "INV-05-SIFILIS-ALGORITMO"
