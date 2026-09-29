@@ -1255,5 +1255,41 @@
         }
       ]
     }
+  },
+  {
+    "case_id": "EV40",
+    "category": "nat_ventana",
+    "notes": "B1 -- primer caso golden del mecanismo de precedencia explicita (INV-18). R4 (periodo de ventana) y R19 (repeticion confirma reactividad) disparan juntas y empatan en peso de decision: ambas Descarte/Diferido_Permanente. Hasta la tabla de precedencia el desempate lo ganaba R19 por tener priority 13 contra 11, publicando 'Reactividad_Confirmada'; el bioquimico de referencia resolvio que debe prevalecer 'Periodo_Ventana'. La disposicion es la misma en ambos arbitrajes -- lo unico que este caso fija es el campo epidemiologico. Bajo INV-17 (RN-02) el escenario es clinicamente inalcanzable (una inicial No Reactiva no motiva duplicado), pero sigue siendo una entrada construible mientras INV-17 no tenga validador: el golden lo congela de forma defensiva.",
+    "inputs": {
+      "sample_id": "EV40",
+      "calidad_muestra": "Normal",
+      "marcador": "HIV",
+      "riesgo": false,
+      "sco_inicial_valor": 0.5,
+      "sco_repeticion_valor": 3.0,
+      "nat": "Reactivo"
+    },
+    "expected": {
+      "final_unit_disposition": "Descarte",
+      "final_donor_disposition": "Diferido_Permanente",
+      "epidemiological_status": "Periodo_Ventana",
+      "has_pending_action": false,
+      "expected_rule_ids": [
+        "R19",
+        "R4"
+      ],
+      "explanation_citations": [
+        {
+          "rule_id": "R19",
+          "cites": {}
+        },
+        {
+          "rule_id": "R4",
+          "cites": {
+            "marcador": "HIV"
+          }
+        }
+      ]
+    }
   }
 ]
