@@ -327,6 +327,34 @@ class TestNATPendiente:
         assert v.final_unit_disposition is None
         assert v.pending_action == "Realizar CLIA confirmatorio"
 
+    def test_tc19b_defecto_pre_fix_clia_reactivo_vdrl_pendiente(self):
+        """Golden PRE-FIX (§ deuda técnica, defecto original de Sífilis):
+        con CLIA reactivo y VDRL no informado, R1 matchea igual (sco
+        centinela 'No Reactivo', nat 'No Aplica' por INV-08, sin riesgo) y
+        ninguna regla intermedia dispara para este antecedente -- vdrl=
+        Pendiente no cumple `vdrl=Reactivo` de R8 -- así que la cláusula de
+        anulación de INV-07 no se activa y la unidad se libera como Apta
+        pese a un ensayo treponémico reactivo sin confirmar.
+
+        Este test PINEA el defecto, no lo valida clínicamente: existe para
+        que el commit que lo corrige (regla nueva de discordancia/reactivo-
+        sin-confirmar) muestre un diff intencional contra este snapshot.
+        Se espera que deje de pasar en cuanto se agregue esa regla, y en
+        ese momento se reemplaza por el criterio correcto (Descarte/
+        Diferido_Temporal, epidemiological_status=
+        'Pendiente_Confirmacion_Serologica')."""
+        v = evaluar_caso(
+            sample_id="TC19B",
+            calidad_muestra="Normal",
+            marcador="Sifilis",
+            riesgo=False,
+            clia="Reactivo",
+        )
+        assert _triggered(v) == {"R1"}
+        assert v.final_unit_disposition.value == "Apta"
+        assert v.final_donor_disposition.value == "Habilitado"
+        assert v.pending_action is None
+
     def test_tc20_marcador_no_nat_no_reactivo_es_apta(self):
         """Regresión de §4bis hallazgo 10: antes del cierre del antecedente
         de R1 con IN, ningún marcador no-NAT podía alcanzar Apta -- el
