@@ -1291,5 +1291,122 @@
         }
       ]
     }
+  },
+  {
+    "case_id": "EV41",
+    "category": "marcador_reactivo",
+    "notes": "B2-B8 -- concatenacion marcador + R19 (INV-18). HIV reactivo con NAT concordante (R5 + R17) empata en peso de decision con R19 (repeticion confirma reactividad). Resolucion clinica: 'ambos en la misma linea', no elegir uno. ATENCION al valor esperado: la concatenacion es HOY DEGENERADA porque R5/R17 tiene epidemiological_status=null, asi que el unico termino es el de R19 y el campo publica 'Reactividad_Confirmada' -- identico a lo que daba el arbitraje por priority. Lo que este caso congela no es un valor nuevo sino que el par esta RESUELTO: ya no figura en epi_undeclared_pairs. Cuando las reglas por marcador reciban nombre epidemiologico (consulta pendiente), este golden debe cambiar a la concatenacion completa -- y si no cambia, el arnes lo va a marcar.",
+    "inputs": {
+      "sample_id": "EV41",
+      "calidad_muestra": "Normal",
+      "marcador": "HIV",
+      "riesgo": false,
+      "sco_inicial_valor": 3.0,
+      "sco_repeticion_valor": 3.0,
+      "nat": "Reactivo"
+    },
+    "expected": {
+      "final_unit_disposition": "Descarte",
+      "final_donor_disposition": "Diferido_Permanente",
+      "epidemiological_status": "Reactividad_Confirmada",
+      "has_pending_action": false,
+      "expected_rule_ids": [
+        "R19",
+        "R5",
+        "R17"
+      ],
+      "explanation_citations": [
+        {
+          "rule_id": "R19",
+          "cites": {}
+        },
+        {
+          "rule_id": "R5",
+          "cites": {
+            "marcador": "HIV"
+          }
+        },
+        {
+          "rule_id": "R17",
+          "cites": {},
+          "nombra_marcador": true
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "EV42",
+    "category": "marcador_reactivo",
+    "notes": "B2-B8 -- concatenacion marcador + R19 (INV-18). Chagas reactivo (R11) empata en peso de decision con R19 (repeticion confirma reactividad). Resolucion clinica: 'ambos en la misma linea', no elegir uno. ATENCION al valor esperado: la concatenacion es HOY DEGENERADA porque R11 tiene epidemiological_status=null, asi que el unico termino es el de R19 y el campo publica 'Reactividad_Confirmada' -- identico a lo que daba el arbitraje por priority. Lo que este caso congela no es un valor nuevo sino que el par esta RESUELTO: ya no figura en epi_undeclared_pairs. Cuando las reglas por marcador reciban nombre epidemiologico (consulta pendiente), este golden debe cambiar a la concatenacion completa -- y si no cambia, el arnes lo va a marcar.",
+    "inputs": {
+      "sample_id": "EV42",
+      "calidad_muestra": "Normal",
+      "marcador": "Chagas",
+      "riesgo": false,
+      "sco_inicial_valor": 3.0,
+      "sco_repeticion_valor": 3.0
+    },
+    "expected": {
+      "final_unit_disposition": "Descarte",
+      "final_donor_disposition": "Diferido_Permanente",
+      "epidemiological_status": "Reactividad_Confirmada",
+      "has_pending_action": false,
+      "expected_rule_ids": [
+        "R19",
+        "R11"
+      ],
+      "explanation_citations": [
+        {
+          "rule_id": "R19",
+          "cites": {}
+        },
+        {
+          "rule_id": "R11",
+          "cites": {},
+          "nombra_marcador": true
+        }
+      ]
+    }
+  },
+  {
+    "case_id": "EV43",
+    "category": "marcador_reactivo",
+    "notes": "B2-B8 -- concatenacion marcador + R19 (INV-18). HBV reactivo con NAT no informado (R16) empata en peso de decision con R19 (repeticion confirma reactividad). Resolucion clinica: 'ambos en la misma linea', no elegir uno. ATENCION al valor esperado: la concatenacion es HOY DEGENERADA porque R16 tiene epidemiological_status=null, asi que el unico termino es el de R19 y el campo publica 'Reactividad_Confirmada' -- identico a lo que daba el arbitraje por priority. Lo que este caso congela no es un valor nuevo sino que el par esta RESUELTO: ya no figura en epi_undeclared_pairs. Cuando las reglas por marcador reciban nombre epidemiologico (consulta pendiente), este golden debe cambiar a la concatenacion completa -- y si no cambia, el arnes lo va a marcar.",
+    "inputs": {
+      "sample_id": "EV43",
+      "calidad_muestra": "Normal",
+      "marcador": "HBV",
+      "riesgo": false,
+      "sco_inicial_valor": 3.0,
+      "sco_repeticion_valor": 3.0,
+      "nat": "Pendiente"
+    },
+    "expected": {
+      "final_unit_disposition": "Descarte",
+      "final_donor_disposition": "Diferido_Permanente",
+      "epidemiological_status": "Reactividad_Confirmada",
+      "has_pending_action": false,
+      "expected_rule_ids": [
+        "R19",
+        "R16"
+      ],
+      "explanation_citations": [
+        {
+          "rule_id": "R21",
+          "cites": {
+            "marcador": "HBV"
+          }
+        },
+        {
+          "rule_id": "R19",
+          "cites": {}
+        },
+        {
+          "rule_id": "R16",
+          "cites": {},
+          "nombra_marcador": true
+        }
+      ]
+    }
   }
 ]

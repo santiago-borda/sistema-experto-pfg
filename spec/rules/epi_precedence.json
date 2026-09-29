@@ -8,5 +8,75 @@
     "winner": "R4",
     "rationale": "NAT reactivo sobre serologia inicial No Reactiva (R4) contra repeticion Reactiva (R19): ambas son Descarte/Diferido_Permanente, luego empatan en peso de decision (INV-07) y hasta aca el desempate lo decidia el orden de priority -- R19 (13) le ganaba a R4 (11) por accidente de ordenamiento, publicando 'Reactividad_Confirmada'. El bioquimico de referencia resolvio que debe prevalecer 'Periodo_Ventana': el hallazgo que define el caso es que el NAT detecto genoma viral ANTES de que la serologia virara, y esa es la informacion epidemiologicamente relevante (rastreo del donante, ventana de transmision). Que la repeticion confirme reactividad no agrega hallazgo: es el mismo virus viendose por serologia con retraso. Es una EXCEPCION acotada a este par: R4 no gana precedencia sobre ninguna otra regla, y por eso la resolucion se declara por par y no como un orden total. Nota: bajo INV-17 (RN-02) este par es clinicamente inalcanzable -- una inicial No Reactiva no motiva duplicado -- pero la entrada sigue siendo construible mientras INV-17 no tenga validador, asi que la resolucion se declara de forma defensiva.",
     "clinical_source": "Bioquimico de referencia -- dossier de arbitraje, pregunta 2 (B1)."
+  },
+  {
+    "pair": [
+      "R5",
+      "R19"
+    ],
+    "resolution": "concat",
+    "winner": null,
+    "rationale": "Marcador positivo por su propio criterio (R5) junto con repeticion que confirma reactividad (R19): empatan en peso de decision (Descarte/Diferido_Permanente) y el desempate lo venia ganando R19 por orden de priority. El bioquimico de referencia resolvio que no corresponde elegir uno -- 'ambos en la misma linea': el reporte debe llevar el hallazgo especifico del marcador Y la confirmacion por repeticion, porque son dos hechos distintos (que ensayo dio positivo, y que la repeticion lo sostuvo) y suprimir cualquiera empobrece el reporte epidemiologico. DEGENERACION ACTUAL, leer antes de tocar esto: R5 tiene epidemiological_status=null, asi que hoy la concatenacion devuelve unicamente el termino de R19 y el valor publicado no cambia respecto del arbitraje por priority. La resolucion queda declarada igual, porque la decision clinica esta tomada y es el termino del marcador el que falta: ponerle nombre epidemiologico a las siete reglas por marcador es una decision de nomenclatura clinica que NO se invento en esta sesion -- esta en la consulta consolidada pendiente. El dia que ese nombre exista, la concatenacion pasa a tener efecto sin tocar el motor ni esta entrada. Nota: bajo INV-17 (RN-02) el par es clinicamente inalcanzable (una inicial Reactiva no motiva duplicado); la entrada es defensiva mientras INV-17 no tenga validador. Hallazgo de R5: concordancia serologia + NAT reactivos.",
+    "clinical_source": "Bioquimico de referencia -- dossier de arbitraje, pregunta 3 (B2-B8)."
+  },
+  {
+    "pair": [
+      "R7",
+      "R19"
+    ],
+    "resolution": "concat",
+    "winner": null,
+    "rationale": "Marcador positivo por su propio criterio (R7) junto con repeticion que confirma reactividad (R19): empatan en peso de decision (Descarte/Diferido_Permanente) y el desempate lo venia ganando R19 por orden de priority. El bioquimico de referencia resolvio que no corresponde elegir uno -- 'ambos en la misma linea': el reporte debe llevar el hallazgo especifico del marcador Y la confirmacion por repeticion, porque son dos hechos distintos (que ensayo dio positivo, y que la repeticion lo sostuvo) y suprimir cualquiera empobrece el reporte epidemiologico. DEGENERACION ACTUAL, leer antes de tocar esto: R7 tiene epidemiological_status=null, asi que hoy la concatenacion devuelve unicamente el termino de R19 y el valor publicado no cambia respecto del arbitraje por priority. La resolucion queda declarada igual, porque la decision clinica esta tomada y es el termino del marcador el que falta: ponerle nombre epidemiologico a las siete reglas por marcador es una decision de nomenclatura clinica que NO se invento en esta sesion -- esta en la consulta consolidada pendiente. El dia que ese nombre exista, la concatenacion pasa a tener efecto sin tocar el motor ni esta entrada. Nota: bajo INV-17 (RN-02) el par es clinicamente inalcanzable (una inicial Reactiva no motiva duplicado); la entrada es defensiva mientras INV-17 no tenga validador. Hallazgo de R7: serologia reactiva con NAT no reactivo.",
+    "clinical_source": "Bioquimico de referencia -- dossier de arbitraje, pregunta 3 (B2-B8)."
+  },
+  {
+    "pair": [
+      "R11",
+      "R19"
+    ],
+    "resolution": "concat",
+    "winner": null,
+    "rationale": "Marcador positivo por su propio criterio (R11) junto con repeticion que confirma reactividad (R19): empatan en peso de decision (Descarte/Diferido_Permanente) y el desempate lo venia ganando R19 por orden de priority. El bioquimico de referencia resolvio que no corresponde elegir uno -- 'ambos en la misma linea': el reporte debe llevar el hallazgo especifico del marcador Y la confirmacion por repeticion, porque son dos hechos distintos (que ensayo dio positivo, y que la repeticion lo sostuvo) y suprimir cualquiera empobrece el reporte epidemiologico. DEGENERACION ACTUAL, leer antes de tocar esto: R11 tiene epidemiological_status=null, asi que hoy la concatenacion devuelve unicamente el termino de R19 y el valor publicado no cambia respecto del arbitraje por priority. La resolucion queda declarada igual, porque la decision clinica esta tomada y es el termino del marcador el que falta: ponerle nombre epidemiologico a las siete reglas por marcador es una decision de nomenclatura clinica que NO se invento en esta sesion -- esta en la consulta consolidada pendiente. El dia que ese nombre exista, la concatenacion pasa a tener efecto sin tocar el motor ni esta entrada. Nota: bajo INV-17 (RN-02) el par es clinicamente inalcanzable (una inicial Reactiva no motiva duplicado); la entrada es defensiva mientras INV-17 no tenga validador. Hallazgo de R11: Chagas reactivo.",
+    "clinical_source": "Bioquimico de referencia -- dossier de arbitraje, pregunta 3 (B2-B8)."
+  },
+  {
+    "pair": [
+      "R12",
+      "R19"
+    ],
+    "resolution": "concat",
+    "winner": null,
+    "rationale": "Marcador positivo por su propio criterio (R12) junto con repeticion que confirma reactividad (R19): empatan en peso de decision (Descarte/Diferido_Permanente) y el desempate lo venia ganando R19 por orden de priority. El bioquimico de referencia resolvio que no corresponde elegir uno -- 'ambos en la misma linea': el reporte debe llevar el hallazgo especifico del marcador Y la confirmacion por repeticion, porque son dos hechos distintos (que ensayo dio positivo, y que la repeticion lo sostuvo) y suprimir cualquiera empobrece el reporte epidemiologico. DEGENERACION ACTUAL, leer antes de tocar esto: R12 tiene epidemiological_status=null, asi que hoy la concatenacion devuelve unicamente el termino de R19 y el valor publicado no cambia respecto del arbitraje por priority. La resolucion queda declarada igual, porque la decision clinica esta tomada y es el termino del marcador el que falta: ponerle nombre epidemiologico a las siete reglas por marcador es una decision de nomenclatura clinica que NO se invento en esta sesion -- esta en la consulta consolidada pendiente. El dia que ese nombre exista, la concatenacion pasa a tener efecto sin tocar el motor ni esta entrada. Nota: bajo INV-17 (RN-02) el par es clinicamente inalcanzable (una inicial Reactiva no motiva duplicado); la entrada es defensiva mientras INV-17 no tenga validador. Hallazgo de R12: HTLV I/II reactivo.",
+    "clinical_source": "Bioquimico de referencia -- dossier de arbitraje, pregunta 3 (B2-B8)."
+  },
+  {
+    "pair": [
+      "R15",
+      "R19"
+    ],
+    "resolution": "concat",
+    "winner": null,
+    "rationale": "Marcador positivo por su propio criterio (R15) junto con repeticion que confirma reactividad (R19): empatan en peso de decision (Descarte/Diferido_Permanente) y el desempate lo venia ganando R19 por orden de priority. El bioquimico de referencia resolvio que no corresponde elegir uno -- 'ambos en la misma linea': el reporte debe llevar el hallazgo especifico del marcador Y la confirmacion por repeticion, porque son dos hechos distintos (que ensayo dio positivo, y que la repeticion lo sostuvo) y suprimir cualquiera empobrece el reporte epidemiologico. DEGENERACION ACTUAL, leer antes de tocar esto: R15 tiene epidemiological_status=null, asi que hoy la concatenacion devuelve unicamente el termino de R19 y el valor publicado no cambia respecto del arbitraje por priority. La resolucion queda declarada igual, porque la decision clinica esta tomada y es el termino del marcador el que falta: ponerle nombre epidemiologico a las siete reglas por marcador es una decision de nomenclatura clinica que NO se invento en esta sesion -- esta en la consulta consolidada pendiente. El dia que ese nombre exista, la concatenacion pasa a tener efecto sin tocar el motor ni esta entrada. Nota: bajo INV-17 (RN-02) el par es clinicamente inalcanzable (una inicial Reactiva no motiva duplicado); la entrada es defensiva mientras INV-17 no tenga validador. Hallazgo de R15: HCV reactivo.",
+    "clinical_source": "Bioquimico de referencia -- dossier de arbitraje, pregunta 3 (B2-B8)."
+  },
+  {
+    "pair": [
+      "R16",
+      "R19"
+    ],
+    "resolution": "concat",
+    "winner": null,
+    "rationale": "Marcador positivo por su propio criterio (R16) junto con repeticion que confirma reactividad (R19): empatan en peso de decision (Descarte/Diferido_Permanente) y el desempate lo venia ganando R19 por orden de priority. El bioquimico de referencia resolvio que no corresponde elegir uno -- 'ambos en la misma linea': el reporte debe llevar el hallazgo especifico del marcador Y la confirmacion por repeticion, porque son dos hechos distintos (que ensayo dio positivo, y que la repeticion lo sostuvo) y suprimir cualquiera empobrece el reporte epidemiologico. DEGENERACION ACTUAL, leer antes de tocar esto: R16 tiene epidemiological_status=null, asi que hoy la concatenacion devuelve unicamente el termino de R19 y el valor publicado no cambia respecto del arbitraje por priority. La resolucion queda declarada igual, porque la decision clinica esta tomada y es el termino del marcador el que falta: ponerle nombre epidemiologico a las siete reglas por marcador es una decision de nomenclatura clinica que NO se invento en esta sesion -- esta en la consulta consolidada pendiente. El dia que ese nombre exista, la concatenacion pasa a tener efecto sin tocar el motor ni esta entrada. Nota: bajo INV-17 (RN-02) el par es clinicamente inalcanzable (una inicial Reactiva no motiva duplicado); la entrada es defensiva mientras INV-17 no tenga validador. Hallazgo de R16: HBV reactivo.",
+    "clinical_source": "Bioquimico de referencia -- dossier de arbitraje, pregunta 3 (B2-B8)."
+  },
+  {
+    "pair": [
+      "R17",
+      "R19"
+    ],
+    "resolution": "concat",
+    "winner": null,
+    "rationale": "Marcador positivo por su propio criterio (R17) junto con repeticion que confirma reactividad (R19): empatan en peso de decision (Descarte/Diferido_Permanente) y el desempate lo venia ganando R19 por orden de priority. El bioquimico de referencia resolvio que no corresponde elegir uno -- 'ambos en la misma linea': el reporte debe llevar el hallazgo especifico del marcador Y la confirmacion por repeticion, porque son dos hechos distintos (que ensayo dio positivo, y que la repeticion lo sostuvo) y suprimir cualquiera empobrece el reporte epidemiologico. DEGENERACION ACTUAL, leer antes de tocar esto: R17 tiene epidemiological_status=null, asi que hoy la concatenacion devuelve unicamente el termino de R19 y el valor publicado no cambia respecto del arbitraje por priority. La resolucion queda declarada igual, porque la decision clinica esta tomada y es el termino del marcador el que falta: ponerle nombre epidemiologico a las siete reglas por marcador es una decision de nomenclatura clinica que NO se invento en esta sesion -- esta en la consulta consolidada pendiente. El dia que ese nombre exista, la concatenacion pasa a tener efecto sin tocar el motor ni esta entrada. Nota: bajo INV-17 (RN-02) el par es clinicamente inalcanzable (una inicial Reactiva no motiva duplicado); la entrada es defensiva mientras INV-17 no tenga validador. Hallazgo de R17: HIV reactivo.",
+    "clinical_source": "Bioquimico de referencia -- dossier de arbitraje, pregunta 3 (B2-B8)."
   }
 ]
