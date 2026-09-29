@@ -222,6 +222,29 @@ Toda etiqueta `sco` derivada de un centinela sintético — interferencia físic
 
 **Nota de alcance.** El invariante gobierna la CERTEZA, no la etiqueta. La etiqueta `sco` sigue siendo el centinela `No Reactivo` en ambos caminos, y eso es un defecto **abierto y distinto**: es lo que permite que R1 dispare sobre datos de Sífilis y aporte al log una línea que afirma "tamizaje negativo completo / unidad apta" en casos de Descarte. Se registra la conexión acá para que no se lea INV-16 como si hubiera cerrado el problema del centinela completo: cerró la mitad numérica.
 
+### INV-17 — Precondición de la repetición por duplicado (RN-02)
+
+**Enunciado.** La repetición por duplicado **solo se ordena** cuando la lectura inicial cayó en Zona Gris. Ningún otro resultado inicial la motiva:
+
+$$
+sco\_repeticion \neq \bot \implies sco\_inicial = \text{Zona Gris}
+$$
+
+**Fundamento.** Confirmado por el bioquímico de referencia (regla de negocio RN-02). Una lectura inicial No Reactiva no deja nada que dirimir, y una Reactiva ya cerró el tamizaje por su propio criterio: en ninguno de los dos casos el protocolo cursa un duplicado. El duplicado existe exclusivamente para resolver la indeterminación analítica de la Zona Gris — es el mecanismo que INV-01 (monotonía de precaución) e INV-03 (ambigüedad persistente) presuponen, y hasta acá vivía como supuesto tácito de ambos.
+
+**Estado de enforcement: DECLARADO, NO EJECUTADO.** Ninguna capa rechaza hoy un `sco_repeticion_valor` con `sco_inicial` fuera de Zona Gris: `construir_hechos()` lo fuzzifica sin mirar la etiqueta inicial, y `WorkingMemoryFacts` no lo valida. El invariante se formaliza acá **antes** de tener validador, en el orden que fija la Consigna 1 (spec primero), y su enforcement queda como frente propio — no se cuela como anexo de la sesión de arbitraje.
+
+**Consecuencia para el arbitraje de `epidemiological_status`.** RN-02 gobierna la **operatoria**, no la **representabilidad**. Varios pares de reglas terminales que empatan en peso de decisión son clínicamente inalcanzables bajo RN-02 pero siguen siendo entradas construibles mientras no haya validador:
+
+| Par | Antecedente conjunto | Alcanzable bajo RN-02 |
+|---|---|---|
+| R4 vs R19 | `sco = No Reactivo` + `sco_repeticion = Reactivo` | No |
+| marcador (R5, R7, R11, R12, R15, R16, R17) vs R19 | `sco = Reactivo` + `sco_repeticion = Reactivo` | No |
+| R6 vs R18 | `sco = No Reactivo` + `sco_repeticion = Zona Gris` | No |
+| R14 vs R18 | `sco = Reactivo` (Brucelosis) + `sco_repeticion = Zona Gris` | No |
+
+Que un par sea inalcanzable **no lo exime** de tener resolución declarada: mientras la entrada sea construible, el motor puede llegar a arbitrarlo, y un `epidemiological_status` resuelto por orden de `priority` accidental es exactamente lo que el mecanismo de precedencia explícita (§INV-18) viene a impedir. La tabla de precedencia los cubre de forma defensiva, y la fila «Alcanzable» queda registrada acá para que, el día que INV-17 tenga validador, se sepa cuáles entradas pasan a ser código muerto verificable en vez de conjetura.
+
 ---
 
 # Invariantes de la frontera neuro-simbólica (INV-09 … INV-14)
