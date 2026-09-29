@@ -101,6 +101,10 @@ $$
 m = \text{Sifilis} \implies vdrl(m),\ clia(m) \in \{\text{Reactivo}, \text{No Reactivo}, \text{Pendiente}\}
 $$
 
+**Matriz completa VDRL×CLIA (Fase 3, corrección de veredicto).** Confirmada con el bioquímico de referencia: un reactivo en cualquiera de las dos técnicas, o discordancia entre ambas, es `Descarte`/`Diferido_Temporal` inmediato — no hay estado clínico de "solo esperar". De las 9 celdas, las 8 con al menos un resultado informado quedan resueltas por R8/R9/R10/R22 sin necesitar saber qué técnica se hizo primero: el veredicto depende únicamente del par de valores. La única celda sin resolver es `vdrl=Pendiente AND clia=Pendiente` (R23, bloqueo sin veredicto).
+
+*Nota de fragilidad:* P/P es el único caso de Sífilis sin resultado informado en ninguna técnica; el bloqueo depende de que exista una regla intermedia que dispare para ese antecedente exacto — si se elimina, R1 vuelve a liberar la unidad sin lectura. R1 no distingue Sífilis de ningún otro marcador (su antecedente nunca miró `vdrl`/`clia`), así que la protección contra ese caso vive enteramente en R23, no en R1: es la misma clase de dependencia implícita ya documentada para R20/INV-16 (Hallazgos conocidos, CLAUDE.md), y merece la misma cautela ante refactors futuros del motor de reglas.
+
 Antes de este paso `vdrl`/`clia` eran `AssayResult | None`, y ese `None` significaba **dos cosas a la vez**: *"este marcador no tiene ese ensayo"* y *"el ensayo corresponde pero no se informó todavía"* — exactamente la conflación que el Paso 2 corrigió para `nat`. Ahora se derivan del marcador igual que `nat`: `No Aplica` fuera de Sífilis, `Pendiente` en Sífilis sin informe. Como efecto colateral se corrigió un **descarte silencioso**: `construir_hechos()` hacía `AssayResult(vdrl) if (marker == SIFILIS and vdrl is not None) else None`, de modo que un `vdrl` provisto para un marcador no-Sífilis desaparecía sin error; hoy se rechaza con `DomainInvariantViolation`.
 
 ### INV-06 — Riesgo epidemiológico declarado

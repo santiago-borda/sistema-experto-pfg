@@ -492,6 +492,45 @@
     ]
   },
   {
+    "rule_id": "R23",
+    "description": "Ambas tecnicas del algoritmo de sifilis sin informar: bloqueo sin veredicto hasta que al menos una llegue. No hace falta modelar que protocolo sigue el laboratorio (VDRL-primero o CLIA-primero): en las otras ocho celdas de la matriz VDRL x CLIA el veredicto depende solo del valor que llego, nunca de cual tecnica es -- 'esperar a que llegue al menos un resultado' equivale en la practica a esperar la tecnica de rutina de ese laboratorio, sin que el sistema necesite saber cual es.",
+    "legacy_notes": "Regla de accion intermedia: no produce candidato terminal. Bloquea la liberacion via la clausula de anulacion ya existente en rule_engine.py (best_candidate se anula si es Apta y disparo alguna regla intermedia, INV-07) -- la misma que ya protegia el caso VDRL reactivo/CLIA pendiente antes de que R8 pasara a terminal. No requirio ningun cambio en rule_engine.py.",
+    "priority": 17,
+    "legal_reference": [
+      "Res. 1507/2015 - Anexo Algoritmo Serológico de Sífilis [verificar articulado oficial]"
+    ],
+    "antecedent": {
+      "operator": "AND",
+      "conditions": [
+        {
+          "fact_path": "marcador",
+          "operator": "EQ",
+          "value": "Sifilis"
+        },
+        {
+          "fact_path": "vdrl",
+          "operator": "EQ",
+          "value": "Pendiente"
+        },
+        {
+          "fact_path": "clia",
+          "operator": "EQ",
+          "value": "Pendiente"
+        }
+      ]
+    },
+    "consequent": {
+      "rule_type": "intermediate",
+      "unit_disposition": null,
+      "donor_disposition": null,
+      "action": "Informar resultado de VDRL o CLIA (al menos uno) antes de emitir veredicto",
+      "explanation_template": "Sífilis: VDRL y CLIA sin informar. Regla {rule_id}: no hay veredicto posible sin al menos un resultado del algoritmo serológico."
+    },
+    "invariant_tags": [
+      "INV-05-SIFILIS-ALGORITMO"
+    ]
+  },
+  {
     "rule_id": "R11",
     "description": "Chagas reactivo: descarte permanente, sin vía de reingreso del donante.",
     "legacy_notes": null,
