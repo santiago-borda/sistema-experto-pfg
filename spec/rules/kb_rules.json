@@ -437,6 +437,61 @@
     ]
   },
   {
+    "rule_id": "R22",
+    "description": "Reactivo sin confirmar, orden indistinto: cubre las dos discordancias que R9/R10 no representan -- VDRL reactivo con CLIA no reactivo, y CLIA reactivo con VDRL aun no informado (este ultimo es el defecto original: antes de esta regla, R1 matcheaba sobre el centinela sintetico y liberaba la unidad como Apta). Mismo veredicto y mismo epidemiological_status que R8: es el mismo hallazgo clinico -- un ensayo treponemico reactivo sin el otro resuelto -- nombrado igual para el reporte, sin importar cual tecnica quedo pendiente o cual disintio.",
+    "legacy_notes": "Primer uso de OR anidado (OR de dos grupos AND) en la KB: hasta esta regla, las 23 entradas existentes componian antecedentes con AND de condiciones atomicas unicamente. Se eligio OR de ANDs en vez de duplicar la regla en dos entradas con el mismo consequent, porque ambos escenarios son el mismo hallazgo clinico (reactivo sin confirmar) y mantenerlos como una sola regla evita que diverjan en texto o epidemiological_status si alguno se edita despues. rule.schema.json ya admite Condition anidado sin cambios (CompoundCondition.conditions es un array de Condition), y _evaluate_condition() en rule_engine.py ya es recursiva sobre cualquier anidamiento -- verificado antes de escribir esta regla, no despues.",
+    "priority": 17,
+    "legal_reference": [
+      "Res. 1507/2015 - Anexo Algoritmo Serológico de Sífilis [verificar articulado oficial]"
+    ],
+    "antecedent": {
+      "operator": "OR",
+      "conditions": [
+        {
+          "operator": "AND",
+          "conditions": [
+            {
+              "fact_path": "vdrl",
+              "operator": "EQ",
+              "value": "Reactivo"
+            },
+            {
+              "fact_path": "clia",
+              "operator": "EQ",
+              "value": "No Reactivo"
+            }
+          ]
+        },
+        {
+          "operator": "AND",
+          "conditions": [
+            {
+              "fact_path": "vdrl",
+              "operator": "EQ",
+              "value": "Pendiente"
+            },
+            {
+              "fact_path": "clia",
+              "operator": "EQ",
+              "value": "Reactivo"
+            }
+          ]
+        }
+      ]
+    },
+    "consequent": {
+      "rule_type": "terminal",
+      "unit_disposition": "Descarte",
+      "donor_disposition": "Diferido_Temporal",
+      "epidemiological_status": "Pendiente_Confirmacion_Serologica",
+      "explanation_template": "Sífilis: reactivo sin confirmar (VDRL y CLIA discordantes o uno de los dos aún no informado). Regla {rule_id}: no se libera un reactivo sin confirmar; diferimiento temporal, se recita para repetir ambos análisis.",
+      "action": null
+    },
+    "invariant_tags": [
+      "INV-05-SIFILIS-ALGORITMO"
+    ]
+  },
+  {
     "rule_id": "R11",
     "description": "Chagas reactivo: descarte permanente, sin vía de reingreso del donante.",
     "legacy_notes": null,
