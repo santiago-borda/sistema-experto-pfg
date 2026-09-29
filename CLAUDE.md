@@ -271,9 +271,13 @@ entre sesiones ni se redescubran desde cero.
   misma: ¿el `explanation_log` es registro completo de evidencia (toda
   regla que matcheó queda, y el defecto está en que R1 *matchee*) o
   justificación del veredicto (solo quedan las líneas que lo sostienen)?
-  Ninguna variante de supresión de línea se implementó en esta sesión —
-  sigue bloqueada, ahora exclusivamente por esa pregunta de diseño del
-  log, ya no por la disposición clínica.
+  Ninguna variante de supresión de línea se implementó — sigue bloqueada,
+  exclusivamente por esa pregunta de diseño del log, ya no por la
+  disposición clínica. Se verificó además que la línea de R1 **no tiene
+  ningún efecto** sobre `epidemiological_status`: R1 no participa de
+  ningún par de empate (su peso, 0, es único en la KB), así que el
+  problema es puramente de trazabilidad. La pregunta está redactada y
+  lista para enviar como punto 3 de `docs/consulta_bioquimico_arbitraje.md`.
 
 - **El redondeo de `certeza_sco` colapsa clasificaciones distintas en el
   mismo número.** En el borde exacto de umbral, dos casos que el motor
