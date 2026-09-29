@@ -78,5 +78,25 @@
     "winner": null,
     "rationale": "Marcador positivo por su propio criterio (R17) junto con repeticion que confirma reactividad (R19): empatan en peso de decision (Descarte/Diferido_Permanente) y el desempate lo venia ganando R19 por orden de priority. El bioquimico de referencia resolvio que no corresponde elegir uno -- 'ambos en la misma linea': el reporte debe llevar el hallazgo especifico del marcador Y la confirmacion por repeticion, porque son dos hechos distintos (que ensayo dio positivo, y que la repeticion lo sostuvo) y suprimir cualquiera empobrece el reporte epidemiologico. DEGENERACION ACTUAL, leer antes de tocar esto: R17 tiene epidemiological_status=null, asi que hoy la concatenacion devuelve unicamente el termino de R19 y el valor publicado no cambia respecto del arbitraje por priority. La resolucion queda declarada igual, porque la decision clinica esta tomada y es el termino del marcador el que falta: ponerle nombre epidemiologico a las siete reglas por marcador es una decision de nomenclatura clinica que NO se invento en esta sesion -- esta en la consulta consolidada pendiente. El dia que ese nombre exista, la concatenacion pasa a tener efecto sin tocar el motor ni esta entrada. Nota: bajo INV-17 (RN-02) el par es clinicamente inalcanzable (una inicial Reactiva no motiva duplicado); la entrada es defensiva mientras INV-17 no tenga validador. Hallazgo de R17: HIV reactivo.",
     "clinical_source": "Bioquimico de referencia -- dossier de arbitraje, pregunta 3 (B2-B8)."
+  },
+  {
+    "pair": [
+      "R6",
+      "R18"
+    ],
+    "resolution": "indistinct",
+    "winner": null,
+    "rationale": "C1. Serologia inicial No Reactiva con riesgo declarado (R6) contra repeticion en Zona Gris (R18). El bioquimico de referencia lo cerro por inexistencia de caso real: bajo RN-02 (INV-17) la repeticion por duplicado solo se cursa cuando la lectura inicial cayo en Zona Gris, y R6 exige justamente una inicial No Reactiva -- sobre una serologia limpia con riesgo declarado no se ordena duplicado, asi que las dos reglas no pueden encontrarse en la operatoria. Se declara indistinct y no se omite la entrada: la combinacion sigue siendo un WorkingMemoryFacts valido mientras INV-17 no tenga validador, y omitirla la volveria indistinguible de un par que nadie miro.",
+    "clinical_source": "Bioquimico de referencia -- dossier de arbitraje, pregunta 4 (C1)."
+  },
+  {
+    "pair": [
+      "R14",
+      "R18"
+    ],
+    "resolution": "indistinct",
+    "winner": null,
+    "rationale": "C2. Brucelosis reactiva (R14) contra repeticion en Zona Gris (R18). Cerrado por inexistencia de caso real, con DOS razones independientes: (a) RN-02/INV-17 -- R14 exige sco Reactivo, que no motiva duplicado; (b) la tecnica de Brucelosis es binaria (Reactivo / No Reactivo) y nunca produce Zona Gris, segun el bioquimico de referencia, de modo que el antecedente de R18 no es alcanzable para este marcador. DEPENDENCIA ABIERTA: (b) no esta hoy enforced -- el invariante de validacion de Brucelosis esta pendiente (sesion aparte), asi que por ahora es posible cargar el dato invalido aunque no deba ocurrir en la operatoria real. Mientras tanto la entrada indistinct cubre el par de forma defensiva.",
+    "clinical_source": "Bioquimico de referencia -- dossier de arbitraje, pregunta 5 (C2)."
   }
 ]

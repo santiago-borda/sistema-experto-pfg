@@ -17,8 +17,8 @@
     },
     "resolution": {
       "type": "string",
-      "enum": ["winner", "concat", "indistinct"],
-      "description": "'winner': gana el epidemiological_status de la regla nombrada en 'winner', sin importar peso ni prioridad. 'concat': el veredicto publica la union ordenada de ambos estados (los null se omiten; ver nota de INV-18 sobre la degeneracion actual de los pares marcador-vs-R19). 'indistinct': se decidio explicitamente que la eleccion no tiene consecuencia clinica; el motor conserva el incumbente del orden de evaluacion. Notese que 'indistinct' NO equivale a omitir la entrada: omitirla es lo que el chequeo de completitud senala como par sin decidir."
+      "enum": ["winner", "concat", "indistinct", "pending_clinical_review"],
+      "description": "'winner': gana el epidemiological_status de la regla nombrada en 'winner', sin importar peso ni prioridad. 'concat': el veredicto publica la union ordenada de ambos estados (los null se omiten; ver nota de INV-18 sobre la degeneracion actual de los pares marcador-vs-R19). 'indistinct': se decidio explicitamente que la eleccion no tiene consecuencia clinica; el motor conserva el incumbente del orden de evaluacion. 'pending_clinical_review': el conflicto esta identificado y ABIERTO, esperando criterio clinico; en runtime se comporta igual que 'indistinct'. Notese que ninguna de las dos equivale a OMITIR la entrada: omitirla es lo que el chequeo de completitud senala como par que nadie miro. La distincion entre las tres es el punto del mecanismo -- 'da igual', 'falta decidirlo' y 'nadie lo vio' son estados distintos y hasta aca los tres se veian igual."
     },
     "winner": {
       "type": ["string", "null"],
@@ -28,7 +28,7 @@
     "rationale": {
       "type": "string",
       "minLength": 1,
-      "description": "Por que se resuelve asi. Obligatorio en las tres resoluciones, incluida 'indistinct': declarar que da igual tambien es una decision y debe quedar fundada, o el proximo lector no puede distinguirla de un descuido."
+      "description": "Por que se resuelve asi. Obligatorio en las cuatro resoluciones, incluidas 'indistinct' y 'pending_clinical_review': declarar que da igual tambien es una decision y debe quedar fundada, o el proximo lector no puede distinguirla de un descuido."
     },
     "clinical_source": {
       "type": ["string", "null"],
@@ -42,7 +42,7 @@
     },
     {
       "if": {
-        "properties": { "resolution": { "enum": ["concat", "indistinct"] } },
+        "properties": { "resolution": { "enum": ["concat", "indistinct", "pending_clinical_review"] } },
         "required": ["resolution"]
       },
       "then": { "properties": { "winner": { "type": "null" } } }

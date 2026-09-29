@@ -293,23 +293,43 @@ entre sesiones ni se redescubran desde cero.
   Gris, el foco de la Consigna 3, y porque cualquier decisión futura
   sobre cómo se presenta la certeza debería conocerlo.
 
-- **[PRIORIDAD ALTA] El `epidemiological_status` lo decide un desempate por
-  prioridad que nadie especificó — 23 grupos abiertos.** Cuando dos reglas
-  terminales empatan en peso de decisión (INV-07), el arbitraje lo resuelve
-  la prioridad, y con ella **qué `epidemiological_status` se publica**. Ese
-  desempate no está declarado regla por regla: es un efecto lateral del
-  orden. Medido sobre la KB actual: **32 pares** de terminales empatan en
-  peso con `epidemiological_status` distinto; 9 involucraban a R4 y quedaron
-  resueltos al acotarla, **23 siguen abiertos** (sífilis interno R9/R10,
-  R19 vs. las reglas por marcador, R18/R6/R3/R14).
-  *Por qué sube a prioridad alta:* es el campo del veredicto que **MedGemma
-  va a leer en fase post-analítica** — `verdict.schema.json` lo declara
-  parte del único artefacto que el módulo neuronal puede consumir para
-  redactar el reporte final. Un campo cuyo valor depende de un orden no
-  especificado no es una base aceptable para el contrato neuro-simbólico.
-  El golden de los 34 casos ya lo congela, así que hoy no puede cambiar en
-  silencio; lo que falta es **decidirlo**, con consulta clínica.
-  Sesión propia: es diseño, no limpieza.
+- ~~**[PRIORIDAD ALTA] El `epidemiological_status` lo decide un desempate por
+  prioridad que nadie especificó.**~~ **SALDADO EL MECANISMO; abierto el
+  contenido de Familia A.** `priority` cumplía dos roles a la vez: ordenar la
+  evaluación de reglas y, de rebote, desempatar qué `epidemiological_status`
+  se publica. Se separaron: **INV-18** formaliza una tabla de precedencia
+  declarativa por par de `rule_id` (`spec/rules/epi_precedence.json` + su
+  schema, espejada en `seitt_core/rules/`), con cuatro resoluciones —
+  `winner`, `concat`, `indistinct` y `pending_clinical_review`. El mecanismo
+  gobierna **solo** `epidemiological_status`: la disposición sigue saliendo
+  del `best_candidate` del arbitraje por peso, así que editar la tabla no
+  puede cambiar una decisión clínica (fijado por test).
+  **Medición real, que corrige la de esta misma entrada:** el conteo previo
+  de "32 pares / 23 abiertos" era estático y no miraba si los antecedentes
+  podían satisfacerse a la vez. La enumeración exhaustiva sobre el espacio
+  de `WorkingMemoryFacts` da **24 pares co-satisfacibles** (44 por conteo
+  ingenuo; 20 son antecedentes incompatibles). De esos 24: **10 resueltos**
+  (B1 por `winner`, los 7 de B2-B8 por `concat`, C1/C2 por `indistinct`) y
+  **14 en `pending_clinical_review`** — los 12 de Familia A más los dos
+  pares nuevos de la línea siguiente.
+  Lo que queda abierto es **contenido clínico, no ingeniería**: la consulta
+  consolidada está en `docs/consulta_bioquimico_arbitraje.md`, lista para
+  enviar.
+
+- **El contrato de `WorkingMemoryFacts` admite `sco != sco_inicial`, estado
+  que el motor difuso no puede producir.** Hallazgo de la enumeración
+  exhaustiva de INV-18: los pares `(R3, R6)` y `(R3, R14)` no figuraban en
+  ninguna de las tres familias del dossier de arbitraje, y existen solo
+  porque `sco` y `sco_inicial` pueden diferir. `construir_hechos()` los
+  deriva **siempre** de la misma fuzzificación, así que por `evaluar_caso()`
+  el estado es inalcanzable; por `RuleEngine.evaluar()` directo, no. O bien
+  el acoplamiento es un invariante y le falta validador en `contracts.py`,
+  o los dos campos son genuinamente independientes y hay reglas que leen el
+  equivocado. No se decidió acá porque tocar el contrato de memoria de
+  trabajo excede el alcance de la sesión de arbitraje, y porque la respuesta
+  correcta depende de para qué existe `sco_inicial` separado de `sco` — que
+  es pregunta de modelo de dominio, no de motor. Los dos pares quedan
+  cubiertos de forma defensiva en la tabla mientras tanto.
 
 - **El Eval Harness no ejercita el adaptador de narración.**
   `seitt_core/adapters/static_narration.py` es el adaptador **por defecto**

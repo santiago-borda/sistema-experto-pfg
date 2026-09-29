@@ -245,6 +245,34 @@ $$
 
 Que un par sea inalcanzable **no lo exime** de tener resolución declarada: mientras la entrada sea construible, el motor puede llegar a arbitrarlo, y un `epidemiological_status` resuelto por orden de `priority` accidental es exactamente lo que el mecanismo de precedencia explícita (§INV-18) viene a impedir. La tabla de precedencia los cubre de forma defensiva, y la fila «Alcanzable» queda registrada acá para que, el día que INV-17 tenga validador, se sepa cuáles entradas pasan a ser código muerto verificable en vez de conjetura.
 
+### INV-18 — Precedencia explícita de `epidemiological_status`
+
+**Enunciado.** Cuando dos reglas terminales empatan en peso de decisión (INV-07) y declaran `epidemiological_status` distinto, el valor publicado se determina por una **resolución declarada para ese par**, nunca por el orden de `priority`.
+
+**El problema que cierra.** `priority` cumplía dos roles a la vez: ordenaba la **evaluación** de las reglas y, como efecto lateral de que el arbitraje conserva al primer candidato de peso máximo, desempataba **qué `epidemiological_status` se publica**. El segundo rol nunca se especificó regla por regla — era una consecuencia del orden. Eso importa más que un detalle de presentación porque `epidemiological_status` es parte de `verdict.schema.json`, el único artefacto que el módulo neuronal puede consumir en fase post-analítica: un contrato neuro-simbólico no puede apoyarse en un campo cuyo valor depende de un orden que nadie declaró.
+
+**Mecanismo.** Tabla declarativa por par de `rule_id` en `spec/rules/epi_precedence.json` (espejada en `seitt_core/rules/`, misma disciplina que `kb_rules.json`), validada contra `spec/schemas/epi_precedence.schema.json` en cada `RuleEngine.load()`. Cuatro resoluciones:
+
+| `resolution` | Semántica | Origen típico |
+|---|---|---|
+| `winner` | Gana el `epidemiological_status` de la regla nombrada, sin importar peso ni prioridad. | Excepción clínica acotada (B1: R4 sobre R19). |
+| `concat` | El veredicto publica la unión ordenada de ambos estados, separados por `" + "`. Los `null` se omiten. | «Ambos en la misma línea» (B2-B8). |
+| `indistinct` | Se decidió que la elección no tiene consecuencia clínica; se conserva el incumbente. | Par sin caso real (C1, C2). |
+| `pending_clinical_review` | El conflicto está **identificado y abierto**, a la espera de criterio clínico. Runtime idéntico a `indistinct`. | Familia A (sífilis). |
+
+**Separación de responsabilidades.** El mecanismo gobierna **solo** `epidemiological_status`. `unit_disposition` y `donor_disposition` siguen saliendo del `best_candidate` del arbitraje por peso, intactos, de modo que ninguna edición de la tabla puede alterar una decisión clínica. Fijado como test (`test_la_precedencia_no_toca_la_disposicion`).
+
+**Por qué por par y no un entero por regla.** Un orden total no puede expresar (i) una excepción acotada —R4 debe ganarle a R19 *sin* pasar a ganarle a ninguna otra regla—, (ii) la concatenación, ni (iii) —lo decisivo— la diferencia entre «se decidió que da igual» y «nadie lo decidió». Sin (iii) el chequeo de completitud no puede existir: una omisión sería indistinguible de una decisión.
+
+**Completitud (enforcement).** Un par sin entrada **no levanta excepción en tiempo de inferencia**: se conserva el incumbente y el par se reporta en `InferenceResult.epi_undeclared_pairs`. Tumbar un veredicto de disposición correcta por una deuda de especificación le negaría al bioquímico un resultado válido. La detección va a CI, por dos vías complementarias:
+
+1. **Estática** — enumeración exhaustiva del espacio de `WorkingMemoryFacts` discreto: todo par co-satisfacible que empata en peso con estados distintos debe tener entrada. Es el contrato de entrada real de `RuleEngine.evaluar()`, así que un par que Pydantic admite puede efectivamente llegar al arbitraje.
+2. **Dinámica** — el Eval Harness falla si algún caso del golden produce `epi_undeclared_pairs` no vacío.
+
+**Medición al cierre de esta sesión:** 24 pares co-satisfacibles con empate y estado distinto (de 44 que da el conteo estático ingenuo; 20 son antecedentes incompatibles). 10 resueltos —B1 por `winner`, B2-B8 por `concat`, C1/C2 por `indistinct`—, 14 en `pending_clinical_review`.
+
+**Dos pares que el relevamiento previo no tenía.** La enumeración exhaustiva encontró `(R3, R6)` y `(R3, R14)`, ausentes de las tres familias del dossier. Ambos dependen de que `sco` y `sco_inicial` puedan diferir: `construir_hechos()` los deriva siempre de la misma fuzzificación, pero `WorkingMemoryFacts` no los acopla, así que el estado es construible entrando directo por `RuleEngine.evaluar()`. Se registra como deuda propia (ver CLAUDE.md): el contrato de memoria de trabajo admite un estado que el motor difuso no puede producir, y hasta acá nadie lo había mirado.
+
 ---
 
 # Invariantes de la frontera neuro-simbólica (INV-09 … INV-14)
