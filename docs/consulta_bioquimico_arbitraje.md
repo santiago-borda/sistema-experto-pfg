@@ -152,19 +152,22 @@ Concretamente:
 - repetición por duplicado **no reactiva**;
 - y, además, **riesgo referido en la anamnesis**.
 
+Por cómo está construido hoy el sistema, esta combinación todavía no puede
+producirse — hay una limitación interna que lo impide, no puesta a propósito, y
+que voy a revisar. Le pido igual su criterio: si me lo da ahora, queda decidido
+de antemano y no depende de que yo no toque esa parte.
+
 Hoy el sistema tiene dos criterios que aplican a la vez y llevan a la misma
 conducta (descarte de la unidad, diferimiento temporal del donante), pero con
 etiquetas distintas: **«serología dudosa»** —porque la lectura inicial fue
 ambigua— y **«precaución por riesgo declarado»** —porque hay riesgo referido
 sobre una serología que terminó no reactiva.
 
-La pregunta es la misma que el punto 1: ¿cuál de las dos debe figurar, o las dos?
+**La pregunta.** ¿Qué debe figurar en el reporte?
 
-Le aclaro algo que hace a si esto amerita su tiempo: por cómo está construido
-hoy el sistema, esta combinación no puede llegar a producirse en la práctica —
-hay una limitación interna que lo impide. Pero esa limitación no está puesta a
-propósito, y la voy a revisar. Si me dice cuál corresponde, queda decidido de
-antemano y no depende de que yo no toque esa parte.
+- **(a) Solo «serología dudosa».**
+- **(b) Solo «precaución por riesgo declarado».**
+- **(c) Las dos, concatenadas.**
 
 **Situación 2 — lo mismo, en Brucelosis.**
 
