@@ -78,6 +78,8 @@ for schema_file in [
     "extraction_envelope.schema.json",
     "extraction_gate_report.schema.json",
     "validation_attestation.schema.json",
+    # Tabla de precedencia de epidemiological_status (INV-18).
+    "epi_precedence.schema.json",
 ]:
     path = SCHEMAS_DIR / schema_file
     try:
@@ -111,6 +113,56 @@ record(
     len(ids) == len(set(ids)),
     "" if len(ids) == len(set(ids)) else f"duplicados: {[i for i in ids if ids.count(i) > 1]}",
 )
+
+# ── 2bis. epi_precedence.json conforma su schema y cubre todo empate ────
+print("\n[2bis] Tabla de precedencia de epidemiological_status (INV-18)")
+epi_schema = load_json(SCHEMAS_DIR / "epi_precedence.schema.json")
+epi_validator = jsonschema.Draft202012Validator(epi_schema)
+epi_entries = load_json(RULES_DIR / "epi_precedence.json")
+
+for entry in epi_entries:
+    par = "/".join(entry.get("pair", ["???"]))
+    errors = sorted(epi_validator.iter_errors(entry), key=lambda e: e.path)
+    if errors:
+        for err in errors:
+            record(f"precedencia {par} conforma schema", False, err.message)
+    else:
+        record(f"precedencia {par} conforma schema", True)
+
+# Los rule_id de la tabla tienen que existir en la KB. RuleEngine ya lo
+# verifica al construirse, pero acá el fallo llega antes y sin levantar el
+# motor: una entrada que nombra una regla inexistente es una decisión clínica
+# aparentemente tomada y de hecho inerte.
+huerfanos = sorted({rid for e in epi_entries for rid in e["pair"] if rid not in set(ids)})
+record(
+    "toda entrada de precedencia referencia reglas existentes",
+    not huerfanos,
+    "" if not huerfanos else f"rule_id inexistentes: {huerfanos}",
+)
+
+# Completitud (INV-18): ningún par de terminales que pueda llegar empatado al
+# arbitraje con epidemiological_status distinto puede quedar sin resolución
+# declarada. Sin esto, el desempate lo decide el orden de priority en
+# silencio — el modo de falla que dejó pasar los seis pares creados por el
+# fix de Sífilis sin que ningún arnés se moviera.
+try:
+    from seitt_core.epi_audit import auditar_precedencia
+
+    auditoria = auditar_precedencia()
+    record(
+        "todo par de empate tiene resolución declarada (completitud INV-18)",
+        auditoria.completa,
+        "" if auditoria.completa else f"sin declarar: {list(auditoria.sin_declarar)}",
+    )
+    record(
+        "la tabla de precedencia no acumula entradas muertas",
+        not auditoria.declarados_sin_conflicto,
+        ""
+        if not auditoria.declarados_sin_conflicto
+        else f"pares que ya no empatan: {list(auditoria.declarados_sin_conflicto)}",
+    )
+except Exception as e:  # noqa: BLE001 - el arnés reporta, no propaga
+    record("completitud INV-18 evaluable", False, str(e))
 
 # ── 3. Casos límite de contrato Pydantic (foco Zona Gris 0.9 / 1.1) ────
 print("\n[3] Casos límite de invariantes (contracts.py)")

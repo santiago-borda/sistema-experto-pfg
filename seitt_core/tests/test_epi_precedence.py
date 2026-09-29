@@ -30,8 +30,10 @@ from pathlib import Path
 import pytest
 
 from seitt_core.domain import DonorDisposition, Marker, UnitDisposition, WorkingMemoryFacts
+from seitt_core.epi_audit import auditar_precedencia
 from seitt_core.rule_engine import (
     _DEFAULT_EPI_PRECEDENCE_SCHEMA_PATH,
+    _DEFAULT_RULES_PATH,
     MalformedEpiPrecedenceError,
     RuleEngine,
 )
@@ -363,3 +365,83 @@ def test_la_copia_de_spec_y_la_de_seitt_core_no_divergen() -> None:
     assert json.loads(en_spec.read_text(encoding="utf-8")) == json.loads(
         _DEFAULT_EPI_PRECEDENCE_PATH.read_text(encoding="utf-8")
     )
+
+
+# ─────────────────────────────────────────────────────────────────────────
+# Completitud: ningún par de empate puede quedar sin declarar (INV-18)
+# ─────────────────────────────────────────────────────────────────────────
+
+
+def test_la_tabla_cubre_todo_par_de_empate_de_la_kb_real() -> None:
+    """El chequeo estructural contra el patrón que ya se repitió tres veces.
+
+    Acotar R4 resolvió nueve pares; dar de alta R8 y R22 en el fix de Sífilis
+    creó seis, sin que nadie los pidiera ni los notara. Mientras el desempate
+    lo resolviera `priority`, un par nuevo no producía ningún síntoma: el
+    veredicto salía correcto y el campo epidemiológico se decidía solo. Este
+    test es el síntoma que faltaba — un cambio de KB que cree un par nuevo
+    ahora rompe CI hasta que alguien lo declare.
+    """
+    auditoria = auditar_precedencia()
+    assert auditoria.sin_declarar == (), (
+        "Pares de reglas terminales que empatan en peso de decisión con "
+        "epidemiological_status distinto y SIN resolución declarada en "
+        f"epi_precedence.json: {list(auditoria.sin_declarar)}. Agregar una entrada — "
+        "'pending_clinical_review' si hace falta criterio clínico, 'indistinct' si se "
+        "decidió que da igual. Lo que no es una opción es dejarlo sin declarar: eso lo "
+        "vuelve a resolver el orden de priority, en silencio."
+    )
+
+
+def test_la_tabla_no_acumula_entradas_muertas() -> None:
+    """Una entrada que sobrevive al conflicto que la justificaba es
+    documentación que envejece en silencio: describe una decisión sobre un
+    empate que ya no puede ocurrir. Se detecta junto con lo contrario."""
+    auditoria = auditar_precedencia()
+    assert auditoria.declarados_sin_conflicto == (), (
+        "Entradas de epi_precedence.json cuyo par ya no puede empatar: "
+        f"{list(auditoria.declarados_sin_conflicto)}."
+    )
+
+
+def test_un_par_nuevo_se_senala_en_vez_de_resolverse_en_silencio(tmp_path: Path) -> None:
+    """Control positivo: se introduce a propósito un par sin declarar.
+
+    Sin este test, `sin_declarar == ()` podría estar en verde simplemente
+    porque la auditoría no encuentra nada nunca. Acá se agrega a la KB una
+    regla terminal que empata en peso con R14 (Brucelosis reactiva,
+    Descarte/Diferido_Temporal) y declara otro epidemiological_status, sin
+    tocar la tabla de precedencia — exactamente la forma que tuvieron R8 y
+    R22 al darse de alta. La auditoría tiene que nombrarlo.
+    """
+    kb = json.loads(_DEFAULT_RULES_PATH.read_text(encoding="utf-8"))
+    kb.append(
+        {
+            "rule_id": "R93",
+            "description": "Regla intrusa: empata con R14 y trae otro estado epidemiológico.",
+            "priority": 50,
+            "legal_reference": ["N/A - regla sintética de prueba"],
+            "antecedent": {
+                "operator": "AND",
+                "conditions": [
+                    {"fact_path": "marcador", "operator": "EQ", "value": "Brucelosis"},
+                    {"fact_path": "sco", "operator": "EQ", "value": "Reactivo"},
+                ],
+            },
+            "consequent": {
+                "rule_type": "terminal",
+                "unit_disposition": "Descarte",
+                "donor_disposition": "Diferido_Temporal",
+                "epidemiological_status": "Estado_Intruso",
+                "explanation_template": "Regla {rule_id}: intrusa.",
+                "action": None,
+            },
+            "invariant_tags": [],
+        }
+    )
+    kb_intrusa = tmp_path / "kb_rules.json"
+    kb_intrusa.write_text(json.dumps(kb, ensure_ascii=False), encoding="utf-8")
+
+    auditoria = auditar_precedencia(rules_path=kb_intrusa)
+    assert ("R14", "R93") in auditoria.sin_declarar
+    assert not auditoria.completa

@@ -60,11 +60,22 @@ spec/         Fase 0: especificación formal.
   schemas/*.schema.json    8 JSON Schemas (Draft 2020-12)
   rules/kb_rules.json      KB declarativa: 25 entradas (R1..R23, con R2
                             desdoblada en 3 variantes de certeza)
+  rules/epi_precedence.json Tabla de precedencia de epidemiological_status
+                            (INV-18): 24 entradas, una por par de reglas
+                            terminales que puede llegar empatado al
+                            arbitraje con estado distinto.
 
 seitt_core/   Fase 1: refactor del motor, DSL-driven (reemplaza a legacy/).
   domain.py, fuzzy_engine.py, rule_engine.py, explicador.py,
   expert_system.py
+  epi_audit.py              Chequeo de completitud de la tabla de
+                            precedencia (INV-18): enumera exhaustivamente
+                            el espacio discreto de WorkingMemoryFacts y
+                            exige resolución declarada para todo par de
+                            terminales que pueda llegar empatado al
+                            arbitraje con epidemiological_status distinto.
   rules/kb_rules.json       (copia sincronizada de spec/rules/)
+  rules/epi_precedence.json (copia sincronizada de spec/rules/)
   tests/                    tests pytest de regresión + fuzzy engine
   eval/                     Fase 2: Eval Harness
     eval_dataset.json       39 casos con criterio experto (ground truth),
@@ -132,9 +143,10 @@ defensa.
 
 ```bash
 ruff format --check . && ruff check .     # esperado: sin diferencias, "All checks passed!"
-python spec/validate_spec.py              # esperado: 89/89 OK
-python -m pytest                          # esperado: 99 passed
-python seitt_core/eval/eval_harness.py    # esperado: 39/39, kappa 1.0, traza 39/39, 25/25 reglas
+python spec/validate_spec.py              # esperado: 117/117 OK
+python -m pytest                          # esperado: 117 passed
+python seitt_core/eval/eval_harness.py    # esperado: 43/43, kappa 1.0, traza 43/43, 25/25 reglas,
+                                          #           24/24 pares de precedencia declarados
 ```
 
 `ruff format --check` **verifica, no reescribe**. Para aplicar el formato:
@@ -171,6 +183,14 @@ otra cosa — son la red de seguridad contra regresiones.
   matchean (no first-match), y resuelve por jerarquía de peso de decisión
   (Cuarentena=4 > Descarte+Permanente=3 > Descarte+Temporal=2 > Descarte=1
   > Apta=0). R20 (integridad física) es el único corto-circuito real.
+- **Precedencia epidemiológica declarada, no heredada del orden (INV-18)**:
+  cuando dos terminales empatan en peso, `epidemiological_status` lo decide
+  una entrada explícita en `epi_precedence.json`, nunca `priority`. Cuatro
+  resoluciones: `winner`, `concat`, `indistinct` y `pending_clinical_review`.
+  El mecanismo gobierna **solo** ese campo — la disposición sale del
+  `best_candidate` del arbitraje por peso y no la toca nadie. Un par sin
+  entrada no rompe la inferencia (se conserva el incumbente) pero **rompe
+  CI**: `validate_spec.py`, `pytest` y el Eval Harness fallan los tres.
 - **KB declarativa externa**: las reglas viven en `kb_rules.json`, nunca
   embebidas como lambdas en Python (eso era el defecto principal del
   legado). `RuleEngine.load()` re-valida contra `rule.schema.json` en cada

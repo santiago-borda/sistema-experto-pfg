@@ -266,8 +266,11 @@ Que un par sea inalcanzable **no lo exime** de tener resolución declarada: mien
 
 **Completitud (enforcement).** Un par sin entrada **no levanta excepción en tiempo de inferencia**: se conserva el incumbente y el par se reporta en `InferenceResult.epi_undeclared_pairs`. Tumbar un veredicto de disposición correcta por una deuda de especificación le negaría al bioquímico un resultado válido. La detección va a CI, por dos vías complementarias:
 
-1. **Estática** — enumeración exhaustiva del espacio de `WorkingMemoryFacts` discreto: todo par co-satisfacible que empata en peso con estados distintos debe tener entrada. Es el contrato de entrada real de `RuleEngine.evaluar()`, así que un par que Pydantic admite puede efectivamente llegar al arbitraje.
-2. **Dinámica** — el Eval Harness falla si algún caso del golden produce `epi_undeclared_pairs` no vacío.
+La enumeración es **exhaustiva sobre el espacio discreto de `WorkingMemoryFacts`**: todo par co-satisfacible que empata en peso con estados distintos debe tener entrada. Se enumera ese espacio y no el de `evaluar_caso()` porque es el contrato de entrada real de `RuleEngine.evaluar()` — un estado que Pydantic admite puede efectivamente llegar al arbitraje, aunque `construir_hechos()` no sepa producirlo. Es una sobre-aproximación, que es la dirección conservadora correcta.
+
+Corre en dos lugares, a propósito: como test (`test_la_tabla_cubre_todo_par_de_empate_de_la_kb_real`) y como condición de salida del **Eval Harness**, que es el artefacto que se corre y se lee para la Consigna 3. Se verificó que hace falta que corra ahí: agregando una regla terminal que empata sobre un camino que ningún caso golden ejercita, el arnés reporta **43/43 y κ = 1.0** —enteramente en verde— y aun así sale con código 1 por los pares sin declarar. Esa es exactamente la forma que tuvo el fix de Sífilis al crear seis pares con el golden intacto.
+
+El barrido reporta también las **entradas muertas**: una resolución cuyo par ya no puede empatar es documentación que envejece en silencio.
 
 **Medición al cierre de esta sesión:** 24 pares co-satisfacibles con empate y estado distinto (de 44 que da el conteo estático ingenuo; 20 son antecedentes incompatibles). 10 resueltos —B1 por `winner`, B2-B8 por `concat`, C1/C2 por `indistinct`—, 14 en `pending_clinical_review`.
 

@@ -55,6 +55,7 @@ from pathlib import Path
 import jsonschema
 
 from seitt_core.domain import SEITTDomainError
+from seitt_core.epi_audit import auditar_precedencia
 from seitt_core.expert_system import evaluar_caso
 
 _DATASET_PATH = Path(__file__).parent / "eval_dataset.json"
@@ -426,6 +427,30 @@ def run(threshold: float = 1.0) -> int:
         print(f"     ⚠ SIN NINGUN CASO GOLDEN    : {', '.join(sin_cubrir)}")
         print("       (hueco declarado, no omision — ver $comment en eval_case.schema.json)")
 
+    # Completitud de la precedencia epidemiologica (INV-18). Va en el arnes y
+    # no solo en pytest porque este es el artefacto que se corre y se lee para
+    # la Consigna 3: un par de reglas terminales que empatan en peso con
+    # epidemiological_status distinto y sin resolucion declarada se resuelve
+    # por el orden de priority, en silencio, y ese fue el modo de falla que
+    # dejo pasar los seis pares que creo el fix de Sifilis sin que nadie los
+    # pidiera. Acá se enumera el espacio de WorkingMemoryFacts entero, no solo
+    # los casos del golden: el golden cubre lo que alguien penso en escribir.
+    auditoria = auditar_precedencia()
+    print()
+    print("  Completitud de la precedencia epidemiologica (INV-18):")
+    print(
+        f"     pares en empate con epi distinto : {len(auditoria.pares_en_conflicto)} "
+        f"(sobre {auditoria.estados_validos} estados validos de WorkingMemoryFacts)"
+    )
+    print(
+        f"     con resolucion declarada         : {len(auditoria.pares_en_conflicto) - len(auditoria.sin_declarar)}"
+    )
+    if auditoria.sin_declarar:
+        print(f"     ❌ SIN DECLARAR                   : {list(auditoria.sin_declarar)}")
+        print("       (se resolverian por orden de priority, sin que nadie lo decidiera)")
+    if auditoria.declarados_sin_conflicto:
+        print(f"     ⚠ ENTRADAS MUERTAS               : {list(auditoria.declarados_sin_conflicto)}")
+
     fails = [r for r in results if not r.correct]
     if fails:
         print(f"\n  CASOS FALLIDOS ({len(fails)}):")
@@ -464,6 +489,12 @@ def run(threshold: float = 1.0) -> int:
             "verificadas_por_campo_citado": con_campos,
             "marcador_nombrado_en_prosa": con_marcador_en_prosa,
         },
+        "completitud_precedencia_epi": {
+            "estados_validos": auditoria.estados_validos,
+            "pares_en_conflicto": [list(p) for p in auditoria.pares_en_conflicto],
+            "sin_declarar": [list(p) for p in auditoria.sin_declarar],
+            "entradas_muertas": [list(p) for p in auditoria.declarados_sin_conflicto],
+        },
         "por_categoria": {
             cat: {"correctos": sum(1 for r in rs if r.correct), "total": len(rs)}
             for cat, rs in by_category.items()
@@ -493,7 +524,11 @@ def run(threshold: float = 1.0) -> int:
         json.dump(report, f, indent=2, ensure_ascii=False)
     print(f"  Reporte JSON: {_REPORT_PATH}")
 
-    return 0 if tasa_acierto >= threshold else 1
+    # La completitud de INV-18 es condicion de salida en verde igual que la
+    # tasa de acierto: un par sin declarar no rompe ningun caso golden (por
+    # eso hizo falta este chequeo), asi que si no entrara aca no entraria
+    # en ninguna parte del arnes.
+    return 0 if (tasa_acierto >= threshold and auditoria.completa) else 1
 
 
 if __name__ == "__main__":

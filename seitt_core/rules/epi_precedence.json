@@ -98,5 +98,145 @@
     "winner": null,
     "rationale": "C2. Brucelosis reactiva (R14) contra repeticion en Zona Gris (R18). Cerrado por inexistencia de caso real, con DOS razones independientes: (a) RN-02/INV-17 -- R14 exige sco Reactivo, que no motiva duplicado; (b) la tecnica de Brucelosis es binaria (Reactivo / No Reactivo) y nunca produce Zona Gris, segun el bioquimico de referencia, de modo que el antecedente de R18 no es alcanzable para este marcador. DEPENDENCIA ABIERTA: (b) no esta hoy enforced -- el invariante de validacion de Brucelosis esta pendiente (sesion aparte), asi que por ahora es posible cargar el dato invalido aunque no deba ocurrir en la operatoria real. Mientras tanto la entrada indistinct cubre el par de forma defensiva.",
     "clinical_source": "Bioquimico de referencia -- dossier de arbitraje, pregunta 5 (C2)."
+  },
+  {
+    "pair": [
+      "R3",
+      "R8"
+    ],
+    "resolution": "pending_clinical_review",
+    "winner": null,
+    "rationale": "FAMILIA A -- BLOQUEADO A LA ESPERA DE CRITERIO CLINICO. En una muestra de Sifilis conviven dos hallazgos con nombre propio: pendiente de confirmacion (VDRL reactivo, CLIA sin informar) por el algoritmo treponemico, y serologia dudosa (Zona Gris inicial, repeticion no reactiva) por el tamizaje serologico de la misma muestra. Ambas reglas son Descarte/Diferido_Temporal, luego empatan en peso (INV-07) y la conducta sobre unidad y donante es la misma en las dos ramas: lo unico en disputa es la etiqueta publicada. Hasta aca la decidia el orden de priority, sin que nadie la especificara. La pregunta esta planteada en docs/consulta_bioquimico_arbitraje.md, punto 1, agrupada con los otros once pares de la familia porque todos comparten la misma pregunta de fondo: si el reporte publica el hallazgo especifico de sifilis, el estado del tamizaje, o ambos concatenados. Mientras no haya respuesta el motor conserva el incumbente del orden de evaluacion -- igual que antes del mecanismo -- pero el par queda DECLARADO como abierto, que es lo que lo distingue de un par que nadie miro.",
+    "clinical_source": "docs/consulta_bioquimico_arbitraje.md, punto 1 -- SIN RESPUESTA."
+  },
+  {
+    "pair": [
+      "R3",
+      "R9"
+    ],
+    "resolution": "pending_clinical_review",
+    "winner": null,
+    "rationale": "FAMILIA A -- BLOQUEADO A LA ESPERA DE CRITERIO CLINICO. En una muestra de Sifilis conviven dos hallazgos con nombre propio: sifilis confirmada (VDRL y CLIA reactivos) por el algoritmo treponemico, y serologia dudosa (Zona Gris inicial, repeticion no reactiva) por el tamizaje serologico de la misma muestra. Ambas reglas son Descarte/Diferido_Temporal, luego empatan en peso (INV-07) y la conducta sobre unidad y donante es la misma en las dos ramas: lo unico en disputa es la etiqueta publicada. Hasta aca la decidia el orden de priority, sin que nadie la especificara. La pregunta esta planteada en docs/consulta_bioquimico_arbitraje.md, punto 1, agrupada con los otros once pares de la familia porque todos comparten la misma pregunta de fondo: si el reporte publica el hallazgo especifico de sifilis, el estado del tamizaje, o ambos concatenados. Mientras no haya respuesta el motor conserva el incumbente del orden de evaluacion -- igual que antes del mecanismo -- pero el par queda DECLARADO como abierto, que es lo que lo distingue de un par que nadie miro.",
+    "clinical_source": "docs/consulta_bioquimico_arbitraje.md, punto 1 -- SIN RESPUESTA."
+  },
+  {
+    "pair": [
+      "R3",
+      "R10"
+    ],
+    "resolution": "pending_clinical_review",
+    "winner": null,
+    "rationale": "FAMILIA A -- BLOQUEADO A LA ESPERA DE CRITERIO CLINICO. En una muestra de Sifilis conviven dos hallazgos con nombre propio: cicatriz serologica (VDRL no reactivo, CLIA reactivo) por el algoritmo treponemico, y serologia dudosa (Zona Gris inicial, repeticion no reactiva) por el tamizaje serologico de la misma muestra. Ambas reglas son Descarte/Diferido_Temporal, luego empatan en peso (INV-07) y la conducta sobre unidad y donante es la misma en las dos ramas: lo unico en disputa es la etiqueta publicada. Hasta aca la decidia el orden de priority, sin que nadie la especificara. La pregunta esta planteada en docs/consulta_bioquimico_arbitraje.md, punto 1, agrupada con los otros once pares de la familia porque todos comparten la misma pregunta de fondo: si el reporte publica el hallazgo especifico de sifilis, el estado del tamizaje, o ambos concatenados. Mientras no haya respuesta el motor conserva el incumbente del orden de evaluacion -- igual que antes del mecanismo -- pero el par queda DECLARADO como abierto, que es lo que lo distingue de un par que nadie miro.",
+    "clinical_source": "docs/consulta_bioquimico_arbitraje.md, punto 1 -- SIN RESPUESTA."
+  },
+  {
+    "pair": [
+      "R3",
+      "R22"
+    ],
+    "resolution": "pending_clinical_review",
+    "winner": null,
+    "rationale": "FAMILIA A -- BLOQUEADO A LA ESPERA DE CRITERIO CLINICO. En una muestra de Sifilis conviven dos hallazgos con nombre propio: pendiente de confirmacion (discordancia, o un ensayo sin informar) por el algoritmo treponemico, y serologia dudosa (Zona Gris inicial, repeticion no reactiva) por el tamizaje serologico de la misma muestra. Ambas reglas son Descarte/Diferido_Temporal, luego empatan en peso (INV-07) y la conducta sobre unidad y donante es la misma en las dos ramas: lo unico en disputa es la etiqueta publicada. Hasta aca la decidia el orden de priority, sin que nadie la especificara. La pregunta esta planteada en docs/consulta_bioquimico_arbitraje.md, punto 1, agrupada con los otros once pares de la familia porque todos comparten la misma pregunta de fondo: si el reporte publica el hallazgo especifico de sifilis, el estado del tamizaje, o ambos concatenados. Mientras no haya respuesta el motor conserva el incumbente del orden de evaluacion -- igual que antes del mecanismo -- pero el par queda DECLARADO como abierto, que es lo que lo distingue de un par que nadie miro.",
+    "clinical_source": "docs/consulta_bioquimico_arbitraje.md, punto 1 -- SIN RESPUESTA."
+  },
+  {
+    "pair": [
+      "R6",
+      "R8"
+    ],
+    "resolution": "pending_clinical_review",
+    "winner": null,
+    "rationale": "FAMILIA A -- BLOQUEADO A LA ESPERA DE CRITERIO CLINICO. En una muestra de Sifilis conviven dos hallazgos con nombre propio: pendiente de confirmacion (VDRL reactivo, CLIA sin informar) por el algoritmo treponemico, y precaucion por riesgo declarado (serologia no reactiva con riesgo en anamnesis) por el tamizaje serologico de la misma muestra. Ambas reglas son Descarte/Diferido_Temporal, luego empatan en peso (INV-07) y la conducta sobre unidad y donante es la misma en las dos ramas: lo unico en disputa es la etiqueta publicada. Hasta aca la decidia el orden de priority, sin que nadie la especificara. La pregunta esta planteada en docs/consulta_bioquimico_arbitraje.md, punto 1, agrupada con los otros once pares de la familia porque todos comparten la misma pregunta de fondo: si el reporte publica el hallazgo especifico de sifilis, el estado del tamizaje, o ambos concatenados. Mientras no haya respuesta el motor conserva el incumbente del orden de evaluacion -- igual que antes del mecanismo -- pero el par queda DECLARADO como abierto, que es lo que lo distingue de un par que nadie miro.",
+    "clinical_source": "docs/consulta_bioquimico_arbitraje.md, punto 1 -- SIN RESPUESTA."
+  },
+  {
+    "pair": [
+      "R6",
+      "R9"
+    ],
+    "resolution": "pending_clinical_review",
+    "winner": null,
+    "rationale": "FAMILIA A -- BLOQUEADO A LA ESPERA DE CRITERIO CLINICO. En una muestra de Sifilis conviven dos hallazgos con nombre propio: sifilis confirmada (VDRL y CLIA reactivos) por el algoritmo treponemico, y precaucion por riesgo declarado (serologia no reactiva con riesgo en anamnesis) por el tamizaje serologico de la misma muestra. Ambas reglas son Descarte/Diferido_Temporal, luego empatan en peso (INV-07) y la conducta sobre unidad y donante es la misma en las dos ramas: lo unico en disputa es la etiqueta publicada. Hasta aca la decidia el orden de priority, sin que nadie la especificara. La pregunta esta planteada en docs/consulta_bioquimico_arbitraje.md, punto 1, agrupada con los otros once pares de la familia porque todos comparten la misma pregunta de fondo: si el reporte publica el hallazgo especifico de sifilis, el estado del tamizaje, o ambos concatenados. Mientras no haya respuesta el motor conserva el incumbente del orden de evaluacion -- igual que antes del mecanismo -- pero el par queda DECLARADO como abierto, que es lo que lo distingue de un par que nadie miro.",
+    "clinical_source": "docs/consulta_bioquimico_arbitraje.md, punto 1 -- SIN RESPUESTA."
+  },
+  {
+    "pair": [
+      "R6",
+      "R10"
+    ],
+    "resolution": "pending_clinical_review",
+    "winner": null,
+    "rationale": "FAMILIA A -- BLOQUEADO A LA ESPERA DE CRITERIO CLINICO. En una muestra de Sifilis conviven dos hallazgos con nombre propio: cicatriz serologica (VDRL no reactivo, CLIA reactivo) por el algoritmo treponemico, y precaucion por riesgo declarado (serologia no reactiva con riesgo en anamnesis) por el tamizaje serologico de la misma muestra. Ambas reglas son Descarte/Diferido_Temporal, luego empatan en peso (INV-07) y la conducta sobre unidad y donante es la misma en las dos ramas: lo unico en disputa es la etiqueta publicada. Hasta aca la decidia el orden de priority, sin que nadie la especificara. La pregunta esta planteada en docs/consulta_bioquimico_arbitraje.md, punto 1, agrupada con los otros once pares de la familia porque todos comparten la misma pregunta de fondo: si el reporte publica el hallazgo especifico de sifilis, el estado del tamizaje, o ambos concatenados. Mientras no haya respuesta el motor conserva el incumbente del orden de evaluacion -- igual que antes del mecanismo -- pero el par queda DECLARADO como abierto, que es lo que lo distingue de un par que nadie miro.",
+    "clinical_source": "docs/consulta_bioquimico_arbitraje.md, punto 1 -- SIN RESPUESTA."
+  },
+  {
+    "pair": [
+      "R6",
+      "R22"
+    ],
+    "resolution": "pending_clinical_review",
+    "winner": null,
+    "rationale": "FAMILIA A -- BLOQUEADO A LA ESPERA DE CRITERIO CLINICO. En una muestra de Sifilis conviven dos hallazgos con nombre propio: pendiente de confirmacion (discordancia, o un ensayo sin informar) por el algoritmo treponemico, y precaucion por riesgo declarado (serologia no reactiva con riesgo en anamnesis) por el tamizaje serologico de la misma muestra. Ambas reglas son Descarte/Diferido_Temporal, luego empatan en peso (INV-07) y la conducta sobre unidad y donante es la misma en las dos ramas: lo unico en disputa es la etiqueta publicada. Hasta aca la decidia el orden de priority, sin que nadie la especificara. La pregunta esta planteada en docs/consulta_bioquimico_arbitraje.md, punto 1, agrupada con los otros once pares de la familia porque todos comparten la misma pregunta de fondo: si el reporte publica el hallazgo especifico de sifilis, el estado del tamizaje, o ambos concatenados. Mientras no haya respuesta el motor conserva el incumbente del orden de evaluacion -- igual que antes del mecanismo -- pero el par queda DECLARADO como abierto, que es lo que lo distingue de un par que nadie miro.",
+    "clinical_source": "docs/consulta_bioquimico_arbitraje.md, punto 1 -- SIN RESPUESTA."
+  },
+  {
+    "pair": [
+      "R18",
+      "R8"
+    ],
+    "resolution": "pending_clinical_review",
+    "winner": null,
+    "rationale": "FAMILIA A -- BLOQUEADO A LA ESPERA DE CRITERIO CLINICO. En una muestra de Sifilis conviven dos hallazgos con nombre propio: pendiente de confirmacion (VDRL reactivo, CLIA sin informar) por el algoritmo treponemico, y serologia dudosa persistente (Zona Gris inicial y repeticion tambien en Zona Gris) por el tamizaje serologico de la misma muestra. Ambas reglas son Descarte/Diferido_Temporal, luego empatan en peso (INV-07) y la conducta sobre unidad y donante es la misma en las dos ramas: lo unico en disputa es la etiqueta publicada. Hasta aca la decidia el orden de priority, sin que nadie la especificara. La pregunta esta planteada en docs/consulta_bioquimico_arbitraje.md, punto 1, agrupada con los otros once pares de la familia porque todos comparten la misma pregunta de fondo: si el reporte publica el hallazgo especifico de sifilis, el estado del tamizaje, o ambos concatenados. Mientras no haya respuesta el motor conserva el incumbente del orden de evaluacion -- igual que antes del mecanismo -- pero el par queda DECLARADO como abierto, que es lo que lo distingue de un par que nadie miro.",
+    "clinical_source": "docs/consulta_bioquimico_arbitraje.md, punto 1 -- SIN RESPUESTA."
+  },
+  {
+    "pair": [
+      "R18",
+      "R9"
+    ],
+    "resolution": "pending_clinical_review",
+    "winner": null,
+    "rationale": "FAMILIA A -- BLOQUEADO A LA ESPERA DE CRITERIO CLINICO. En una muestra de Sifilis conviven dos hallazgos con nombre propio: sifilis confirmada (VDRL y CLIA reactivos) por el algoritmo treponemico, y serologia dudosa persistente (Zona Gris inicial y repeticion tambien en Zona Gris) por el tamizaje serologico de la misma muestra. Ambas reglas son Descarte/Diferido_Temporal, luego empatan en peso (INV-07) y la conducta sobre unidad y donante es la misma en las dos ramas: lo unico en disputa es la etiqueta publicada. Hasta aca la decidia el orden de priority, sin que nadie la especificara. La pregunta esta planteada en docs/consulta_bioquimico_arbitraje.md, punto 1, agrupada con los otros once pares de la familia porque todos comparten la misma pregunta de fondo: si el reporte publica el hallazgo especifico de sifilis, el estado del tamizaje, o ambos concatenados. Mientras no haya respuesta el motor conserva el incumbente del orden de evaluacion -- igual que antes del mecanismo -- pero el par queda DECLARADO como abierto, que es lo que lo distingue de un par que nadie miro.",
+    "clinical_source": "docs/consulta_bioquimico_arbitraje.md, punto 1 -- SIN RESPUESTA."
+  },
+  {
+    "pair": [
+      "R18",
+      "R10"
+    ],
+    "resolution": "pending_clinical_review",
+    "winner": null,
+    "rationale": "FAMILIA A -- BLOQUEADO A LA ESPERA DE CRITERIO CLINICO. En una muestra de Sifilis conviven dos hallazgos con nombre propio: cicatriz serologica (VDRL no reactivo, CLIA reactivo) por el algoritmo treponemico, y serologia dudosa persistente (Zona Gris inicial y repeticion tambien en Zona Gris) por el tamizaje serologico de la misma muestra. Ambas reglas son Descarte/Diferido_Temporal, luego empatan en peso (INV-07) y la conducta sobre unidad y donante es la misma en las dos ramas: lo unico en disputa es la etiqueta publicada. Hasta aca la decidia el orden de priority, sin que nadie la especificara. La pregunta esta planteada en docs/consulta_bioquimico_arbitraje.md, punto 1, agrupada con los otros once pares de la familia porque todos comparten la misma pregunta de fondo: si el reporte publica el hallazgo especifico de sifilis, el estado del tamizaje, o ambos concatenados. Mientras no haya respuesta el motor conserva el incumbente del orden de evaluacion -- igual que antes del mecanismo -- pero el par queda DECLARADO como abierto, que es lo que lo distingue de un par que nadie miro.",
+    "clinical_source": "docs/consulta_bioquimico_arbitraje.md, punto 1 -- SIN RESPUESTA."
+  },
+  {
+    "pair": [
+      "R18",
+      "R22"
+    ],
+    "resolution": "pending_clinical_review",
+    "winner": null,
+    "rationale": "FAMILIA A -- BLOQUEADO A LA ESPERA DE CRITERIO CLINICO. En una muestra de Sifilis conviven dos hallazgos con nombre propio: pendiente de confirmacion (discordancia, o un ensayo sin informar) por el algoritmo treponemico, y serologia dudosa persistente (Zona Gris inicial y repeticion tambien en Zona Gris) por el tamizaje serologico de la misma muestra. Ambas reglas son Descarte/Diferido_Temporal, luego empatan en peso (INV-07) y la conducta sobre unidad y donante es la misma en las dos ramas: lo unico en disputa es la etiqueta publicada. Hasta aca la decidia el orden de priority, sin que nadie la especificara. La pregunta esta planteada en docs/consulta_bioquimico_arbitraje.md, punto 1, agrupada con los otros once pares de la familia porque todos comparten la misma pregunta de fondo: si el reporte publica el hallazgo especifico de sifilis, el estado del tamizaje, o ambos concatenados. Mientras no haya respuesta el motor conserva el incumbente del orden de evaluacion -- igual que antes del mecanismo -- pero el par queda DECLARADO como abierto, que es lo que lo distingue de un par que nadie miro.",
+    "clinical_source": "docs/consulta_bioquimico_arbitraje.md, punto 1 -- SIN RESPUESTA."
+  },
+  {
+    "pair": [
+      "R3",
+      "R6"
+    ],
+    "resolution": "pending_clinical_review",
+    "winner": null,
+    "rationale": "PAR NUEVO, detectado por la enumeracion exhaustiva de INV-18 y ausente de las tres familias del dossier de arbitraje. Existe unicamente porque `sco` y `sco_inicial` pueden diferir en WorkingMemoryFacts: R3 exige sco_inicial='Zona Gris' y R6 exige sco='No Reactivo', o sea la misma lectura clasificada de dos formas a la vez. `construir_hechos()` deriva ambos campos SIEMPRE de la misma fuzzificacion, asi que por evaluar_caso() el estado es inalcanzable; entrando directo por RuleEngine.evaluar(), no. Se declara pending_clinical_review y no indistinct a proposito: la pregunta previa no es clinica sino de modelo de dominio -- para que existe `sco_inicial` separado de `sco` -- y cerrarla como 'da igual' seria dar por resuelta una deuda que ni siquiera se planteo. Ver la entrada correspondiente en CLAUDE.md y el anexo de la consulta.",
+    "clinical_source": "docs/consulta_bioquimico_arbitraje.md, anexo -- SIN RESPUESTA."
+  },
+  {
+    "pair": [
+      "R3",
+      "R14"
+    ],
+    "resolution": "pending_clinical_review",
+    "winner": null,
+    "rationale": "PAR NUEVO, detectado por la enumeracion exhaustiva de INV-18 y ausente de las tres familias del dossier de arbitraje. Existe unicamente porque `sco` y `sco_inicial` pueden diferir en WorkingMemoryFacts: R3 exige sco_inicial='Zona Gris' y R14 exige sco='Reactivo' sobre Brucelosis, o sea la misma lectura clasificada de dos formas a la vez -- y ademas, segun el bioquimico, Brucelosis no tiene Zona Gris por ser tecnica binaria. `construir_hechos()` deriva ambos campos SIEMPRE de la misma fuzzificacion, asi que por evaluar_caso() el estado es inalcanzable; entrando directo por RuleEngine.evaluar(), no. Se declara pending_clinical_review y no indistinct a proposito: la pregunta previa no es clinica sino de modelo de dominio -- para que existe `sco_inicial` separado de `sco` -- y cerrarla como 'da igual' seria dar por resuelta una deuda que ni siquiera se planteo. Ver la entrada correspondiente en CLAUDE.md y el anexo de la consulta.",
+    "clinical_source": "docs/consulta_bioquimico_arbitraje.md, anexo -- SIN RESPUESTA."
   }
 ]
