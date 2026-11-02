@@ -11,3 +11,12 @@ seitt_core/eval/eval_report.json
 Dockerfile
 docker-compose.yml
 .dockerignore
+
+# pyproject.toml queda FUERA del despliegue a proposito. Vercel le da
+# prioridad sobre requirements.txt e instala solo `project.dependencies`
+# (pydantic, jsonschema), no el extra opcional `api`: la funcion arrancaba
+# sin fastapi (ModuleNotFoundError). El nucleo declara fastapi como extra
+# para instalarse sin la capa web, y esa decision se respeta; la demo
+# instala desde requirements.txt. La app corre como fuentes, no como
+# paquete instalado, asi que en runtime no necesita el pyproject.
+pyproject.toml
