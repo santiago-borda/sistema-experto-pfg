@@ -1,3 +1,7 @@
-# Sistema Experto de Seguridad Transfusional (ITT)
-# Motor difuso implementado manualmente — no requiere dependencias externas.
-# Solo se usa la biblioteca estándar de Python (>= 3.8).
+# Dependencias de runtime para el despliegue en Vercel (demo del prototipo).
+# Versiones alineadas con constraints.txt, que es la fuente de verdad del
+# build en Docker; aca solo van las directas, el resto lo resuelve el
+# instalador. uvicorn no hace falta: Vercel sirve la app por su cuenta.
+fastapi==0.141.1
+pydantic==2.13.4
+jsonschema==4.26.0

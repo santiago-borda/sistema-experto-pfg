@@ -1,0 +1,9 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "functions": {
+    "index.py": {
+      "includeFiles": "{app/web/**,spec/schemas/**,spec/rules/**,seitt_core/rules/**}",
+      "excludeFiles": "{legacy/**,docs/**,tests/**,.venv/**,seitt_core/tests/**}"
+    }
+  }
+}

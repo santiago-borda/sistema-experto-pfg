@@ -1,0 +1,13 @@
+# Fuera del despliegue: historia, papers, entorno local y artefactos.
+legacy/
+docs/
+.venv/
+.git/
+.pytest_cache/
+.ruff_cache/
+__pycache__/
+*.egg-info/
+seitt_core/eval/eval_report.json
+Dockerfile
+docker-compose.yml
+.dockerignore
